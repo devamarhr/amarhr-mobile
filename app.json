@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "amarapp",
-    "slug": "amarapp",
+    "name": "AmarHR",
+    "slug": "amarhr-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "amarapp",
+    "scheme": "amarhr",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d9685003-ec99-4a9e-b32d-0b8b9ed0986f"
+      }
+    },
+    "owner": "amarhr"
   }
 }
