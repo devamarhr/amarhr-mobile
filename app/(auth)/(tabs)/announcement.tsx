@@ -1,9 +1,10 @@
 import { View, Text } from 'react-native';
+import { ScreenScrollView } from "@/components/screen-scroll-view";
 
 export default function AnnouncementScreen() {
   return (
-    <View>
+    <ScreenScrollView>
       <Text>Announcement</Text>
-    </View>
+    </ScreenScrollView>
   );
 }
