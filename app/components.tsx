@@ -16,7 +16,7 @@ import {
   Avatar,
   Button, Chip, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
   Switch,
-  Tabs,
+  Tabs, TextField,
   useThemeColor,
   useToast
 } from "heroui-native";
@@ -144,134 +144,52 @@ const KeyboardAvoidingContainer = ({
 const BasicTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <AppTextField
-        isRequired
-        label="Email"
-        inputProps={{
-          placeholder: "Enter your email",
-          keyboardType: "email-address",
-          autoCapitalize: "none",
-        }}
-        description="We'll never share your email with anyone else."
-      />
+      <TextField isRequired>
+        <TextField.Label>Email</TextField.Label>
+        <TextField.Input
+          placeholder="Enter your email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextField.Description>
+          We'll never share your email with anyone else.
+        </TextField.Description>
+      </TextField>
     </View>
   );
 };
 
 const TextFieldWithIconsContent = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
 
   return (
     <View className="flex-1 justify-center px-5">
-      <View className="gap-6">
-        <AppTextField
-          isRequired
-          label="Password"
-          inputProps={{
-            placeholder: "Enter your password",
-            secureTextEntry: !isPasswordVisible,
-          }}
-          leftIcon={
-            <StyledHugeiconsIcon
-              icon={LockPasswordIcon}
+      <TextField isRequired>
+        <TextField.Label>Password</TextField.Label>
+        <View className="w-full flex-row items-center">
+          <TextField.Input
+            className="flex-1 px-10"
+            placeholder="Enter your password"
+            secureTextEntry={!isPasswordVisible}
+          />
+          <StyledIonicons
+            name="lock-closed-outline"
+            size={16}
+            className="absolute left-3.5 text-muted"
+            pointerEvents="none"
+          />
+          <Pressable
+            className="absolute right-4"
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+          >
+            <StyledIonicons
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
               size={16}
               className="text-muted"
             />
-          }
-          rightIcon={
-            <StyledHugeiconsIcon
-              icon={isPasswordVisible ? ViewIcon : ViewOffIcon}
-              size={16}
-              className="text-muted"
-            />
-          }
-          onRightIconPress={() => setIsPasswordVisible(!isPasswordVisible)}
-        />
-
-        <AppTextField
-          label="Search"
-          inputProps={{
-            placeholder: "Search...",
-            value: searchValue,
-            onChangeText: setSearchValue,
-          }}
-          leftIcon={
-            <StyledHugeiconsIcon
-              icon={Search01Icon}
-              size={16}
-              className="text-muted"
-            />
-          }
-          rightIcon={
-            searchValue ? (
-              <StyledHugeiconsIcon
-                icon={ClosedCaptionIcon}
-                size={16}
-                className="text-muted"
-              />
-            ) : null
-          }
-          onRightIconPress={() => setSearchValue('')}
-        />
-
-        <View className="flex flex-row gap-2">
-          <View className="flex-1">
-            <AppTextField
-              label="Search 1"
-              inputProps={{
-                placeholder: "Search...",
-                value: searchValue,
-                onChangeText: setSearchValue,
-              }}
-              leftIcon={
-                <StyledHugeiconsIcon
-                  icon={Search01Icon}
-                  size={16}
-                  className="text-muted"
-                />
-              }
-              rightIcon={
-                searchValue ? (
-                  <StyledHugeiconsIcon
-                    icon={ClosedCaptionIcon}
-                    size={16}
-                    className="text-muted"
-                  />
-                ) : null
-              }
-              onRightIconPress={() => setSearchValue('')}
-            />
-          </View>
-          <View className="flex-1">
-            <AppTextField
-              label="Search 2"
-              inputProps={{
-                placeholder: "Search...",
-                value: searchValue,
-                onChangeText: setSearchValue,
-              }}
-              leftIcon={
-                <StyledHugeiconsIcon
-                  icon={Search01Icon}
-                  size={16}
-                  className="text-muted"
-                />
-              }
-              rightIcon={
-                searchValue ? (
-                  <StyledHugeiconsIcon
-                    icon={ClosedCaptionIcon}
-                    size={16}
-                    className="text-muted"
-                  />
-                ) : null
-              }
-              onRightIconPress={() => setSearchValue('')}
-            />
-          </View>
+          </Pressable>
         </View>
-      </View>
+      </TextField>
     </View>
   );
 };
@@ -280,24 +198,27 @@ const DisabledTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
       <View className="gap-8">
-        <AppTextField
-          label="Account ID"
-          inputProps={{
-            placeholder: "Enter account ID",
-            value: "ACC-2024-12345",
-          }}
-          description="Your unique account identifier"
-        />
+        <TextField>
+          <TextField.Label>Account ID</TextField.Label>
+          <TextField.Input
+            placeholder="Enter account ID"
+            value="ACC-2024-12345"
+          />
+          <TextField.Description>
+            Your unique account identifier
+          </TextField.Description>
+        </TextField>
 
-        <AppTextField
-          isDisabled
-          label="User Role"
-          inputProps={{
-            placeholder: "Role assignment",
-            value: "Administrator",
-          }}
-          description="Contact support to change your role"
-        />
+        <TextField isDisabled>
+          <TextField.Label>User Role</TextField.Label>
+          <TextField.Input
+            placeholder="Role assignment"
+            value="Administrator"
+          />
+          <TextField.Description>
+            Contact support to change your role
+          </TextField.Description>
+        </TextField>
       </View>
     </View>
   );
@@ -306,16 +227,16 @@ const DisabledTextFieldContent = () => {
 const MultilineTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <AppTextField
-        label="Message"
-        inputProps={{
-          placeholder: "Type your message here...",
-          multiline: true,
-          numberOfLines: 4,
-          textAlignVertical: "top",
-        }}
-        description="Maximum 500 characters"
-      />
+      <TextField>
+        <TextField.Label>Message</TextField.Label>
+        <TextField.Input
+          placeholder="Type your message here..."
+          multiline
+          numberOfLines={4}
+          textAlignVertical="top"
+        />
+        <TextField.Description>Maximum 500 characters</TextField.Description>
+      </TextField>
     </View>
   );
 };
@@ -326,19 +247,22 @@ const TextFieldWithValidationContent = () => {
 
   return (
     <View className="flex-1 justify-center px-5">
-      <View className="gap-4">
-        <AppTextField
-          isRequired
-          isInvalid={isTestFieldInvalid}
-          label="Promo Code"
-          inputProps={{
-            placeholder: "Enter promo code",
-            value: testFieldValue,
-            onChangeText: setTestFieldValue,
-            autoCapitalize: "characters",
-          }}
-          errorMessage="This promo code is invalid or has expired"
-        />
+      <View className="gap-8">
+        <TextField isRequired isInvalid={isTestFieldInvalid}>
+          <TextField.Label>Promo Code</TextField.Label>
+          <TextField.Input
+            placeholder="Enter promo code"
+            value={testFieldValue}
+            onChangeText={setTestFieldValue}
+            autoCapitalize="characters"
+          />
+          <TextField.Description>
+            Enter a valid code to receive discount
+          </TextField.Description>
+          <TextField.ErrorMessage>
+            This promo code is invalid or has expired
+          </TextField.ErrorMessage>
+        </TextField>
         <Button
           onPress={() => setIsTestFieldInvalid(!isTestFieldInvalid)}
           variant="secondary"
@@ -521,20 +445,6 @@ const SelectPresentationContent = () => {
   );
 };
 
-const ButtonSizesContent = () => {
-  return (
-    <View className="flex-1">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-8 w-full px-8">
-          <Button size="sm">Small Button</Button>
-          <Button size="md">Medium Button</Button>
-          <Button size="lg">Large Button</Button>
-        </View>
-      </View>
-    </View>
-  );
-};
-
 const ButtonVariantsContent = () => {
   return (
     <View className="flex-1">
@@ -546,25 +456,12 @@ const ButtonVariantsContent = () => {
           <Button variant="ghost">Ghost</Button>
           <Button variant="danger">Danger</Button>
           <Button variant="danger-soft">Danger Soft</Button>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const ButtonDisabledStateContent = () => {
-  const themeColorMuted = useThemeColor('muted');
-
-  return (
-    <View className="flex-1">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-8 w-full px-8">
           <Button isDisabled>
-            <Spinner color={themeColorMuted} size="sm" />
+            <Spinner size="sm" />
             <Button.Label>Loading</Button.Label>
           </Button>
           <Button variant="secondary" isDisabled>
-            <Spinner size="sm" color={themeColorMuted} />
+            <Spinner size="sm" />
             <Button.Label>Loading</Button.Label>
           </Button>
           <Button variant="tertiary" isDisabled>
@@ -575,40 +472,6 @@ const ButtonDisabledStateContent = () => {
             />
             <Button.Label>Access Denied</Button.Label>
           </Button>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const ButtonWidthAlignmentContent = () => {
-  return (
-    <View className="flex-1">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-8 w-full px-8">
-          <Button>Full Width Button</Button>
-          <View>
-            <Button variant="secondary" size="sm" className="self-start">
-              Start
-            </Button>
-            <Button variant="secondary" size="sm" className="self-center">
-              Center
-            </Button>
-            <Button variant="secondary" size="sm" className="self-end">
-              End
-            </Button>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const ButtonWithIconsContent = () => {
-  return (
-    <View className="flex-1">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-8 w-full px-8">
           <Button variant="primary">
             <HugeiconsIcon
               icon={Add01Icon}
@@ -617,7 +480,6 @@ const ButtonWithIconsContent = () => {
             />
             <Button.Label>Add Item</Button.Label>
           </Button>
-
           <Button variant="secondary">
             <Button.Label>Download</Button.Label>
             <HugeiconsIcon
@@ -626,7 +488,6 @@ const ButtonWithIconsContent = () => {
               className="text-accent-soft-foreground"
             />
           </Button>
-
           <Button variant="tertiary">
             <HugeiconsIcon
               icon={HeartbreakIcon}
@@ -640,7 +501,6 @@ const ButtonWithIconsContent = () => {
               className="text-default-foreground"
             />
           </Button>
-
           <Button variant="danger" size="sm">
             <HugeiconsIcon
               icon={Trash}
@@ -649,17 +509,6 @@ const ButtonWithIconsContent = () => {
             />
             <Button.Label>Delete</Button.Label>
           </Button>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const ButtonIconOnlyContent = () => {
-  return (
-    <View className="flex-1">
-      <View className="flex-1 items-center justify-center">
-        <View className="flex-row gap-8">
           <Button size="sm" isIconOnly>
             <Button.Label>
               <HugeiconsIcon
@@ -1208,12 +1057,7 @@ export default function ComponentsScreen() {
         <Divider />
         <View className="my-2 gap-y-2">
           <AppText className="text-lg font-medium">Button</AppText>
-          <ButtonSizesContent />
           <ButtonVariantsContent />
-          <ButtonDisabledStateContent />
-          <ButtonWidthAlignmentContent />
-          <ButtonWithIconsContent />
-          <ButtonIconOnlyContent />
         </View>
         <Divider />
         <View className="my-2 gap-y-2">

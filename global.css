@@ -24,22 +24,22 @@
 }
 
 @theme inline {
-  --color-darkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
-  --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
-  --color-gray: oklch(0.5243 0 0); /* #6A6A6A */
-  --color-black: oklch(0.252 0 0); /* #222222 */
-  --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
-  --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
-  --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
-  --color-red: oklch(0.5086 0.1956 27.89); /* #BC1818 */
-  --color-green: oklch(0.6416 0.2128 142.12); /* #18AA0B */
-  --color-mediumblue: oklch(0.5212 0.0454 272.32); /* #606884 */
-  --color-darkblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
-  --color-cyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
-  --color-lightcyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
-  --color-darkcyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
-  --color-darkgray: oklch(0.5658 0 0); /* #767676 */
-  --color-lightercyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
+  --color-adarkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
+  --color-ablue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
+  --color-agray: oklch(0.5243 0 0); /* #6A6A6A */
+  --color-ablack: oklch(0.252 0 0); /* #222222 */
+  --color-alightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
+  --color-ayellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
+  --color-aorange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
+  --color-ared: oklch(0.5086 0.1956 27.89); /* #BC1818 */
+  --color-agreen: oklch(0.6416 0.2128 142.12); /* #18AA0B */
+  --color-amediumblue: oklch(0.5212 0.0454 272.32); /* #606884 */
+  --color-adarkblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
+  --color-acyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
+  --color-alightcyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
+  --color-adarkcyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
+  --color-adarkgray: oklch(0.5658 0 0); /* #767676 */
+  --color-alightercyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
 }
 
 @layer theme {
