@@ -24,29 +24,29 @@
 }
 
 @theme inline {
-  --color-adarkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
-  --color-ablue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
-  --color-agray: oklch(0.5243 0 0); /* #6A6A6A */
-  --color-ablack: oklch(0.252 0 0); /* #222222 */
-  --color-alightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
-  --color-ayellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
-  --color-aorange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
-  --color-ared: oklch(0.5086 0.1956 27.89); /* #BC1818 */
-  --color-agreen: oklch(0.6416 0.2128 142.12); /* #18AA0B */
-  --color-amediumblue: oklch(0.5212 0.0454 272.32); /* #606884 */
-  --color-adarkblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
-  --color-acyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
-  --color-alightcyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
-  --color-adarkcyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
-  --color-adarkgray: oklch(0.5658 0 0); /* #767676 */
-  --color-alightercyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
+  --color-black: var(--color-black);
+  --color-darkgray: var(--color-darkgray);
+  --color-gray: var(--color-gray);
+  --color-red: var(--color-red);
+  --color-darkgreen: var(--color-darkgreen);
+  --color-green: var(--color-green);
+  --color-darkerblue: var(--color-darkerblue);
+  --color-darkblue: var(--color-darkblue);
+  --color-blue: var(--color-blue);
+  --color-lightblue: var(--color-lightblue);
+  --color-yellow: var(--color-yellow);
+  --color-orange: var(--color-orange);
+  --color-darkercyan: var(--color-darkercyan);
+  --color-darkcyan: var(--color-darkcyan);
+  --color-cyan: var(--color-cyan);
+  --color-lightcyan: var(--color-lightcyan);
 }
 
 @layer theme {
   :root {
     @variant light {
       /* Base Colors */
-      --background: oklch(1 0 89.876);
+      --background: var(--white);
       --foreground: var(--eclipse);
 
       /* Surface: Used for non-overlay components (cards, accordions, disclosure groups) */
@@ -72,13 +72,13 @@
       --field-border: transparent; /* no border by default on form fields */
 
       /* Status Colors */
-      --success: oklch(0.642 0.213 142.124);
+      --success: var(--color-green);
       --success-foreground: var(--eclipse);
 
       --warning: oklch(0.7819 0.1585 72.33);
       --warning-foreground: var(--eclipse);
 
-      --danger: oklch(0.509 0.196 27.89);
+      --danger: var(--color-red);
       --danger-foreground: var(--snow);
 
       /* Component Colors */
@@ -91,15 +91,32 @@
       --link: var(--foreground);
 
       /* Shadows */
-      /* --surface-shadow: 0 0px 0px 0 rgba(24, 24, 27, 0.03), 0 2px 10px 0 rgba(24, 24, 27, 0.08); */
       --surface-shadow: 0 0 0 0 transparent inset;
       --overlay-shadow: 0 0 0 0 transparent inset;
       --field-shadow: 0 0 0 0 transparent inset;
+
+      /* Custom Colors */
+      --color-black: oklch(0.252 0 0); /* #222222 */
+      --color-darkgray: oklch(0.5243 0 0); /* #6A6A6A */
+      --color-gray: oklch(0.5658 0 0); /* #767676 */
+      --color-red: oklch(0.5086 0.1956 27.89); /* #BC1818 */
+      --color-darkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
+      --color-green: oklch(0.6416 0.2128 142.12); /* #18AA0B */
+      --color-darkerblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
+      --color-darkblue: oklch(0.5212 0.0454 272.32); /* #606884 */
+      --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
+      --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
+      --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
+      --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
+      --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
+      --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
+      --color-cyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
+      --color-lightcyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
     }
 
     @variant dark {
       /* Base Colors */
-      --background: oklch(1 0 89.876);
+      --background: var(--white);
       --foreground: var(--eclipse);
 
       /* Surface: Used for non-overlay components (cards, accordions, disclosure groups) */
@@ -125,13 +142,13 @@
       --field-border: transparent; /* no border by default on form fields */
 
       /* Status Colors */
-      --success: oklch(0.642 0.213 142.124);
+      --success: var(--color-green);
       --success-foreground: var(--eclipse);
 
       --warning: oklch(0.7819 0.1585 72.33);
       --warning-foreground: var(--eclipse);
 
-      --danger: oklch(0.509 0.196 27.89);
+      --danger: var(--color-red);
       --danger-foreground: var(--snow);
 
       /* Component Colors */
@@ -144,10 +161,27 @@
       --link: var(--foreground);
 
       /* Shadows */
-      /* --surface-shadow: 0 0px 0px 0 rgba(24, 24, 27, 0.03), 0 2px 10px 0 rgba(24, 24, 27, 0.08); */
       --surface-shadow: 0 0 0 0 transparent inset;
       --overlay-shadow: 0 0 0 0 transparent inset;
       --field-shadow: 0 0 0 0 transparent inset;
+
+      /* Custom Colors */
+      --color-black: oklch(0.252 0 0); /* #222222 */
+      --color-darkgray: oklch(0.5243 0 0); /* #6A6A6A */
+      --color-gray: oklch(0.5658 0 0); /* #767676 */
+      --color-red: oklch(0.5086 0.1956 27.89); /* #BC1818 */
+      --color-darkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
+      --color-green: oklch(0.6416 0.2128 142.12); /* #18AA0B */
+      --color-darkerblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
+      --color-darkblue: oklch(0.5212 0.0454 272.32); /* #606884 */
+      --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
+      --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
+      --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
+      --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
+      --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
+      --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
+      --color-cyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
+      --color-lightcyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
     }
   }
 }

@@ -16,7 +16,7 @@ import {
   Avatar,
   Button, Chip, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
   Switch,
-  Tabs, TextField,
+  Tabs,
   useThemeColor,
   useToast
 } from "heroui-native";
@@ -144,17 +144,17 @@ const KeyboardAvoidingContainer = ({
 const BasicTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <TextField isRequired>
-        <TextField.Label>Email</TextField.Label>
-        <TextField.Input
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextField.Description>
-          We'll never share your email with anyone else.
-        </TextField.Description>
-      </TextField>
+      <AppTextField
+        label="Email"
+      />
+      <AppTextField
+        isRequired
+        label="Email"
+        placeholder="Enter your email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        description="We'll never share your email with anyone else."
+      />
     </View>
   );
 };
@@ -164,32 +164,28 @@ const TextFieldWithIconsContent = () => {
 
   return (
     <View className="flex-1 justify-center px-5">
-      <TextField isRequired>
-        <TextField.Label>Password</TextField.Label>
-        <View className="w-full flex-row items-center">
-          <TextField.Input
-            className="flex-1 px-10"
-            placeholder="Enter your password"
-            secureTextEntry={!isPasswordVisible}
-          />
+      <AppTextField
+        isRequired
+        label="Password"
+        placeholder="Enter your password"
+        secureTextEntry={!isPasswordVisible}
+        leftIcon={
           <StyledIonicons
             name="lock-closed-outline"
             size={16}
-            className="absolute left-3.5 text-muted"
-            pointerEvents="none"
+            className="text-muted"
           />
-          <Pressable
-            className="absolute right-4"
-            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-          >
+        }
+        rightIcon={
+          <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
             <StyledIonicons
               name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
               size={16}
               className="text-muted"
             />
           </Pressable>
-        </View>
-      </TextField>
+        }
+      />
     </View>
   );
 };
@@ -198,27 +194,20 @@ const DisabledTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
       <View className="gap-8">
-        <TextField>
-          <TextField.Label>Account ID</TextField.Label>
-          <TextField.Input
-            placeholder="Enter account ID"
-            value="ACC-2024-12345"
-          />
-          <TextField.Description>
-            Your unique account identifier
-          </TextField.Description>
-        </TextField>
+        <AppTextField
+          label="Account ID"
+          placeholder="Enter account ID"
+          value="ACC-2024-12345"
+          description="Your unique account identifier"
+        />
 
-        <TextField isDisabled>
-          <TextField.Label>User Role</TextField.Label>
-          <TextField.Input
-            placeholder="Role assignment"
-            value="Administrator"
-          />
-          <TextField.Description>
-            Contact support to change your role
-          </TextField.Description>
-        </TextField>
+        <AppTextField
+          isDisabled
+          label="User Role"
+          placeholder="Role assignment"
+          value="Administrator"
+          description="Contact support to change your role"
+        />
       </View>
     </View>
   );
@@ -227,16 +216,14 @@ const DisabledTextFieldContent = () => {
 const MultilineTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <TextField>
-        <TextField.Label>Message</TextField.Label>
-        <TextField.Input
-          placeholder="Type your message here..."
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-        <TextField.Description>Maximum 500 characters</TextField.Description>
-      </TextField>
+      <AppTextField
+        label="Message"
+        placeholder="Type your message here..."
+        multiline
+        numberOfLines={4}
+        textAlignVertical="top"
+        description="Maximum 500 characters"
+      />
     </View>
   );
 };
@@ -248,21 +235,17 @@ const TextFieldWithValidationContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
       <View className="gap-8">
-        <TextField isRequired isInvalid={isTestFieldInvalid}>
-          <TextField.Label>Promo Code</TextField.Label>
-          <TextField.Input
-            placeholder="Enter promo code"
-            value={testFieldValue}
-            onChangeText={setTestFieldValue}
-            autoCapitalize="characters"
-          />
-          <TextField.Description>
-            Enter a valid code to receive discount
-          </TextField.Description>
-          <TextField.ErrorMessage>
-            This promo code is invalid or has expired
-          </TextField.ErrorMessage>
-        </TextField>
+        <AppTextField
+          isRequired
+          isInvalid={isTestFieldInvalid}
+          label="Promo Code"
+          placeholder="Enter promo code"
+          value={testFieldValue}
+          onChangeText={setTestFieldValue}
+          autoCapitalize="characters"
+          description="Enter a valid code to receive discount"
+          errorMessage="This promo code is invalid or has expired"
+        />
         <Button
           onPress={() => setIsTestFieldInvalid(!isTestFieldInvalid)}
           variant="secondary"
