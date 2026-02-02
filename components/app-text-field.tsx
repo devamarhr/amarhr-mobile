@@ -79,20 +79,26 @@ export function AppTextField({
 }: AppTextFieldProps) {
   const hasIcons = leftIcon || rightIcon;
 
+  const renderTextInput = () => {
+    return (
+      <TextField.Input
+        {...inputProps}
+        className={cn(
+          'flex-1 rounded-lg border border-gray/30 focus:border-gray/30 text-sm py-[11px] px-3',
+          leftIcon && 'pl-10',
+          rightIcon && 'pr-10',
+          isInvalid && 'border-red focus:border-red',
+          inputProps.multiline ? 'h-[100px]' : '',
+          className
+        )}
+      />
+    )};
+
   const renderInput = () => {
     if (hasIcons) {
       return (
         <View className={cn('w-full flex-row items-center', iconContainerClassName)}>
-          <TextField.Input
-            {...inputProps}
-            className={cn(
-              'flex-1 rounded-lg border border-gray/30 focus:border-gray/30',
-              leftIcon && 'pl-10',
-              rightIcon && 'pr-10',
-              isInvalid && 'border-red focus:border-red',
-              className
-            )}
-          />
+          {renderTextInput()}
           {leftIcon && (
             <View className="absolute left-3.5" pointerEvents="none">
               {leftIcon}
@@ -108,14 +114,9 @@ export function AppTextField({
     }
 
     return (
-      <TextField.Input
-        {...inputProps}
-        className={cn(
-          'rounded-lg border border-gray/30 focus:border-gray/30',
-          isInvalid && 'border-red focus:border-red',
-          className
-        )}
-      />
+      <>
+        {renderTextInput()}
+      </>
     );
   };
 

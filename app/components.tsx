@@ -1,15 +1,18 @@
 import { AppText } from "@/components/app-text";
+import { AppButton } from "@/components/app-button";
 import { AppTextField } from "@/components/app-text-field";
 import { useAppTheme } from "@/contexts/app-theme-context";
 import {
-  Add01Icon, ChevronLeft, ClosedCaptionIcon, Download01Icon, HeartbreakIcon,
+  ChevronLeft,
+  ClosedCaptionIcon,
+  HeartbreakIcon,
   Home02Icon,
-  LockPasswordIcon,
+  ArrowLeft01Icon,
   Moon01Icon,
   Search01Icon,
-  Sun01Icon, Trash,
-  ViewIcon,
-  ViewOffIcon
+  Sun01Icon,
+  MinusSignIcon,
+  FileAttachmentIcon
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
@@ -32,43 +35,18 @@ import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
 const StyledHugeiconsIcon = withUniwind(HugeiconsIcon);
 
-const AvatarSizes = () => {
+const AvatarVariants = () => {
   return (
     <View className="flex-1 px-5 items-center justify-center">
-      <View className="flex-row items-center justify-center gap-4">
-        <Avatar size="sm" alt="Small Avatar">
+      <View className="flex-row items-center justify-center gap-4 flex-wrap">
+        <Avatar alt="Avatar">
           <Avatar.Image
             source={{
-              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=3',
+              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=1',
             }}
           />
           <Avatar.Fallback />
         </Avatar>
-        <Avatar size="md" alt="Medium Avatar">
-          <Avatar.Image
-            source={{
-              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=5',
-            }}
-          />
-          <Avatar.Fallback>MD</Avatar.Fallback>
-        </Avatar>
-        <Avatar size="lg" alt="Large Avatar">
-          <Avatar.Image
-            source={{
-              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=20',
-            }}
-          />
-          <Avatar.Fallback>LG</Avatar.Fallback>
-        </Avatar>
-      </View>
-    </View>
-  );
-};
-
-const AvatarFallback = () => {
-  return (
-    <View className="flex-1 px-5 items-center justify-center">
-      <View className="flex-row items-center justify-center gap-3">
         <Avatar color="accent" alt="Accent">
           <Avatar.Image source={undefined} />
           <Avatar.Fallback>AC</Avatar.Fallback>
@@ -77,27 +55,6 @@ const AvatarFallback = () => {
           <Avatar.Image source={undefined} />
           <Avatar.Fallback>DF</Avatar.Fallback>
         </Avatar>
-        <Avatar color="success" alt="Success">
-          <Avatar.Image source={undefined} />
-          <Avatar.Fallback>SC</Avatar.Fallback>
-        </Avatar>
-        <Avatar color="warning" alt="Warning">
-          <Avatar.Image source={undefined} />
-          <Avatar.Fallback>WR</Avatar.Fallback>
-        </Avatar>
-        <Avatar color="danger" alt="Danger">
-          <Avatar.Image source={undefined} />
-          <Avatar.Fallback>DG</Avatar.Fallback>
-        </Avatar>
-      </View>
-    </View>
-  );
-};
-
-const AvatarSoftFallback = () => {
-  return (
-    <View className="flex-1 px-5 items-center justify-center">
-      <View className="flex-row items-center justify-center gap-3">
         <Avatar variant="soft" color="accent" alt="Accent">
           <Avatar.Image source={undefined} />
           <Avatar.Fallback>AC</Avatar.Fallback>
@@ -106,17 +63,21 @@ const AvatarSoftFallback = () => {
           <Avatar.Image source={undefined} />
           <Avatar.Fallback>DF</Avatar.Fallback>
         </Avatar>
-        <Avatar variant="soft" color="success" alt="Success">
-          <Avatar.Image source={undefined} />
-          <Avatar.Fallback>SC</Avatar.Fallback>
+        <Avatar alt="Avatar" className="w-20 h-20">
+          <Avatar.Image
+            source={{
+              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=11',
+            }}
+          />
+          <Avatar.Fallback />
         </Avatar>
-        <Avatar variant="soft" color="warning" alt="Warning">
+        <Avatar alt="Avatar" className="w-20 h-20 bg-red/7">
           <Avatar.Image source={undefined} />
-          <Avatar.Fallback>WR</Avatar.Fallback>
-        </Avatar>
-        <Avatar variant="soft" color="danger" alt="Danger">
-          <Avatar.Image source={undefined} />
-          <Avatar.Fallback>DG</Avatar.Fallback>
+          <Avatar.Fallback classNames={{
+            text: "text-red"
+          }}>
+            DF
+          </Avatar.Fallback>
         </Avatar>
       </View>
     </View>
@@ -163,7 +124,7 @@ const TextFieldWithIconsContent = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
-    <View className="flex-1 justify-center px-5">
+    <View className="flex-1 justify-center px-5 gap-3">
       <AppTextField
         isRequired
         label="Password"
@@ -184,6 +145,17 @@ const TextFieldWithIconsContent = () => {
               className="text-muted"
             />
           </Pressable>
+        }
+      />
+      <AppTextField
+        className="rounded-full"
+        placeholder="Ажилтны нэрээр хайх"
+        leftIcon={
+          <HugeiconsIcon
+            size="20"
+            color="#222222"
+            icon={Search01Icon}
+          />
         }
       />
     </View>
@@ -246,14 +218,11 @@ const TextFieldWithValidationContent = () => {
           description="Enter a valid code to receive discount"
           errorMessage="This promo code is invalid or has expired"
         />
-        <Button
+        <AppButton
           onPress={() => setIsTestFieldInvalid(!isTestFieldInvalid)}
-          variant="secondary"
-          size="sm"
           className="self-start"
-        >
-          {isTestFieldInvalid ? 'Clear Error' : 'Simulate Error'}
-        </Button>
+          label={isTestFieldInvalid ? 'Clear Error' : 'Simulate Error'}
+        />
       </View>
     </View>
   );
@@ -299,7 +268,7 @@ const SelectPresentationContent = () => {
           }}
         >
           <Select.Trigger asChild>
-            <Button variant="secondary">
+            <AppButton>
               {popoverValue ? (
                 <View className="flex-row items-center gap-2">
                   <AppText className="text-base">{popoverValue.flag}</AppText>
@@ -310,7 +279,7 @@ const SelectPresentationContent = () => {
               ) : (
                 <AppText className="text-accent">Popover</AppText>
               )}
-            </Button>
+            </AppButton>
           </Select.Trigger>
           <Select.Portal>
             <Select.Overlay />
@@ -356,7 +325,7 @@ const SelectPresentationContent = () => {
           }}
         >
           <Select.Trigger asChild>
-            <Button variant="secondary" isDisabled={isBottomSheetOpen}>
+            <AppButton isDisabled={isBottomSheetOpen}>
               {bottomSheetValue ? (
                 <View className="flex-row items-center gap-2">
                   <AppText className="text-base">
@@ -369,7 +338,7 @@ const SelectPresentationContent = () => {
               ) : (
                 <AppText className="text-accent">Sheet</AppText>
               )}
-            </Button>
+            </AppButton>
           </Select.Trigger>
           <Select.Portal>
             <Select.Overlay className="bg-black/15" />
@@ -433,186 +402,92 @@ const ButtonVariantsContent = () => {
     <View className="flex-1">
       <View className="flex-1 items-center justify-center">
         <View className="gap-6 w-full px-8">
-          <Button variant="primary">Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="tertiary">Tertiary</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="danger">Danger</Button>
-          <Button variant="danger-soft">Danger Soft</Button>
-          <Button isDisabled>
-            <Spinner size="sm" />
-            <Button.Label>Loading</Button.Label>
-          </Button>
-          <Button variant="secondary" isDisabled>
-            <Spinner size="sm" />
-            <Button.Label>Loading</Button.Label>
-          </Button>
-          <Button variant="tertiary" isDisabled>
-            <HugeiconsIcon
-              icon={Home02Icon}
-              size={16}
-              className="text-muted"
-            />
-            <Button.Label>Access Denied</Button.Label>
-          </Button>
-          <Button variant="primary">
-            <HugeiconsIcon
-              icon={Add01Icon}
-              size={20}
-              className="text-accent-foreground"
-            />
-            <Button.Label>Add Item</Button.Label>
-          </Button>
-          <Button variant="secondary">
-            <Button.Label>Download</Button.Label>
-            <HugeiconsIcon
-              icon={Download01Icon}
-              size={18}
-              className="text-accent-soft-foreground"
-            />
-          </Button>
-          <Button variant="tertiary">
-            <HugeiconsIcon
-              icon={HeartbreakIcon}
-              size={14}
-              className="text-default-foreground"
-            />
-            <Button.Label>Favorite</Button.Label>
-            <HugeiconsIcon
-              icon={ChevronLeft}
-              size={18}
-              className="text-default-foreground"
-            />
-          </Button>
-          <Button variant="danger" size="sm">
-            <HugeiconsIcon
-              icon={Trash}
-              size={14}
-              className="text-danger-foreground"
-            />
-            <Button.Label>Delete</Button.Label>
-          </Button>
-          <Button size="sm" isIconOnly>
-            <Button.Label>
+          <AppButton
+            className="border-darkgray/30"
+            label="Хавсралттай"
+            labelClassName="text-blue"
+            leftIcon={
               <HugeiconsIcon
-                icon={Add01Icon}
-                size={16}
-                className="text-accent-foreground"
+                icon={FileAttachmentIcon}
+                size={22}
+                color="#005FEE"
               />
-            </Button.Label>
-          </Button>
-          <Button size="md" variant="secondary" isIconOnly>
-            <Button.Label>
+            }
+          />
+
+          <AppButton
+            className="border-darkblue/15 bg-lightblue"
+            label="Илгээх"
+            labelClassName="text-darkerblue text-base"
+          />
+
+          <AppButton label="Loading" isLoading />
+
+          <AppButton
+            label="Disabled"
+            isDisabled
+            leftIcon={
+              <HugeiconsIcon
+                icon={Home02Icon}
+                size={24}
+                color="#6a6a6a"
+              />
+            }
+          />
+
+          <AppButton
+            className="border-darkgray/60 rounded"
+            label="Үргэлжлүүл"
+          />
+
+          <AppButton
+            className="bg-green/10 border-green/15"
+            label="Зөвшөөрөх"
+            labelClassName="text-green"
+          />
+
+          <AppButton
+            leftIcon={
               <HugeiconsIcon
                 icon={HeartbreakIcon}
-                size={18}
-                className="text-pink-500"
+                size={24}
+                color="#222222"
               />
-            </Button.Label>
-          </Button>
-          <Button size="lg" variant="danger" isIconOnly>
-            <Button.Label>
+            }
+            label="Favorite"
+            rightIcon={
               <HugeiconsIcon
-                icon={Trash}
-                size={20}
-                className="text-danger-foreground"
+                icon={ChevronLeft}
+                size={24}
+                color="#222222"
               />
-            </Button.Label>
-          </Button>
-        </View>
-      </View>
-    </View>
-  );
-};
+            }
+          />
 
-const ChipSizesContent = () => {
-  return (
-    <View className="flex-1 px-5">
-      <View className="flex-1 items-center justify-center">
-        <View className="flex-row items-center gap-4">
-          <Chip size="sm">Small</Chip>
-          <Chip size="md">Medium</Chip>
-          <Chip size="lg">Large</Chip>
-        </View>
-      </View>
-    </View>
-  );
-};
+          <View className="flex-row gap-4">
+            <AppButton
+              isIconOnly
+              className="border-darkgray/60 rounded"
+              leftIcon={
+                <HugeiconsIcon
+                  icon={ArrowLeft01Icon}
+                  size={24}
+                  color="#222222"
+                />
+              }
+            />
 
-const ChipVariantsContent = () => {
-  return (
-    <View className="flex-1 px-5">
-      <View className="flex-1 items-center justify-center gap-4">
-        <Chip variant="primary" className="self-center">
-          Primary
-        </Chip>
-        <Chip variant="secondary" className="self-center">
-          Secondary
-        </Chip>
-        <Chip variant="tertiary" className="self-center">
-          Tertiary
-        </Chip>
-        <Chip variant="soft" className="self-center">
-          Soft
-        </Chip>
-      </View>
-    </View>
-  );
-};
-
-const ChipPrimaryVariantColorsContent = () => {
-  return (
-    <View className="flex-1 px-5">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-4">
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="primary" color="accent">
-              Accent
-            </Chip>
-            <Chip variant="primary" color="default">
-              Default
-            </Chip>
-            <Chip variant="primary" color="success">
-              Success
-            </Chip>
-          </View>
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="primary" color="warning">
-              Warning
-            </Chip>
-            <Chip variant="primary" color="danger">
-              Danger
-            </Chip>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const ChipSecondaryVariantColorsContent = () => {
-  return (
-    <View className="flex-1 px-5">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-4">
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="secondary" color="accent">
-              Accent
-            </Chip>
-            <Chip variant="secondary" color="default">
-              Default
-            </Chip>
-            <Chip variant="secondary" color="success">
-              Success
-            </Chip>
-          </View>
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="secondary" color="warning">
-              Warning
-            </Chip>
-            <Chip variant="secondary" color="danger">
-              Danger
-            </Chip>
+            <AppButton
+              isIconOnly
+              className="border-darkgray/30"
+              leftIcon={
+                <HugeiconsIcon
+                  icon={MinusSignIcon}
+                  size={24}
+                  color="#222222"
+                />
+              }
+            />
           </View>
         </View>
       </View>
@@ -978,13 +853,11 @@ const WithValidationOTPContent = () => {
           <ErrorView className="mt-3" isInvalid={isInvalid}>
             The code you entered is incorrect.
           </ErrorView>
-          <Button
-            variant="secondary"
+          <AppButton
             className="self-start mt-5"
             onPress={onSubmit}
-          >
-            Submit
-          </Button>
+            label="Submit"
+          />
         </View>
       </View>
     </View>
@@ -997,7 +870,7 @@ export default function ComponentsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="px-4 bg-background">
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch theme</AppText>
           <Pressable
             onPress={() => {
@@ -1016,7 +889,7 @@ export default function ComponentsScreen() {
           </Pressable>
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Textfield</AppText>
           <BasicTextFieldContent />
           <TextFieldWithIconsContent />
@@ -1025,65 +898,55 @@ export default function ComponentsScreen() {
           <TextFieldWithValidationContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Date picker</AppText>
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Colors</AppText>
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Select</AppText>
           <SelectPresentationContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Button</AppText>
           <ButtonVariantsContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
-          <AppText className="text-lg font-medium">Chip</AppText>
-          <ChipSizesContent />
-          <ChipVariantsContent />
-          <ChipPrimaryVariantColorsContent />
-          <ChipSecondaryVariantColorsContent />
-        </View>
-        <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Calendar</AppText>
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch</AppText>
           <SwitchCustomStylesContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Tabs</AppText>
           <TabPillContent />
           <TabLineContent />
           <TabScrollableContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Toast</AppText>
           <ToastVariantContent />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Bottom sheet</AppText>
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Avatar</AppText>
-          <AvatarSizes />
-          <AvatarFallback />
-          <AvatarSoftFallback />
+          <AvatarVariants />
         </View>
         <Divider />
-        <View className="my-2 gap-y-2">
+        <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">InputOTP</AppText>
           <WithValidationOTPContent />
         </View>
