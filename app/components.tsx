@@ -3,6 +3,7 @@ import { AppButton } from "@/components/app-button";
 import { AppTextField } from "@/components/app-text-field";
 import { AppSwitch } from "@/components/app-switch";
 import { AppInputOTPSlot } from "@/components/app-input-otp-slot";
+import { AppToast } from "@/components/app-toast";
 import { useAppTheme } from "@/contexts/app-theme-context";
 import {
   ChevronLeft,
@@ -14,14 +15,14 @@ import {
   Search01Icon,
   Sun01Icon,
   MinusSignIcon,
-  FileAttachmentIcon
+  FileAttachmentIcon, CheckmarkCircle02Icon, Cancel01Icon, Alert01Icon
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Avatar,
   Button, Chip, cn, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
   Switch,
-  Tabs,
+  Tabs, Toast,
   useThemeColor,
   useToast
 } from "heroui-native";
@@ -736,65 +737,70 @@ const ToastVariantContent = () => {
   const { toast } = useToast();
 
   return (
-    <View className="flex-1 px-5">
-      <View className="flex-1 items-center justify-center">
-        <View className="gap-4">
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="primary" color="accent" onPress={() => toast.show({
-              variant: 'accent',
-              label: 'You have upgraded your plan',
-              description: 'You can continue using HeroUI Chat',
-              icon: <HugeiconsIcon icon={ClosedCaptionIcon} />,
-              actionLabel: 'Close',
-              onActionPress: ({ hide }) => hide(),
-            })}>
-              Accent
-            </Chip>
-            <Chip variant="primary" color="default" onPress={() => toast.show({
-              variant: 'default',
-              label: 'You have upgraded your plan',
-              description: 'You can continue using HeroUI Chat',
-              icon: <HugeiconsIcon icon={ClosedCaptionIcon} />,
-              actionLabel: 'Close',
-              onActionPress: ({ hide }) => hide(),
-            })}>
-              Default
-            </Chip>
-            <Chip variant="primary" color="success" onPress={() => toast.show({
-              variant: 'success',
-              label: 'You have upgraded your plan',
-              description: 'You can continue using HeroUI Chat',
-              icon: <HugeiconsIcon icon={ClosedCaptionIcon} />,
-              actionLabel: 'Close',
-              onActionPress: ({ hide }) => hide(),
-            })}>
-              Success
-            </Chip>
-          </View>
-          <View className="flex-row gap-4 justify-center">
-            <Chip variant="primary" color="warning" onPress={() => toast.show({
-              variant: 'warning',
-              label: 'You have upgraded your plan',
-              description: 'You can continue using HeroUI Chat',
-              icon: <HugeiconsIcon icon={ClosedCaptionIcon} />,
-              actionLabel: 'Close',
-              onActionPress: ({ hide }) => hide(),
-            })}>
-              Warning
-            </Chip>
-            <Chip variant="primary" color="danger" onPress={() => toast.show({
-              variant: 'danger',
-              label: 'You have upgraded your plan',
-              description: 'You can continue using HeroUI Chat',
-              icon: <HugeiconsIcon icon={ClosedCaptionIcon} />,
-              actionLabel: 'Close',
-              onActionPress: ({ hide }) => hide(),
-            })}>
-              Danger
-            </Chip>
-          </View>
-        </View>
-      </View>
+    <View className="flex-1 px-5 flex-row gap-2 flex-wrap">
+      <Chip
+        variant="primary"
+        color="success"
+        onPress={() =>
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="success"
+                title="You have upgraded your plan"
+                description="You can continue using HeroUI Chat"
+                icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+                iconContainerClassName="justify-center"
+                action={<HugeiconsIcon icon={Cancel01Icon} size={16} color="#FFFFFF" />}
+                actionClassName="justify-center"
+                onActionPress={(props) => props.hide()}
+              />
+            ),
+          })
+        }
+      >
+        Success (Icon)
+      </Chip>
+      <Chip
+        variant="primary"
+        color="warning"
+        onPress={() =>
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="warning"
+                title="You have upgraded your plan"
+                description="You can continue using HeroUI Chat"
+                action="Close"
+                onActionPress={(props) => props.hide()}
+              />
+            ),
+          })
+        }
+      >
+        Warning (Label)
+      </Chip>
+      <Chip
+        variant="primary"
+        color="danger"
+        onPress={() =>
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="danger"
+                title="You have upgraded your plan"
+                description="You can continue using HeroUI Chat"
+                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                showClose
+              />
+            ),
+          })
+        }
+      >
+        Danger (Close)
+      </Chip>
     </View>
   );
 }
@@ -924,13 +930,6 @@ export default function ComponentsScreen() {
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch</AppText>
           <SwitchCustomStylesContent />
-        </View>
-        <Divider />
-        <View className="py-4 gap-y-2">
-          <AppText className="text-lg font-medium">Tabs</AppText>
-          <TabPillContent />
-          <TabLineContent />
-          <TabScrollableContent />
         </View>
         <Divider />
         <View className="py-4 gap-y-2">
