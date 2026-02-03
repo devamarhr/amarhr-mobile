@@ -1,6 +1,8 @@
 import { AppText } from "@/components/app-text";
 import { AppButton } from "@/components/app-button";
 import { AppTextField } from "@/components/app-text-field";
+import { AppSwitch } from "@/components/app-switch";
+import { AppInputOTPSlot } from "@/components/app-input-otp-slot";
 import { useAppTheme } from "@/contexts/app-theme-context";
 import {
   ChevronLeft,
@@ -17,7 +19,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Avatar,
-  Button, Chip, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
+  Button, Chip, cn, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
   Switch,
   Tabs,
   useThemeColor,
@@ -498,127 +500,130 @@ const ButtonVariantsContent = () => {
 const StyledIonicons = withUniwind(Ionicons);
 const StyledFontAwesome6 = withUniwind(FontAwesome6);
 const SwitchCustomStylesContent = () => {
+  const [selected, setSelected] = React.useState(false);
   const [icon, setIcon] = React.useState(true);
   const [contentIcon, setContentIcon] = React.useState(true);
   const [contentText, setContentText] = React.useState(true);
 
   return (
-    <View className="flex-1 px-5 items-center justify-center">
-      <View className="gap-16 items-center">
-        <Switch isSelected={icon} onSelectedChange={setIcon} />
-        <Switch isSelected={icon} onSelectedChange={setIcon}>
-          <Switch.Thumb>
-            {icon ? (
-              <Animated.View key="check" entering={ZoomIn}>
-                <StyledFontAwesome6
-                  name="check"
-                  size={12}
-                  className="text-accent"
-                />
-              </Animated.View>
-            ) : (
-              <Animated.View key="x" entering={ZoomIn}>
-                <StyledIonicons name="close" size={14} className="text-muted" />
-              </Animated.View>
-            )}
-          </Switch.Thumb>
-        </Switch>
+    <View className="flex-1 px-5 flex-row gap-2 flex-wrap">
+      <AppSwitch isSelected={selected} onSelectedChange={setSelected} />
 
-        <Switch
-          isSelected={contentIcon}
-          onSelectedChange={setContentIcon}
-          className="w-[56px] h-[32px]"
-          animation={{
-            backgroundColor: {
-              value: ['#172554', '#eab308'],
-            },
-          }}
-        >
-          <Switch.Thumb
-            className="size-[22px]"
-            animation={{
-              left: {
-                value: 4,
-                springConfig: {
-                  damping: 30,
-                  stiffness: 300,
-                  mass: 1,
-                },
-              },
-            }}
-          />
-          <Switch.StartContent className="left-2">
-            {contentIcon && (
-              <Animated.View key="sun" entering={ZoomIn.springify()}>
-                <StyledIonicons
-                  name="sunny"
-                  size={16}
-                  className="text-[#854d0e]"
-                />
-              </Animated.View>
-            )}
-          </Switch.StartContent>
-          <Switch.EndContent className="right-2">
-            {!contentIcon && (
-              <Animated.View key="moon" entering={ZoomIn.springify()}>
-                <StyledIonicons
-                  name="moon"
-                  size={16}
-                  className="text-[#dbeafe]"
-                />
-              </Animated.View>
-            )}
-          </Switch.EndContent>
-        </Switch>
+      <AppSwitch isDisabled />
 
-        <Switch
-          isSelected={contentText}
-          onSelectedChange={setContentText}
-          className="w-[60px] h-[32px]"
-          animation={{
-            backgroundColor: {
-              value: ['#71717a', '#16a34a'],
+      <AppSwitch
+        isSelected={icon}
+        onSelectedChange={setIcon}
+        thumbClassName="size-[30px]"
+        thumbIcon={
+          icon ? (
+            <Animated.View key="check" entering={ZoomIn}>
+              <StyledFontAwesome6
+                name="check"
+                size={12}
+                className="text-accent"
+              />
+            </Animated.View>
+          ) : (
+            <Animated.View key="x" entering={ZoomIn}>
+              <StyledIonicons name="close" size={14} className="text-muted" />
+            </Animated.View>
+          )
+        }
+      />
+
+      <AppSwitch
+        isSelected={contentIcon}
+        onSelectedChange={setContentIcon}
+        className="w-[56px] h-[32px]"
+        thumbClassName="size-[22px]"
+        startContentClassName="left-2"
+        endContentClassName="right-2"
+        animation={{
+          backgroundColor: {
+            value: ['#172554', '#eab308'],
+          },
+        }}
+        thumbAnimation={{
+          left: {
+            value: 4,
+            springConfig: {
+              damping: 30,
+              stiffness: 300,
+              mass: 1,
             },
-          }}
-        >
-          <Switch.Thumb
-            className="size-[22px]"
-            animation={{
-              left: {
-                value: 4,
-                springConfig: {
-                  damping: 36,
-                  stiffness: 400,
-                  mass: 1,
-                },
-              },
-              backgroundColor: {
-                value: ['#fff', '#fff'],
-              },
-            }}
-          />
-          <Switch.StartContent className="left-3">
-            {contentText && (
-              <Animated.View
-                key="sun"
-                entering={FadeInRight.springify().duration(100)}
-              >
-                <AppText className="text-xs font-bold text-white">ON</AppText>
-              </Animated.View>
-            )}
-          </Switch.StartContent>
-          <Switch.EndContent className="right-2">
-            {!contentText && (
-              <Animated.View
-                key="moon"
-                entering={FadeInLeft.springify().duration(100)}
-              >
-                <AppText className="text-xs font-bold text-white">OFF</AppText>
-              </Animated.View>
-            )}
-          </Switch.EndContent>
-        </Switch>
-      </View>
+          },
+        }}
+        startContent={
+          contentIcon && (
+            <Animated.View key="sun" entering={ZoomIn.springify()}>
+              <StyledIonicons
+                name="sunny"
+                size={16}
+                className="text-[#854d0e]"
+              />
+            </Animated.View>
+          )
+        }
+        endContent={
+          !contentIcon && (
+            <Animated.View key="moon" entering={ZoomIn.springify()}>
+              <StyledIonicons
+                name="moon"
+                size={16}
+                className="text-[#dbeafe]"
+              />
+            </Animated.View>
+          )
+        }
+      />
+
+      <AppSwitch
+        isSelected={contentText}
+        onSelectedChange={setContentText}
+        className="w-[60px] h-[32px]"
+        thumbClassName="size-[22px]"
+        startContentClassName="left-3"
+        endContentClassName="right-2"
+        animation={{
+          backgroundColor: {
+            value: ['#71717a', '#16a34a'],
+          },
+        }}
+        thumbAnimation={{
+          left: {
+            value: 4,
+            springConfig: {
+              damping: 36,
+              stiffness: 400,
+              mass: 1,
+            },
+          },
+          backgroundColor: {
+            value: ['#fff', '#fff'],
+          },
+        }}
+        startContent={
+          contentText && (
+            <Animated.View
+              key="sun"
+              entering={FadeInRight.springify().duration(100)}
+            >
+              <AppText className="text-xs font-bold text-white">ON</AppText>
+            </Animated.View>
+          )
+        }
+        endContent={
+          !contentText && (
+            <Animated.View
+              key="moon"
+              entering={FadeInLeft.springify().duration(100)}
+            >
+              <AppText className="text-xs font-bold text-white">OFF</AppText>
+            </Animated.View>
+          )
+        }
+      />
     </View>
   );
 };
@@ -839,15 +844,15 @@ const WithValidationOTPContent = () => {
             isInvalid={isInvalid}
           >
             <InputOTP.Group>
-              <InputOTP.Slot index={0} />
-              <InputOTP.Slot index={1} />
-              <InputOTP.Slot index={2} />
+              <AppInputOTPSlot index={0} />
+              <AppInputOTPSlot index={1} />
+              <AppInputOTPSlot index={2} />
             </InputOTP.Group>
             <InputOTP.Separator />
             <InputOTP.Group>
-              <InputOTP.Slot index={3} />
-              <InputOTP.Slot index={4} />
-              <InputOTP.Slot index={5} />
+              <AppInputOTPSlot index={3} />
+              <AppInputOTPSlot index={4} />
+              <AppInputOTPSlot index={5} />
             </InputOTP.Group>
           </InputOTP>
           <ErrorView className="mt-3" isInvalid={isInvalid}>
@@ -900,10 +905,6 @@ export default function ComponentsScreen() {
         <Divider />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Date picker</AppText>
-        </View>
-        <Divider />
-        <View className="py-4 gap-y-2">
-          <AppText className="text-lg font-medium">Colors</AppText>
         </View>
         <Divider />
         <View className="py-4 gap-y-2">
