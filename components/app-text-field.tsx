@@ -1,4 +1,4 @@
-import { cn, TextField } from 'heroui-native';
+import { cn, Description, FieldError, Input, Label, TextArea, TextField } from 'heroui-native';
 import React from 'react';
 import { TextInputProps, View } from 'react-native';
 
@@ -23,6 +23,11 @@ interface AppTextFieldProps extends TextInputProps {
    * @default false
    */
   isRequired?: boolean;
+  /**
+   * Whether to render as a TextArea (multiline) instead of Input
+   * @default false
+   */
+  isTextArea?: boolean;
   /**
    * Additional CSS classes for the TextField root container
    */
@@ -66,6 +71,7 @@ export function AppTextField({
   isDisabled,
   isInvalid,
   isRequired,
+  isTextArea = false,
   textFieldClassName,
   labelClassName,
   descriptionClassName,
@@ -78,17 +84,17 @@ export function AppTextField({
   ...inputProps
 }: AppTextFieldProps) {
   const hasIcons = leftIcon || rightIcon;
+  const InputComponent = isTextArea ? TextArea : Input;
 
   const renderTextInput = () => {
     return (
-      <TextField.Input
+      <InputComponent
         {...inputProps}
         className={cn(
-          'flex-1 rounded-lg border border-gray/30 focus:border-gray/30 text-sm py-[11px] px-3',
+          'flex-1 rounded-lg border border-gray/30 focus:border-gray/30 text-sm py-[11px] px-3 ios:shadow-none android:shadow-none',
           leftIcon && 'pl-10',
           rightIcon && 'pr-10',
           isInvalid && 'border-red focus:border-red',
-          inputProps.multiline ? 'h-[100px]' : '',
           className
         )}
       />
@@ -129,22 +135,22 @@ export function AppTextField({
       animation={animation}
     >
       {label && (
-        <TextField.Label className={cn('text-sm font-normal text-darkgray', labelClassName)}>
+        <Label className={cn('text-sm font-normal text-darkgray', labelClassName)}>
           {label}
-        </TextField.Label>
+        </Label>
       )}
 
       {renderInput()}
 
       {description && !isInvalid && (
-        <TextField.Description className={cn('', descriptionClassName)}>
+        <Description className={cn('', descriptionClassName)}>
           {description}
-        </TextField.Description>
+        </Description>
       )}
       {errorMessage && isInvalid && (
-        <TextField.ErrorMessage className={cn('', errorMessageClassName)}>
+        <FieldError className={cn('', errorMessageClassName)}>
           {errorMessage}
-        </TextField.ErrorMessage>
+        </FieldError>
       )}
     </TextField>
   );

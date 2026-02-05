@@ -4,6 +4,7 @@ import { AppTextField } from "@/components/app-text-field";
 import { AppSwitch } from "@/components/app-switch";
 import { AppInputOTPSlot } from "@/components/app-input-otp-slot";
 import { AppToast } from "@/components/app-toast";
+import { AppSelect, SelectOption } from "@/components/app-select";
 import { useAppTheme } from "@/contexts/app-theme-context";
 import {
   ChevronLeft,
@@ -15,12 +16,14 @@ import {
   Search01Icon,
   Sun01Icon,
   MinusSignIcon,
-  FileAttachmentIcon, CheckmarkCircle02Icon, Cancel01Icon, Alert01Icon
+  FileAttachmentIcon, CheckmarkCircle02Icon, Cancel01Icon, Alert01Icon, ArrowDown01Icon, MultiplicationSignIcon,
+  Tick02Icon
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Avatar,
-  Button, Chip, cn, Description, Divider, ErrorView, InputOTP, Label, ScrollShadow, Select, Spinner,
+  Button, Chip, CloseButton, cn, Description, FieldError, InputOTP, Label, PressableFeedback, ScrollShadow, Select,
+  Separator, Spinner,
   Switch,
   Tabs, Toast,
   useThemeColor,
@@ -108,17 +111,19 @@ const KeyboardAvoidingContainer = ({
 const BasicTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <AppTextField
-        label="Email"
-      />
-      <AppTextField
-        isRequired
-        label="Email"
-        placeholder="Enter your email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        description="We'll never share your email with anyone else."
-      />
+      <View className="gap-3">
+        <AppTextField
+          label="Email"
+        />
+        <AppTextField
+          isRequired
+          label="Email"
+          placeholder="Enter your email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          description="We'll never share your email with anyone else."
+        />
+      </View>
     </View>
   );
 };
@@ -127,40 +132,42 @@ const TextFieldWithIconsContent = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
-    <View className="flex-1 justify-center px-5 gap-3">
-      <AppTextField
-        isRequired
-        label="Password"
-        placeholder="Enter your password"
-        secureTextEntry={!isPasswordVisible}
-        leftIcon={
-          <StyledIonicons
-            name="lock-closed-outline"
-            size={16}
-            className="text-muted"
-          />
-        }
-        rightIcon={
-          <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+    <View className="flex-1 justify-center px-5">
+      <View className="gap-3">
+        <AppTextField
+          isRequired
+          label="Password"
+          placeholder="Enter your password"
+          secureTextEntry={!isPasswordVisible}
+          leftIcon={
             <StyledIonicons
-              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+              name="lock-closed-outline"
               size={16}
               className="text-muted"
             />
-          </Pressable>
-        }
-      />
-      <AppTextField
-        className="rounded-full"
-        placeholder="Ажилтны нэрээр хайх"
-        leftIcon={
-          <HugeiconsIcon
-            size="20"
-            color="#222222"
-            icon={Search01Icon}
-          />
-        }
-      />
+          }
+          rightIcon={
+            <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+              <StyledIonicons
+                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={16}
+                className="text-muted"
+              />
+            </Pressable>
+          }
+        />
+        <AppTextField
+          className="rounded-full"
+          placeholder="Ажилтны нэрээр хайх"
+          leftIcon={
+            <HugeiconsIcon
+              size="20"
+              color="#222222"
+              icon={Search01Icon}
+            />
+          }
+        />
+      </View>
     </View>
   );
 };
@@ -168,14 +175,13 @@ const TextFieldWithIconsContent = () => {
 const DisabledTextFieldContent = () => {
   return (
     <View className="flex-1 justify-center px-5">
-      <View className="gap-8">
+      <View className="gap-3">
         <AppTextField
           label="Account ID"
           placeholder="Enter account ID"
           value="ACC-2024-12345"
           description="Your unique account identifier"
         />
-
         <AppTextField
           isDisabled
           label="User Role"
@@ -194,7 +200,7 @@ const MultilineTextFieldContent = () => {
       <AppTextField
         label="Message"
         placeholder="Type your message here..."
-        multiline
+        isTextArea
         numberOfLines={4}
         textAlignVertical="top"
         description="Maximum 500 characters"
@@ -209,7 +215,7 @@ const TextFieldWithValidationContent = () => {
 
   return (
     <View className="flex-1 justify-center px-5">
-      <View className="gap-8">
+      <View className="gap-3">
         <AppTextField
           isRequired
           isInvalid={isTestFieldInvalid}
@@ -231,170 +237,93 @@ const TextFieldWithValidationContent = () => {
   );
 };
 
-type CountryOption = {
-  value: string;
-  label: string;
-  flag: string;
-  code: string;
-};
+const MONTH_OPTIONS: SelectOption[] = [
+  { value: '12', label: '12 сар' },
+  { value: '11', label: '11 сар' },
+  { value: '10', label: '10 сар' },
+  { value: '9', label: '9 сар' },
+  { value: '8', label: '8 сар' },
+  { value: '7', label: '7 сар' },
+  { value: '6', label: '6 сар' },
+  { value: '5', label: '5 сар' },
+  { value: '4', label: '4 сар' },
+  { value: '3', label: '3 сар' },
+  { value: '2', label: '2 сар' },
+  { value: '1', label: '1 сар' },
+];
 
-const COUNTRIES: CountryOption[] = [
-  { value: 'US', label: 'United States', flag: '🇺🇸', code: '+1' },
-  { value: 'GB', label: 'United Kingdom', flag: '🇬🇧', code: '+44' },
-  { value: 'CA', label: 'Canada', flag: '🇨🇦', code: '+1' },
-  { value: 'AU', label: 'Australia', flag: '🇦🇺', code: '+61' },
-  { value: 'DE', label: 'Germany', flag: '🇩🇪', code: '+49' },
-  { value: 'FR', label: 'France', flag: '🇫🇷', code: '+33' },
-  { value: 'JP', label: 'Japan', flag: '🇯🇵', code: '+81' },
-  { value: 'CN', label: 'China', flag: '🇨🇳', code: '+86' },
-  { value: 'IN', label: 'India', flag: '🇮🇳', code: '+91' },
-  { value: 'BR', label: 'Brazil', flag: '🇧🇷', code: '+55' },
+const EMPLOYEE_OPTIONS: SelectOption[] = [
+  { value: '1', label: 'Б.Энхбаяр', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=1', job: 'Захирал' },
+  { value: '2', label: 'С.Оюунчимэг', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', job: 'Маркетингийн менежер' },
+  { value: '3', label: 'Д.Болдбаатар', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=3', job: 'Ахлах хөгжүүлэгч' },
+  { value: '4', label: 'Т.Сарангэрэл', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=4', job: 'UX дизайнер' },
+  { value: '5', label: 'Г.Мөнхбат', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=5', job: 'Бизнес төлөвлөлтийн туслах' },
+  { value: '6', label: 'Н.Алтанцэцэг', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=6', job: 'Хүний нөөцийн менежер' },
+  { value: '7', label: 'Ч.Баярмаа', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=7', job: 'Борлуулалтын ахлах мэргэжилтэн' },
+  { value: '8', label: 'Л.Төгөлдөр', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=8', job: 'Санхүүгийн зөвлөх' },
+  { value: '9', label: 'П.Ганбаатар', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=9', job: 'Хөгжүүлэлтийн менежер' },
+  { value: '10', label: 'Х.Цэцэгмаа', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=10', job: 'Контент стратегич' },
 ];
 
 const SelectPresentationContent = () => {
-  const [popoverValue, setPopoverValue] = useState<CountryOption | undefined>();
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [bottomSheetValue, setBottomSheetValue] = useState<
-    CountryOption | undefined
-  >();
-
-  const themeColorOverlay = useThemeColor('overlay');
+  const [month, setMonth] = useState<SelectOption | undefined>();
+  const [employee, setEmployee] = useState<SelectOption | undefined>();
 
   return (
-    <View className="flex-1 px-5 items-center justify-center">
-      <View className="flex-row items-center justify-center gap-4">
-        <Select
-          value={popoverValue}
-          onValueChange={(value) => {
-            const country = COUNTRIES.find((c) => c.value === value?.value);
-            setPopoverValue(country);
-          }}
-        >
-          <Select.Trigger asChild>
-            <AppButton>
-              {popoverValue ? (
-                <View className="flex-row items-center gap-2">
-                  <AppText className="text-base">{popoverValue.flag}</AppText>
-                  <AppText className="text-sm text-accent font-medium">
-                    {popoverValue.code}
-                  </AppText>
-                </View>
-              ) : (
-                <AppText className="text-accent">Popover</AppText>
-              )}
-            </AppButton>
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Overlay />
-            <Select.Content
-              width={300}
-              className="aspect-[1.2]"
-              presentation="popover"
-              placement="top"
-              align="start"
-              alignOffset={-20}
-            >
-              <ScrollView>
-                {COUNTRIES.map((country) => (
-                  <Select.Item
-                    key={country.value}
-                    value={country.value}
-                    label={country.label}
-                  >
-                    <View className="flex-1 flex-row items-center gap-3">
-                      <AppText className="text-2xl">{country.flag}</AppText>
-                      <AppText className="text-sm text-muted w-10">
-                        {country.code}
-                      </AppText>
-                      <AppText className="text-base text-foreground flex-1">
-                        {country.label}
-                      </AppText>
-                    </View>
-                    <Select.ItemIndicator />
-                  </Select.Item>
-                ))}
-              </ScrollView>
-            </Select.Content>
-          </Select.Portal>
-        </Select>
-
-        <Select
-          isOpen={isBottomSheetOpen}
-          onOpenChange={setIsBottomSheetOpen}
-          value={bottomSheetValue}
-          onValueChange={(value) => {
-            const country = COUNTRIES.find((c) => c.value === value?.value);
-            setBottomSheetValue(country);
-          }}
-        >
-          <Select.Trigger asChild>
-            <AppButton isDisabled={isBottomSheetOpen}>
-              {bottomSheetValue ? (
-                <View className="flex-row items-center gap-2">
-                  <AppText className="text-base">
-                    {bottomSheetValue.flag}
-                  </AppText>
-                  <AppText className="text-sm text-accent font-medium">
-                    {bottomSheetValue.code}
-                  </AppText>
-                </View>
-              ) : (
-                <AppText className="text-accent">Sheet</AppText>
-              )}
-            </AppButton>
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Overlay className="bg-black/15" />
-            <Select.Content
-              presentation="bottom-sheet"
-              snapPoints={['35%', '50%']}
-              detached
-              enableDynamicSizing={false}
-              enableOverDrag={false}
-              backgroundClassName="bg-transparent"
-              handleClassName="h-1"
-              handleIndicatorClassName="w-12 h-[3px]"
-              contentContainerClassName="h-full pt-1 pb-1 mx-2.5 rounded-t-[36px] border border-divider/20 bg-overlay overflow-hidden"
-              contentContainerProps={{
-                style: {
-                  borderCurve: 'continuous',
-                },
-              }}
-            >
-              <ScrollShadow
-                LinearGradientComponent={LinearGradient}
-                color={themeColorOverlay}
-              >
-                <BottomSheetScrollView
-                  contentContainerClassName="p-4"
-                  showsVerticalScrollIndicator={false}
-                >
-                  {COUNTRIES.map((country, index) => (
-                    <React.Fragment key={country.value}>
-                      <Select.Item
-                        value={country.value}
-                        label={country.label}
-                        className="py-5 px-3"
-                      >
-                        <View className="flex-row items-center gap-3 flex-1">
-                          <AppText className="text-2xl">{country.flag}</AppText>
-                          <AppText className="text-sm text-muted font-medium w-10">
-                            {country.code}
-                          </AppText>
-                          <AppText className="text-base text-foreground flex-1">
-                            {country.label}
-                          </AppText>
-                        </View>
-                        <Select.ItemIndicator />
-                      </Select.Item>
-                      {index < COUNTRIES.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </BottomSheetScrollView>
-              </ScrollShadow>
-            </Select.Content>
-          </Select.Portal>
-        </Select>
+    <View className="flex-1 px-5">
+      <View className="gap-8">
+        <AppSelect
+          label="Month"
+          isRequired
+          placeholder="Select a month"
+          options={MONTH_OPTIONS}
+          value={month}
+          onValueChange={setMonth}
+        />
+        <AppSelect
+          label="Year"
+          placeholder="Select a year"
+          options={[
+            { value: '2024', label: '2024' },
+            { value: '2023', label: '2023' },
+            { value: '2022', label: '2022' },
+          ]}
+          snapPoints={['35%']}
+          indicatorIconColor="#005FEE"
+        />
+        <AppSelect
+          label="Employee"
+          placeholder="Select an employee"
+          options={EMPLOYEE_OPTIONS}
+          value={employee}
+          onValueChange={setEmployee}
+          snapPoints={['60%']}
+          showSeparators={false}
+          itemClassName="py-2"
+          renderValue={(option) => (
+            <View className="flex-row items-center gap-3">
+              <Avatar alt="avatar" className="w-8 h-8">
+                <Avatar.Image source={{ uri: option.avatar }} />
+                <Avatar.Fallback delayMs={600}>{option.label[0]}</Avatar.Fallback>
+              </Avatar>
+              <View className="flex-1">
+                <AppText className="text-sm">{option.label}</AppText>
+              </View>
+            </View>
+          )}
+          renderItem={({ option }) => (
+            <View className="flex-row items-center gap-3 flex-1">
+              <Avatar alt="avatar" className="w-10 h-10">
+                <Avatar.Image source={{ uri: option.avatar }} />
+                <Avatar.Fallback delayMs={600}>{option.label[0]}</Avatar.Fallback>
+              </Avatar>
+              <View className="flex-1">
+                <AppText className="text-sm">{option.label}</AppText>
+                <AppText className="text-sm text-darkgray">{option.job}</AppText>
+              </View>
+            </View>
+          )}
+        />
       </View>
     </View>
   );
@@ -629,110 +558,6 @@ const SwitchCustomStylesContent = () => {
   );
 };
 
-const TabPillContent = () => {
-  const [activeTab, setActiveTab] = useState('settings');
-
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} variant="pill">
-      <Tabs.List>
-        <Tabs.Indicator/>
-        <Tabs.Trigger value="settings">
-          <Tabs.Label>Settings</Tabs.Label>
-        </Tabs.Trigger>
-        <Tabs.Trigger value="profile">
-          <Tabs.Label>Profile</Tabs.Label>
-        </Tabs.Trigger>
-        <Tabs.Trigger value="main">
-          <Tabs.Label>Main</Tabs.Label>
-        </Tabs.Trigger>
-        <Tabs.Trigger value="other">
-          <Tabs.Label>Other</Tabs.Label>
-        </Tabs.Trigger>
-      </Tabs.List>
-      <Tabs.Content value="settings">
-        <AppText>Settings</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="profile">
-        <AppText>Profile</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="main">
-        <AppText>Main</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="other">
-        <AppText>Other</AppText>
-      </Tabs.Content>
-    </Tabs>
-  );
-}
-
-const TabLineContent = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} variant="line">
-      <Tabs.List>
-        <Tabs.Indicator />
-        <Tabs.Trigger value="overview">
-          <Tabs.Label>Overview</Tabs.Label>
-        </Tabs.Trigger>
-        <Tabs.Trigger value="analytics">
-          <Tabs.Label>Analytics</Tabs.Label>
-        </Tabs.Trigger>
-      </Tabs.List>
-      <Tabs.Content value="overview">
-        <AppText>Overview</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="analytics">
-        <AppText>Analytics</AppText>
-      </Tabs.Content>
-    </Tabs>
-  );
-}
-
-const TabScrollableContent = () => {
-  const [activeTab, setActiveTab] = useState('tab1');
-
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <Tabs.List>
-        <Tabs.ScrollView scrollAlign="center">
-          <Tabs.Indicator />
-          <Tabs.Trigger value="tab1">
-            <Tabs.Label>First Tab</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Trigger value="tab2">
-            <Tabs.Label>Second Tab</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Trigger value="tab3">
-            <Tabs.Label>Third Tab</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Trigger value="tab4">
-            <Tabs.Label>Fourth Tab</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Trigger value="tab5">
-            <Tabs.Label>Fifth Tab</Tabs.Label>
-          </Tabs.Trigger>
-        </Tabs.ScrollView>
-      </Tabs.List>
-      <Tabs.Content value="tab1">
-        <AppText>Tab1</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="tab2">
-        <AppText>Tab2</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="tab3">
-        <AppText>Tab3</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="tab4">
-        <AppText>Tab4</AppText>
-      </Tabs.Content>
-      <Tabs.Content value="tab5">
-        <AppText>Tab5</AppText>
-      </Tabs.Content>
-    </Tabs>
-  );
-}
-
 const ToastVariantContent = () => {
   const { toast } = useToast();
 
@@ -861,9 +686,9 @@ const WithValidationOTPContent = () => {
               <AppInputOTPSlot index={5} />
             </InputOTP.Group>
           </InputOTP>
-          <ErrorView className="mt-3" isInvalid={isInvalid}>
+          <FieldError className="mt-3" isInvalid={isInvalid}>
             The code you entered is incorrect.
-          </ErrorView>
+          </FieldError>
           <AppButton
             className="self-start mt-5"
             onPress={onSubmit}
@@ -899,7 +724,7 @@ export default function ComponentsScreen() {
             )}
           </Pressable>
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Textfield</AppText>
           <BasicTextFieldContent />
@@ -908,49 +733,49 @@ export default function ComponentsScreen() {
           <MultilineTextFieldContent />
           <TextFieldWithValidationContent />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Date picker</AppText>
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Select</AppText>
           <SelectPresentationContent />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Button</AppText>
           <ButtonVariantsContent />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Calendar</AppText>
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch</AppText>
           <SwitchCustomStylesContent />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Toast</AppText>
           <ToastVariantContent />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Bottom sheet</AppText>
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Avatar</AppText>
           <AvatarVariants />
         </View>
-        <Divider />
+        <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">InputOTP</AppText>
           <WithValidationOTPContent />
         </View>
-        <Divider />
+        <Separator />
       </ScrollView>
     </SafeAreaView>
   );
