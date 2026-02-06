@@ -5,6 +5,7 @@ import { AppSwitch } from "@/components/app-switch";
 import { AppInputOTPSlot } from "@/components/app-input-otp-slot";
 import { AppToast } from "@/components/app-toast";
 import { AppSelect, SelectOption } from "@/components/app-select";
+import { AppDatePicker } from "@/components/app-date-picker";
 import { useAppTheme } from "@/contexts/app-theme-context";
 import {
   ChevronLeft,
@@ -17,11 +18,11 @@ import {
   Sun01Icon,
   MinusSignIcon,
   FileAttachmentIcon, CheckmarkCircle02Icon, Cancel01Icon, Alert01Icon, ArrowDown01Icon, MultiplicationSignIcon,
-  Tick02Icon
+  Tick02Icon, Clock01Icon, Calendar03Icon
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  Avatar,
+  Avatar, BottomSheet,
   Button, Chip, CloseButton, cn, Description, FieldError, InputOTP, Label, PressableFeedback, ScrollShadow, Select,
   Separator, Spinner,
   Switch,
@@ -29,15 +30,17 @@ import {
   useThemeColor,
   useToast
 } from "heroui-native";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from 'react-native';
 import { useReanimatedKeyboardAnimation, useWindowDimensions } from "react-native-keyboard-controller";
 import Animated, { FadeInLeft, FadeInRight, FadeOut, useAnimatedStyle, ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 import { LinearGradient } from "expo-linear-gradient";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { BottomSheetModalProvider, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import dayjs from 'dayjs';
 
 const StyledHugeiconsIcon = withUniwind(HugeiconsIcon);
 
@@ -700,6 +703,74 @@ const WithValidationOTPContent = () => {
   );
 };
 
+const DatepickerVariants = () => {
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [date, setDate] = useState<Date>();
+  const [time, setTime] = useState<Date>();
+  const [datetime, setDatetime] = useState<Date>();
+
+  return (
+    <View className="flex-1 px-5">
+      <View className="gap-8">
+        <View className="flex-row gap-2">
+          <AppDatePicker
+            className="flex-1"
+            label="Start date"
+            mode="date"
+            value={startDate}
+            maximumDate={endDate}
+            onValueChange={setStartDate}
+            placeholder="0000/00/00"
+            icon={
+            <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+            }
+          />
+          <AppDatePicker
+            className="flex-1"
+            label="End date"
+            mode="date"
+            value={endDate}
+            minimumDate={startDate}
+            onValueChange={setEndDate}
+            placeholder="0000/00/00"
+            icon={
+              <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+            }
+          />
+        </View>
+        <AppDatePicker
+          label="Date"
+          mode="date"
+          value={date}
+          onValueChange={setDate}
+          placeholder="Select a date"
+        />
+        <AppDatePicker
+          label="Start time"
+          mode="time"
+          value={time}
+          onValueChange={setTime}
+          icon={
+            <HugeiconsIcon icon={Clock01Icon} size={22} color="#005FEE" />
+          }
+        />
+        <AppDatePicker
+          label="Appointment"
+          isRequired
+          mode="datetime"
+          value={datetime}
+          onValueChange={setDatetime}
+          format="YYYY/MM/DD HH:mm"
+          icon={
+            <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+          }
+        />
+      </View>
+    </View>
+  );
+};
+
 export default function ComponentsScreen() {
   const { toggleTheme, isLight } = useAppTheme();
 
@@ -736,6 +807,7 @@ export default function ComponentsScreen() {
         <Separator />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Date picker</AppText>
+          <DatepickerVariants />
         </View>
         <Separator />
         <View className="py-4 gap-y-2">
