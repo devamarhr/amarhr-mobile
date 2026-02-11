@@ -1,5 +1,5 @@
 import { AppText } from '@/components/app-text';
-import { cn, Label, PressableFeedback } from 'heroui-native';
+import { cn, FieldError, Label, PressableFeedback } from 'heroui-native';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -44,6 +44,19 @@ interface AppDatePickerProps {
    */
   isDisabled?: boolean;
   /**
+   * Whether the field is in an invalid state
+   * @default false
+   */
+  isInvalid?: boolean;
+  /**
+   * Error message to display when isInvalid is true
+   */
+  errorMessage?: string;
+  /**
+   * Additional CSS classes for the error message
+   */
+  errorMessageClassName?: string;
+  /**
    * Optional icon element to display before the text
    * If not provided, no icon will be shown
    */
@@ -79,6 +92,9 @@ export function AppDatePicker({
   placeholder,
   format,
   isDisabled = false,
+  isInvalid = false,
+  errorMessage,
+  errorMessageClassName,
   icon,
   className,
   labelClassName,
@@ -138,6 +154,7 @@ export function AppDatePicker({
         className={cn(
           'flex-row rounded-lg border border-gray/30 items-center h-11 px-3 gap-2',
           isDisabled && 'opacity-50',
+          isInvalid && 'border-red',
           triggerClassName
         )}
       >
@@ -146,6 +163,12 @@ export function AppDatePicker({
           {value ? formatValue(value) : getDefaultPlaceholder()}
         </AppText>
       </PressableFeedback>
+
+      {errorMessage && isInvalid && (
+        <FieldError isInvalid className={cn('', errorMessageClassName)}>
+          {errorMessage}
+        </FieldError>
+      )}
 
       <DateTimePickerModal
         isVisible={isOpen}

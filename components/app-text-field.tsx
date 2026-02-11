@@ -91,14 +91,16 @@ export function AppTextField({
       <InputComponent
         {...inputProps}
         className={cn(
-          'flex-1 rounded-lg border border-gray/30 focus:border-gray/30 text-sm py-[11px] px-3 ios:shadow-none android:shadow-none',
+          'rounded-lg border border-gray/30 focus:border-gray/30 ios:py-3 android:py-2.75 px-3 ios:shadow-none android:shadow-none',
+          hasIcons && 'flex-1',
           leftIcon && 'pl-10',
           rightIcon && 'pr-10',
           isInvalid && 'border-red focus:border-red',
           className
         )}
       />
-    )};
+    );
+  };
 
   const renderInput = () => {
     if (hasIcons) {
@@ -135,8 +137,10 @@ export function AppTextField({
       animation={animation}
     >
       {label && (
-        <Label className={cn('text-sm font-normal text-darkgray', labelClassName)}>
-          {label}
+        <Label isRequired={isRequired}>
+          <Label.Text className={cn('text-sm font-normal text-darkgray', labelClassName)}>
+            {label}
+          </Label.Text>
         </Label>
       )}
 

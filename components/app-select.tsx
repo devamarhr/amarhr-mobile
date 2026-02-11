@@ -2,7 +2,7 @@ import { AppText } from '@/components/app-text';
 import { ArrowDown01Icon, MultiplicationSignIcon, Tick02Icon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { cn, Label, PressableFeedback, Select, Separator } from 'heroui-native';
+import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 
@@ -55,6 +55,19 @@ interface AppSelectProps {
    * @default false
    */
   isDisabled?: boolean;
+  /**
+   * Whether the select field is in an invalid state
+   * @default false
+   */
+  isInvalid?: boolean;
+  /**
+   * Error message to display when isInvalid is true
+   */
+  errorMessage?: string;
+  /**
+   * Additional CSS classes for the error message
+   */
+  errorMessageClassName?: string;
   /**
    * Height percentage for the bottom sheet
    * @default '50%'
@@ -125,6 +138,9 @@ export function AppSelect({
   value,
   onValueChange,
   isDisabled = false,
+  isInvalid = false,
+  errorMessage,
+  errorMessageClassName,
   snapPoints = ['50%'],
   className,
   labelClassName,
@@ -174,6 +190,7 @@ export function AppSelect({
             className={cn(
               'flex-row rounded-lg border border-gray/30 items-center h-11 px-3',
               isDisabled && 'opacity-50',
+              isInvalid && 'border-red',
               triggerClassName
             )}
           >
@@ -268,6 +285,11 @@ export function AppSelect({
           </Select.Content>
         </Select.Portal>
       </Select>
+      {errorMessage && isInvalid && (
+        <FieldError isInvalid className={cn('', errorMessageClassName)}>
+          {errorMessage}
+        </FieldError>
+      )}
     </View>
   );
 }

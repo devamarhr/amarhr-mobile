@@ -41,6 +41,7 @@ import { BottomSheetModalProvider, BottomSheetScrollView } from "@gorhom/bottom-
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import dayjs from 'dayjs';
+import { router } from "expo-router";
 
 const StyledHugeiconsIcon = withUniwind(HugeiconsIcon);
 
@@ -745,6 +746,8 @@ const DatepickerVariants = () => {
           value={date}
           onValueChange={setDate}
           placeholder="Select a date"
+          isInvalid={true}
+          errorMessage="Date is required"
         />
         <AppDatePicker
           label="Start time"
@@ -777,6 +780,7 @@ export default function ComponentsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="px-4 bg-background">
+        <AppButton className="self-end" onPress={() => router.push("/(auth)/(tabs)")} label="Back" />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch theme</AppText>
           <Pressable
