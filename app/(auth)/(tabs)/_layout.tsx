@@ -11,8 +11,10 @@ import {
   Notification02Icon,
   UserGroupIcon
 } from '@hugeicons-pro/core-stroke-standard';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function TabLayout() {
+  const isSupervisor = useAuthStore((state) => state.isSupervisor);
 
   return (
     <Tabs
@@ -21,6 +23,9 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#B4B4B4',
         headerShown: false,
         tabBarShowLabel: false,
+        tabBarStyle: {
+          paddingTop: 4,
+        },
         tabBarBadgeStyle: {
           backgroundColor: '#EE5700',
           minWidth: 8,
@@ -64,6 +69,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="supervisor"
         options={{
+          href: isSupervisor ? '/(auth)/(tabs)/supervisor' : null,
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={28} color={color} />,
         }}
       />

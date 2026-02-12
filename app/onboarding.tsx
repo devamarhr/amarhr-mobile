@@ -219,6 +219,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="registerNumber"
+          rules={{ required: 'Регистрийн дугаар оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
               label="Регистрийн дугаар"
@@ -226,6 +227,7 @@ export default function OnboardingScreen() {
               onChangeText={onChange}
               onBlur={onBlur}
               maxLength={10}
+              isRequired
               errorMessage={errors.registerNumber?.message}
               isInvalid={!!errors.registerNumber}
             />
@@ -253,9 +255,10 @@ export default function OnboardingScreen() {
           control={control}
           name="email"
           rules={{
+            required: 'И-мэйл оруулна уу',
             pattern: {
               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'Буруу и-мэйл хаяг'
+              message: 'И-мэйл хаяг алдаатай байна'
             }
           }}
           render={({ field: { onChange, onBlur, value } }) => (
@@ -266,6 +269,7 @@ export default function OnboardingScreen() {
               onBlur={onBlur}
               keyboardType="email-address"
               autoCapitalize="none"
+              isRequired
               errorMessage={errors.email?.message}
               isInvalid={!!errors.email}
             />
@@ -274,6 +278,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="emergencyContact"
+          rules={{ required: 'Яаралтай үед холбоо барих дугаар оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
               label="Яаралтай үед холбоо барих дугаар"
@@ -282,6 +287,7 @@ export default function OnboardingScreen() {
               onBlur={onBlur}
               keyboardType="phone-pad"
               maxLength={8}
+              isRequired
               errorMessage={errors.emergencyContact?.message}
               isInvalid={!!errors.emergencyContact}
             />
@@ -290,6 +296,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="emergencyRelationship"
+          rules={{ required: 'Хэн болох оруулна уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = relationshipOptions.find(opt => opt.value === value);
             return (
@@ -301,6 +308,7 @@ export default function OnboardingScreen() {
                 placeholder="Сонгох"
                 errorMessage={errors.emergencyRelationship?.message}
                 isInvalid={!!errors.emergencyRelationship}
+                isRequired
               />
             );
           }}
@@ -313,7 +321,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="city"
-          // rules={{ required: 'Хот/аймаг сонгоно уу' }}
+          rules={{ required: 'Хот/аймаг сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = cityOptions.find(opt => opt.value === value);
             return (
@@ -323,6 +331,7 @@ export default function OnboardingScreen() {
                 onValueChange={(option) => onChange(option?.value)}
                 options={cityOptions}
                 placeholder="Сонгох"
+                isRequired
                 errorMessage={errors.city?.message}
                 isInvalid={!!errors.city}
               />
@@ -332,6 +341,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="district"
+          rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = districtOptions.find(opt => opt.value === value);
             return (
@@ -341,6 +351,7 @@ export default function OnboardingScreen() {
                 onValueChange={(option) => onChange(option?.value)}
                 options={districtOptions}
                 placeholder="Сонгох"
+                isRequired
                 errorMessage={errors.district?.message}
                 isInvalid={!!errors.district}
               />
@@ -350,6 +361,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="address"
+          rules={{ required: 'Хаяг оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
               label="Хороо, гудамж, байр, тоот"
@@ -360,6 +372,7 @@ export default function OnboardingScreen() {
               placeholder="Хаягаа оруулна уу"
               multiline
               numberOfLines={4}
+              isRequired
               errorMessage={errors.address?.message}
               isInvalid={!!errors.address}
             />
@@ -382,7 +395,7 @@ export default function OnboardingScreen() {
       return (
         <View className="flex-1 gap-6">
           <View className="gap-2">
-            <Label>
+            <Label isRequired>
               <Label.Text className="text-sm font-normal text-darkgray">
                 Хүүхэд
               </Label.Text>
@@ -419,7 +432,7 @@ export default function OnboardingScreen() {
                   name={`children.${index}.gender`}
                   render={({ field: { onChange, value } }) => (
                     <View className="gap-2">
-                      <Label>
+                      <Label isRequired>
                         <Label.Text className="text-sm font-normal text-darkgray">
                           Хүйс
                         </Label.Text>
@@ -468,6 +481,7 @@ export default function OnboardingScreen() {
                           onChange(date ? date.toISOString() : '');
                         }}
                         placeholder="0000/00/00"
+                        isRequired
                         isInvalid={!!fieldError}
                         errorMessage={fieldError?.message}
                       />
@@ -487,6 +501,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="salaryAccount"
+          rules={{ required: 'Цалингийн данс оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
               label="Цалингийн данс"
@@ -495,6 +510,7 @@ export default function OnboardingScreen() {
               onBlur={onBlur}
               placeholder="Дансны дугаар"
               keyboardType="numeric"
+              isRequired
               errorMessage={errors.salaryAccount?.message}
               isInvalid={!!errors.salaryAccount}
             />
@@ -503,6 +519,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="bank"
+          rules={{ required: 'Банк оруулна уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = bankOptions.find(opt => opt.value === value);
             return (
@@ -512,6 +529,7 @@ export default function OnboardingScreen() {
                 onValueChange={(option) => onChange(option?.value)}
                 options={bankOptions}
                 placeholder="Сонгох"
+                isRequired
                 errorMessage={errors.bank?.message}
                 isInvalid={!!errors.bank}
               />
@@ -568,13 +586,12 @@ export default function OnboardingScreen() {
       return (
         <View className="gap-6 items-center">
           <View className="gap-2 w-full">
-            <Label>
+            <Label isRequired>
               <Label.Text className="text-sm font-normal text-darkgray">
                 Профайл зураг
               </Label.Text>
             </Label>
 
-            {/* Profile Image Placeholder */}
             <View className="items-center justify-center mt-4">
               <View className="w-40 h-40 rounded-full bg-darkgray/7 items-center justify-center overflow-hidden">
                 {profileImage ? (
@@ -588,7 +605,6 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          {/* Action Buttons */}
           <View className="flex-row gap-3 w-full mt-4">
             <AppButton
               label="Утаснаас оруулах"

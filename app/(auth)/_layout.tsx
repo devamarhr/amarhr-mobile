@@ -23,8 +23,8 @@ export default function AuthLayout() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </View>
   );

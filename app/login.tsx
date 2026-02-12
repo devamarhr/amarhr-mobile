@@ -166,7 +166,6 @@ export default function LoginScreen() {
             className="w-60 h-15 object-contain"
           />
         </View>
-        {/* Phone Number Step */}
         {step === 'phone' && (
           <View className="gap-6">
             <Controller
@@ -203,7 +202,6 @@ export default function LoginScreen() {
           </View>
         )}
 
-        {/* OTP Step */}
         {step === 'otp' && (
           <View className="gap-6">
             <View className="gap-3">

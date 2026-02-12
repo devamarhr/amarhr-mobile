@@ -221,7 +221,6 @@ export function AppSelect({
               },
             }}
           >
-            {/* Header */}
             <View className="px-4 py-5">
               <AppText className="text-base font-medium text-center">
                 {displayTitle}
@@ -234,7 +233,6 @@ export function AppSelect({
               </PressableFeedback>
             </View>
 
-            {/* Items */}
             <BottomSheetScrollView
               contentContainerClassName="pt-2 px-4 pb-4"
               showsVerticalScrollIndicator={false}

@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   userName: string | null;
   hasCompletedOnboarding: boolean;
+  isSupervisor: boolean;
 
   // Onboarding data
   lastName: string | null;
@@ -27,6 +28,7 @@ interface AuthState {
   }) => void;
   logout: () => void;
   clearAuth: () => void;
+  toggleSupervisor: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       userName: null,
       hasCompletedOnboarding: false,
+      isSupervisor: false,
       lastName: null,
       firstName: null,
       gender: null,
@@ -66,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           userName: null,
           hasCompletedOnboarding: false,
+          isSupervisor: false,
           lastName: null,
           firstName: null,
           gender: null,
@@ -81,12 +85,16 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           userName: null,
           hasCompletedOnboarding: false,
+          isSupervisor: false,
           lastName: null,
           firstName: null,
           gender: null,
           nationality: null,
           familyName: null,
         });
+      },
+      toggleSupervisor: () => {
+        set((state) => ({ isSupervisor: !state.isSupervisor }));
       },
     }),
     {

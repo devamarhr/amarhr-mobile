@@ -144,10 +144,8 @@ export function AppToast({
 
   return (
     <Toast variant={variant} className="flex-row gap-3" {...toastProps}>
-      {/* Left icon */}
       {icon && <View className={iconContainerClassName}>{icon}</View>}
 
-      {/* Title and description */}
       <View className={cn('flex-1',contentContainerClassName)}>
         {title && <Toast.Title className={titleClassName}>{title}</Toast.Title>}
         {description && (
@@ -157,14 +155,12 @@ export function AppToast({
         )}
       </View>
 
-      {/* Action button */}
       {action && onActionPress && (
         <Toast.Action className={actionClassName} onPress={handleActionPress}>
           {action}
         </Toast.Action>
       )}
 
-      {/* Close button */}
       {showClose && <Toast.Close className={closeClassName} />}
     </Toast>
   );
