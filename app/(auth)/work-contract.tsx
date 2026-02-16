@@ -1,11 +1,9 @@
-import { View, Pressable, ScrollView } from 'react-native';
-import { useRouter } from "expo-router";
+import { View, ScrollView } from 'react-native';
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
+import { AppHeader } from "@/components/app-header";
 import React from "react";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft02Icon } from "@hugeicons-pro/core-stroke-standard";
 import { cn } from "heroui-native";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
@@ -28,18 +26,10 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function ContractInfoScreen() {
-  const router = useRouter();
-
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1">
-        <View className="flex-row items-center gap-2 px-4 mb-5">
-          <Pressable onPress={() => router.back()}>
-            <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />
-          </Pressable>
-          <AppText className="text-xl font-medium">Хөд/гэрээний мэдээлэл</AppText>
-        </View>
-
+        <AppHeader title="Хөд/гэрээний мэдээлэл" showBack className="px-4" />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4">
             <InfoField label="Хөдөлмөрийн гэрээ" value="Хугацаатай" />

@@ -11,6 +11,7 @@ import {
   Notification02Icon,
   UserGroupIcon
 } from '@hugeicons-pro/core-stroke-standard';
+import { TugrugIcon } from '@/components/app-icon';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function TabLayout() {
@@ -57,7 +58,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="salary"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={DollarCircleIcon} size={28} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={TugrugIcon} size={28} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,13 +1,12 @@
 import { View, Pressable, ScrollView, TextInput, Linking } from 'react-native';
-import { useRouter } from "expo-router";
 import { Avatar, cn, Separator } from "heroui-native";
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
+import { AppHeader } from "@/components/app-header";
 import React, { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  ArrowLeft02Icon,
   Search01Icon,
   SmartPhone01Icon,
   AtIcon,
@@ -62,6 +61,24 @@ const DEPARTMENTS: Department[] = [
   },
 ];
 
+const BRANCHES: Department[] = [
+  {
+    name: 'Оффис / Хан-Уул',
+    contacts: [
+      { id: 'b1', name: 'Батбаяр.Б', position: 'Санхүүгийн менежер', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=3', phone: '99112233', email: 'batbayar@amarhr.mn' },
+      { id: 'b2', name: 'Сарнай.Д', position: 'Нягтлан бодогч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=4', phone: '99223344', email: 'sarnai@amarhr.mn' },
+      { id: 'b3', name: 'Төмөр.О', position: 'Хүний нөөцийн мэргэжилтэн', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=5', phone: '99334455', email: 'tumur@amarhr.mn' },
+    ],
+  },
+  {
+    name: 'Эмийн сан / Салбар 1',
+    contacts: [
+      { id: 'b4', name: 'Оюунаа.Г', position: 'Эм зүйч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=6', phone: '99445566', email: 'oyunaa@amarhr.mn' },
+      { id: 'b5', name: 'Энхжин.С', position: 'Эм найруулагч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=7', phone: '99556677', email: 'enkhjin@amarhr.mn' },
+    ],
+  },
+];
+
 const TABS = ['Алба, хэлтэс', 'Салбар, байршил'] as const;
 
 function ContactCard({ contact, isExpanded, onToggle }: {
@@ -112,12 +129,12 @@ function ContactCard({ contact, isExpanded, onToggle }: {
 }
 
 export default function ContactScreen() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filteredDepartments = DEPARTMENTS.map((dept) => ({
+  const sourceData = activeTab === 0 ? DEPARTMENTS : BRANCHES;
+  const filteredDepartments = sourceData.map((dept) => ({
     ...dept,
     contacts: dept.contacts.filter((c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,17 +145,11 @@ export default function ContactScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1">
-        <View className="flex-row items-center gap-2 px-4 rounded-full mb-5">
-          <Pressable onPress={() => router.back()}>
-            <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />
-          </Pressable>
-          <AppText className="text-xl font-medium">Холбоо барих жагсаалт</AppText>
-        </View>
-
+        <AppHeader title="Холбоо барих жагсаалт" showBack className="px-4" />
         <View className="px-4 mb-5">
           <AppTextField
             className="rounded-full"
-            placeholderTextColorClassName="red"
+            placeholder="Ажилтны нэрээр хайх"
             leftIcon={
               <HugeiconsIcon icon={Search01Icon} color="#222222" size={20} />
             }

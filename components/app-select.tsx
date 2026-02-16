@@ -127,6 +127,11 @@ interface AppSelectProps {
    * @returns Custom React element to render in the trigger
    */
   renderValue?: (option: SelectOption) => React.ReactNode;
+  /**
+   * Custom trigger element that replaces the default trigger entirely
+   * Useful for inline selects like header month pickers
+   */
+  trigger?: React.ReactNode;
 }
 
 export function AppSelect({
@@ -153,6 +158,7 @@ export function AppSelect({
   itemClassName,
   renderItem,
   renderValue,
+  trigger,
 }: AppSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const displayTitle = title || label || 'Select';
@@ -185,26 +191,32 @@ export function AppSelect({
         onValueChange={handleValueChange}
         isDisabled={isDisabled}
       >
-        <Select.Trigger asChild>
-          <PressableFeedback
-            className={cn(
-              'flex-row rounded-lg border border-gray/30 items-center h-11 px-3',
-              isDisabled && 'opacity-50',
-              isInvalid && 'border-red',
-              triggerClassName
-            )}
-          >
-            <View className="flex-1">
-              {fullValue && renderValue ? (
-                renderValue(fullValue)
-              ) : (
-                <AppText className={!fullValue ? 'text-muted' : undefined}>
-                  {fullValue?.label ?? placeholder}
-                </AppText>
+        <Select.Trigger asChild className="">
+          {trigger ? (
+            <PressableFeedback className={triggerClassName}>
+              {trigger}
+            </PressableFeedback>
+          ) : (
+            <PressableFeedback
+              className={cn(
+                'flex-row rounded-lg border border-gray/30 items-center h-11 px-3',
+                isDisabled && 'opacity-50',
+                isInvalid && 'border-red',
+                triggerClassName
               )}
-            </View>
-            <HugeiconsIcon icon={ArrowDown01Icon} size={24} color={arrowIconColor} />
-          </PressableFeedback>
+            >
+              <View className="flex-1">
+                {fullValue && renderValue ? (
+                  renderValue(fullValue)
+                ) : (
+                  <AppText className={!fullValue ? 'text-muted' : undefined}>
+                    {fullValue?.label ?? placeholder}
+                  </AppText>
+                )}
+              </View>
+              <HugeiconsIcon icon={ArrowDown01Icon} size={24} color={arrowIconColor} />
+            </PressableFeedback>
+          )}
         </Select.Trigger>
 
         <Select.Portal>

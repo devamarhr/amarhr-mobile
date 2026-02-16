@@ -9,12 +9,11 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   UserMultipleIcon,
   Clock01Icon,
-  Login02Icon,
-  Logout02Icon, Login01Icon, Logout01Icon, LoginCircle02Icon, LogoutCircle02Icon,
+  LoginCircle02Icon,
+  LogoutCircle02Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import PagerView from 'react-native-pager-view';
 import dayjs from 'dayjs';
-import { LoginCircle01StrokeRounded } from "@hugeicons-pro/core-stroke-rounded";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -45,7 +44,7 @@ export default function HomeScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
-        <View className="flex-row justify-between items-center">
+        <View className="flex-row justify-between items-center py-[7px]">
           <AppText className="text-xl font-medium">Датаком</AppText>
           <View className="flex-row gap-4 items-center">
             <Pressable onPress={() => router.push('/contact')}>

@@ -5,17 +5,14 @@ import { useAuthStore } from '@/store/auth-store';
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
+import { AppHeader } from "@/components/app-header";
 import React, { useState } from "react";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
 import {
-  ArrowLeft01Icon,
   UserIcon,
-  Building01Icon,
-  Book01Icon,
   Clock01Icon,
-  TelephoneIcon,
   InformationCircleIcon,
-  Logout01Icon, Agreement01Icon, Agreement03Icon, ArrowLeft02Icon, Building03Icon, Building06StrokeStandard,
+  Agreement03Icon, Building06StrokeStandard,
   LicenseIcon, SmartPhone01Icon, Logout05Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { AppSwitch } from "@/components/app-switch";
@@ -70,12 +67,7 @@ export default function ProfileScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
-        <View className="flex-row items-center gap-2">
-          <Pressable onPress={() => router.back()}>
-            <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />
-          </Pressable>
-          <AppText className="text-xl font-medium">Профайл</AppText>
-        </View>
+        <AppHeader title="Профайл" showBack />
         <View className="items-center mt-4 mb-6">
           <Avatar alt="Profile" className="w-32.5 h-32.5">
             <Avatar.Image source={{

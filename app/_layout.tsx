@@ -1,4 +1,5 @@
 import '../global.css';
+import { StatusBar } from 'expo-status-bar';
 import { HeroUINativeProvider } from 'heroui-native';
 import type { HeroUINativeConfig } from 'heroui-native';
 import { Slot } from 'expo-router';
@@ -64,6 +65,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
+      <StatusBar style="dark" />
       <KeyboardProvider>
         <AppContent />
       </KeyboardProvider>

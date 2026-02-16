@@ -45,7 +45,6 @@ app-example
 # other
 .idea
 .npmrc
-heroui-native.md
 example
 .agent
 .agents

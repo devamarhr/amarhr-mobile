@@ -4,9 +4,10 @@ import { Separator } from "heroui-native";
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
+import { AppHeader } from "@/components/app-header";
 import React from "react";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft02Icon, Agreement03Icon, FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
+import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -39,13 +40,7 @@ export default function ContractsRulesScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
-        <View className="flex-row items-center gap-2 mb-5">
-          <Pressable onPress={() => router.back()}>
-            <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />
-          </Pressable>
-          <AppText className="text-xl font-medium">Гэрээ & дүрэм журам</AppText>
-        </View>
-
+        <AppHeader title="Гэрээ & дүрэм журам" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <DocumentItem label="Байгууллагын дотоод дүрэм журам" onPress={() => router.push({
             pathname: '/pdf-view', params: { title: 'Дотоод дүрэм журам', url: 'https://assets.withfra.me/pdf/sample.pdf' }
