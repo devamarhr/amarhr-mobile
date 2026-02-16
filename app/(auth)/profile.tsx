@@ -1,6 +1,6 @@
 import { View, Pressable, ScrollView } from 'react-native';
 import { useRouter } from "expo-router";
-import { Avatar, cn, Separator, Switch } from "heroui-native";
+import { Avatar, Button, cn, Dialog, Separator, Switch } from "heroui-native";
 import { useAuthStore } from '@/store/auth-store';
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,8 +56,10 @@ export default function ProfileScreen() {
   const { lastName, firstName, logout } = useAuthStore();
   const [timeRegistration, setTimeRegistration] = useState(true);
   const [showContact, setShowContact] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleLogout = () => {
+    setLogoutDialogOpen(false);
     logout();
     router.replace('/login');
   };
@@ -140,11 +142,33 @@ export default function ProfileScreen() {
               icon={Logout05Icon}
               label="Апп-с гарах"
               labelClassName="font-normal"
-              onPress={handleLogout}
+              onPress={() => setLogoutDialogOpen(true)}
             />
           </View>
         </View>
       </View>
+
+      <Dialog isOpen={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="bg-[#6C719F]/40" />
+          <Dialog.Content>
+            <View className="mb-5 gap-1.5">
+              <Dialog.Title>Апп-с гарах</Dialog.Title>
+              <Dialog.Description>
+                Та системээс гарахдаа итгэлтэй байна уу?
+              </Dialog.Description>
+            </View>
+            <View className="flex-row justify-end gap-3">
+              <Button variant="ghost" size="sm" onPress={() => setLogoutDialogOpen(false)}>
+                <Button.Label>Үгүй</Button.Label>
+              </Button>
+              <Button size="sm" className="bg-red" onPress={handleLogout}>
+                <Button.Label className="text-white">Тийм</Button.Label>
+              </Button>
+            </View>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
     </StyledSafeAreaView>
   );
 }

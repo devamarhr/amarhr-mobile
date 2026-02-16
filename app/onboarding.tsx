@@ -2,7 +2,7 @@ import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
 import { AppTextField } from '@/components/app-text-field';
 import { AppSelect, SelectOption } from '@/components/app-select';
-import { useAuthStore } from '@/store/auth-store';
+import { useAuthStore, type ProfileFormData } from '@/store/auth-store';
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,30 +23,6 @@ import { AppDatePicker } from "@/components/app-date-picker";
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 const StyledPagerView = withUniwind(PagerView);
 
-type Child = {
-  gender: 'boy' | 'girl';
-  birthDate: string;
-};
-
-type OnboardingFormData = {
-  lastName: string;
-  firstName: string;
-  gender: 'male' | 'female';
-  nationality: string;
-  familyName: string;
-  registerNumber: string;
-  phoneNumber: string;
-  email: string;
-  emergencyContact: string;
-  emergencyRelationship: string;
-  city: string;
-  district: string;
-  address: string;
-  children: Child[];
-  salaryAccount: string;
-  bank: string;
-  profileImage?: string;
-};
 
 const nationalityOptions: SelectOption[] = [
   { value: 'mongolia', label: 'Монгол' },
@@ -101,6 +77,7 @@ export default function OnboardingScreen() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
+  const phoneNumber = useAuthStore((state) => state.phoneNumber);
 
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -233,23 +210,10 @@ export default function OnboardingScreen() {
             />
           )}
         />
-        <Controller
-          control={control}
-          name="phoneNumber"
-          rules={{ required: 'Утасны дугаар оруулна уу' }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <AppTextField
-              label="Утасны дугаар"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              keyboardType="phone-pad"
-              maxLength={8}
-              errorMessage={errors.phoneNumber?.message}
-              isInvalid={!!errors.phoneNumber}
-              isRequired
-            />
-          )}
+        <AppTextField
+          label="Утасны дугаар"
+          value={phoneNumber ?? ''}
+          isDisabled
         />
         <Controller
           control={control}
@@ -634,7 +598,7 @@ export default function OnboardingScreen() {
     handleSubmit,
     trigger,
     formState: { errors },
-  } = useForm<OnboardingFormData>({
+  } = useForm<ProfileFormData>({
     defaultValues: {
       lastName: '',
       firstName: '',
@@ -642,7 +606,6 @@ export default function OnboardingScreen() {
       nationality: 'mongolia',
       familyName: '',
       registerNumber: '',
-      phoneNumber: '',
       email: '',
       emergencyContact: '',
       emergencyRelationship: '',
@@ -670,7 +633,7 @@ export default function OnboardingScreen() {
     return <Redirect href="/(auth)/(tabs)" />;
   }
 
-  const handleComplete = async (data: OnboardingFormData) => {
+  const handleComplete = async (data: ProfileFormData) => {
     setIsLoading(true);
 
     console.log(JSON.stringify(data))
@@ -693,9 +656,9 @@ export default function OnboardingScreen() {
 
   const handleNext = async () => {
     // Define which fields to validate for each page
-    const pageFields: Record<number, (keyof OnboardingFormData)[]> = {
+    const pageFields: Record<number, (keyof ProfileFormData)[]> = {
       0: ['lastName', 'firstName', 'gender', 'nationality', 'familyName'],
-      1: ['registerNumber', 'phoneNumber', 'email', 'emergencyContact', 'emergencyRelationship'],
+      1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelationship'],
       2: ['city', 'district', 'address'],
       3: ['children'],
       4: ['salaryAccount', 'bank'],
