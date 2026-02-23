@@ -34,6 +34,7 @@ export default function TabLayout() {
           borderRadius: 4,
           fontSize: 1,
           top: 0,
+          right: 0
         },
       }}>
       <Tabs.Screen

@@ -2,8 +2,9 @@ import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuthStore } from '@/store/auth-store';
-import { Label, InputOTP, FieldError, TextField, Input, Description } from 'heroui-native';
+import { Label, InputOTP, FieldError, TextField, Input, Description, useToast } from 'heroui-native';
 import { AppInputOTPSlot } from '@/components/app-input-otp-slot';
+import { AppToast } from '@/components/app-toast';
 import { useState, useEffect } from 'react';
 import { View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +27,7 @@ export default function LoginScreen() {
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const setToken = useAuthStore((state) => state.setToken);
 
+  const { toast } = useToast();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
@@ -100,18 +102,25 @@ export default function LoginScreen() {
       return;
     }
 
+    if (otp !== '123456') {
+      setError('Баталгаажуулах код буруу байна');
+      toast.show({
+        component: (props) => (
+          <AppToast
+            {...props}
+            variant="danger"
+            title="Баталгаажуулах код буруу байна"
+            description="Зөв кодоо дахин оруулна уу"
+          />
+        ),
+      });
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      // TODO: Replace with your actual API call
-      // const response = await fetch('YOUR_API/verify-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phoneNumber, otp }),
-      // });
-      // const data = await response.json();
-
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -128,7 +137,7 @@ export default function LoginScreen() {
         router.replace('/(auth)/(tabs)');
       }
     } catch {
-      setError('Invalid code. Please try again.');
+      setError('Алдаа гарлаа. Дахин оролдоно уу.');
     } finally {
       setIsLoading(false);
     }

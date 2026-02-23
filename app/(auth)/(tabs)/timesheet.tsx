@@ -20,6 +20,16 @@ export default function TimesheetScreen() {
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <AppHeader title="05 сар" />
+        <View className="gap-2">
+          <AppButton
+            label="Toggle supervisor"
+            onPress={toggleSupervisor}
+          />
+          <AppButton
+            label="Go to component"
+            onPress={() => router.push('/components')}
+          />
+        </View>
       </View>
     </StyledSafeAreaView>
   );
