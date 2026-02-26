@@ -130,7 +130,7 @@ export function AppButton({
         isDisabled && 'border-transparent bg-darkgray/30 opacity-100',
         className
       )}
-      pressableFeedbackVariant="none"
+      feedbackVariant="scale"
 
       {...pressableProps}
     >

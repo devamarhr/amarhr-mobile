@@ -33,8 +33,8 @@ export default function TabLayout() {
           height: 8,
           borderRadius: 4,
           fontSize: 1,
-          top: 0,
-          right: 0
+          top: -4,
+          left: 28,
         },
       }}>
       <Tabs.Screen

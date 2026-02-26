@@ -8,19 +8,20 @@ import { ArrowLeft02Icon } from '@hugeicons-pro/core-stroke-standard';
 interface AppHeaderProps {
   title: string;
   showBack?: boolean;
+  backIcon?: React.ReactNode;
   rightContent?: React.ReactNode;
   className?: string;
   titleClassName?: string;
 }
 
-export function AppHeader({ title, showBack, rightContent, className, titleClassName }: AppHeaderProps) {
+export function AppHeader({ title, showBack, backIcon, rightContent, className, titleClassName }: AppHeaderProps) {
   const router = useRouter();
 
   return (
     <View className={cn('flex-row items-center gap-2 mt-4 mb-5', className)}>
       {showBack && (
         <Pressable onPress={() => router.back()}>
-          <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />
+          {backIcon || <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />}
         </Pressable>
       )}
       <AppText className={cn('text-xl font-medium flex-1', titleClassName)}>{title}</AppText>
