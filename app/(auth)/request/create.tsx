@@ -16,7 +16,7 @@ import {
   ArrowLeft02Icon,
   ArrowRight02Icon,
   FileAttachmentIcon,
-  MultiplicationSignIcon,
+  MultiplicationSignIcon, LoginCircle02Icon, LogoutCircle02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useMemo } from 'react';
@@ -40,8 +40,19 @@ interface FormData {
   endTime?: Date;
   arrivalTime?: Date;
   departureTime?: Date;
+  overtimeStartTime?: Date;
+  overtimeEndTime?: Date;
   description: string;
   compensatoryMode: 'day' | 'hour';
+}
+
+function parseTimeToDate(timeStr?: string): Date | undefined {
+  if (!timeStr) return undefined;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes)) return undefined;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
 }
 
 export default function RequestCreateScreen() {
@@ -54,6 +65,10 @@ export default function RequestCreateScreen() {
     textAreaLabel?: string;
     textAreaPlaceholder?: string;
     dateLabel?: string;
+    arrived?: string;
+    left?: string;
+    overtimeStart?: string;
+    overtimeEnd?: string;
   }>();
 
   const title = params.title ?? '';
@@ -96,6 +111,10 @@ export default function RequestCreateScreen() {
     defaultValues: {
       description: '',
       compensatoryMode: 'day',
+      arrivalTime: parseTimeToDate(params.arrived),
+      departureTime: parseTimeToDate(params.left),
+      overtimeStartTime: parseTimeToDate(params.overtimeStart),
+      overtimeEndTime: parseTimeToDate(params.overtimeEnd),
     },
   });
 
@@ -264,44 +283,85 @@ export default function RequestCreateScreen() {
   );
 
   const renderTimeCorrectionFields = () => (
-    <View className="flex-row gap-3">
-      <View className="flex-1">
-        <Controller
-          control={control}
-          name="arrivalTime"
-          render={({ field: { onChange, value } }) => (
-            <AppDatePicker
-              label="Ирсэн цаг"
-              mode="time"
-              value={value}
-              onValueChange={onChange}
-              placeholder="--:--"
-              icon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#005FEE" size={22} />}
-              isInvalid={!!errors.arrivalTime}
-              errorMessage={errors.arrivalTime?.message}
-            />
-          )}
-        />
+    <>
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="arrivalTime"
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Ирсэн цаг"
+                mode="time"
+                value={value}
+                onValueChange={onChange}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
+                isInvalid={!!errors.arrivalTime}
+                errorMessage={errors.arrivalTime?.message}
+              />
+            )}
+          />
+        </View>
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="departureTime"
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Тарсан цаг"
+                mode="time"
+                value={value}
+                onValueChange={onChange}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
+                isInvalid={!!errors.departureTime}
+                errorMessage={errors.departureTime?.message}
+              />
+            )}
+          />
+        </View>
       </View>
-      <View className="flex-1">
-        <Controller
-          control={control}
-          name="departureTime"
-          render={({ field: { onChange, value } }) => (
-            <AppDatePicker
-              label="Тарсан цаг"
-              mode="time"
-              value={value}
-              onValueChange={onChange}
-              placeholder="--:--"
-              icon={<HugeiconsIcon icon={ArrowRight02Icon} color="#005FEE" size={22} />}
-              isInvalid={!!errors.departureTime}
-              errorMessage={errors.departureTime?.message}
-            />
-          )}
-        />
-      </View>
-    </View>
+
+      {(params.overtimeStart || params.overtimeEnd) && <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="overtimeStartTime"
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Ирсэн цаг / Илүү цаг"
+                mode="time"
+                value={value}
+                onValueChange={onChange}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                isInvalid={!!errors.overtimeStartTime}
+                errorMessage={errors.overtimeStartTime?.message}
+              />
+            )}
+          />
+        </View>
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="overtimeEndTime"
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Тарсан цаг / Илүү цаг"
+                mode="time"
+                value={value}
+                onValueChange={onChange}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                isInvalid={!!errors.overtimeEndTime}
+                errorMessage={errors.overtimeEndTime?.message}
+              />
+            )}
+          />
+        </View>
+      </View>}
+    </>
   );
 
   const renderCompensatoryFields = () => (

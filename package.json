@@ -15,6 +15,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.8",
+    "@hugeicons-pro/core-solid-standard": "^3.1.0",
     "@hugeicons-pro/core-stroke-rounded": "^3.1.0",
     "@hugeicons-pro/core-stroke-standard": "^3.1.0",
     "@hugeicons/react-native": "^1.0.11",
