@@ -74,13 +74,13 @@ const bankOptions: SelectOption[] = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const pagerRef = useRef<PagerView>(null);
+  const [currentPage, setCurrentPage] = useState(0);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Function that returns array of page components
@@ -134,8 +134,8 @@ export default function OnboardingScreen() {
                   label="Эмэгтэй"
                   className="flex-1 bg-white border-darkgray/30"
                   labelClassName={cn(
-                    "text-black",
-                    value === 'female' && 'text-darkgray/50'
+                    "text-darkgray/50",
+                    value === 'female' && 'text-black'
                   )}
                   isDisabled={value === 'female'}
                   onPress={() => onChange('female')}
@@ -144,8 +144,8 @@ export default function OnboardingScreen() {
                   label="Эрэгтэй"
                   className="flex-1 bg-white border-darkgray/30"
                   labelClassName={cn(
-                    "text-black",
-                    value === 'male' && 'text-darkgray/50'
+                    "text-darkgray/50",
+                    value === 'male' && 'text-black'
                   )}
                   isDisabled={value === 'male'}
                   onPress={() => onChange('male')}
@@ -406,8 +406,8 @@ export default function OnboardingScreen() {
                           label="Охин"
                           className="flex-1 bg-white border-darkgray/30 rounded-full"
                           labelClassName={cn(
-                            "text-black",
-                            value === 'girl' && 'text-darkgray/50'
+                            "text-darkgray/50",
+                            value === 'girl' && 'text-black'
                           )}
                           isDisabled={value === 'girl'}
                           onPress={() => onChange('girl')}
@@ -416,8 +416,8 @@ export default function OnboardingScreen() {
                           label="Хүү"
                           className="flex-1 bg-white border-darkgray/30 rounded-full"
                           labelClassName={cn(
-                            "text-black",
-                            value === 'boy' && 'text-darkgray/50'
+                            "text-darkgray/50",
+                            value === 'boy' && 'text-black'
                           )}
                           isDisabled={value === 'boy'}
                           onPress={() => onChange('boy')}
@@ -699,6 +699,7 @@ export default function OnboardingScreen() {
           initialPage={0}
           onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
           scrollEnabled={false}
+          overdrag={false}
         >
           {pages.map((PageComponent, index) => (
             <View key={index.toString()}>

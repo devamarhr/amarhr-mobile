@@ -19,7 +19,7 @@ function InfoField({ label, value, className }: { label: string; value?: string 
 
 export default function WorkInfoScreen() {
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
         <AppHeader title="Ажлын байрны мэдээлэл" showBack className="px-4" />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>

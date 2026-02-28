@@ -11,7 +11,7 @@ export default function PdfViewScreen() {
   const { title, url } = useLocalSearchParams<{ title: string; url: string }>();
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader title={title || 'Баримт бичиг'} showBack />
         <WebView

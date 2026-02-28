@@ -57,7 +57,7 @@ export default function PersonalInfoScreen() {
   const salaryDisplay = [store.salaryAccount, store.bank ? bankLabels[store.bank] : null].filter(Boolean).join(' /') + (store.bank ? '/' : '');
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader
           title="Хувийн мэдээлэл"

@@ -114,7 +114,7 @@ export default function PersonalInfoEditScreen() {
   };
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader title="Мэдээлэл засах" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>

@@ -21,7 +21,6 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
-import { StatusBar } from "expo-status-bar";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -533,7 +532,6 @@ export default function RequestCreateScreen() {
 
   return (
     <View className="flex-1 bg-lightblue">
-      <StatusBar style="dark" />
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
           title=""

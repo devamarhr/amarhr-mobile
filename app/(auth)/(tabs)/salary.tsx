@@ -1,12 +1,13 @@
 import { View, ScrollView, Pressable } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { Separator } from 'heroui-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 import { AppText } from '@/components/app-text';
 import { AppHeader } from '@/components/app-header';
 import { AppSelect, SelectOption } from '@/components/app-select';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -87,9 +88,15 @@ function SalaryRow({ item }: { item: SalaryLine }) {
 export default function SalaryScreen() {
   const [selectedMonth, setSelectedMonth] = useState<SelectOption>(MONTH_OPTIONS[0]);
 
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, [])
+  );
+
   return (
     <View className="flex-1 bg-darkgreen">
-      <StatusBar style="light" />
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
           title="Цалин тооцоолол"

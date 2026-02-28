@@ -143,7 +143,7 @@ export default function ContactScreen() {
   })).filter((dept) => dept.contacts.length > 0);
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
         <AppHeader title="Холбоо барих жагсаалт" showBack className="px-4" />
         <View className="px-4 mb-5">

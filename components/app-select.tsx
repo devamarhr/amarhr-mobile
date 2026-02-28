@@ -199,7 +199,7 @@ export function AppSelect({
           ) : (
             <PressableFeedback
               className={cn(
-                'flex-row rounded-lg border border-gray/30 items-center h-11 px-3',
+                'flex-row rounded-lg border border-gray/30 items-center justify-center px-3 py-1 h-11',
                 isDisabled && 'opacity-50',
                 isInvalid && 'border-red',
                 triggerClassName
@@ -209,7 +209,10 @@ export function AppSelect({
                 {fullValue && renderValue ? (
                   renderValue(fullValue)
                 ) : (
-                  <AppText className={!fullValue ? 'text-muted' : undefined}>
+                  <AppText className={cn(
+                    '',
+                    !fullValue && 'text-muted'
+                  )}>
                     {fullValue?.label ?? placeholder}
                   </AppText>
                 )}

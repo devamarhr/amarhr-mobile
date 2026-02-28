@@ -67,7 +67,7 @@ export default function ProfileScreen() {
   const fullName = `${lastName ?? ''} ${firstName ?? ''}`.trim() || 'Хэрэглэгч';
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader title="Профайл" showBack />
         <View className="items-center mt-4 mb-6">
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <View className="mt-2 mb-8">
+          <View className="mt-2 mb-2">
             <MenuItem
               icon={InformationCircleIcon}
               label="Ашиглах заавар"
