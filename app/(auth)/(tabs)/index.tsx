@@ -47,10 +47,10 @@ export default function HomeScreen() {
         <View className="flex-row justify-between items-center py-[7px]">
           <AppText className="text-xl font-medium">Датаком</AppText>
           <View className="flex-row gap-4 items-center">
-            <Pressable onPress={() => router.push('/contact')}>
+            <Pressable onPress={() => router.navigate('/contact')}>
               <HugeiconsIcon icon={UserMultipleIcon} color="#222222" size={24} />
             </Pressable>
-            <Pressable onPress={() => router.push('/profile')}>
+            <Pressable onPress={() => router.navigate('/profile')}>
               <Avatar alt="Profile" className="w-10 h-10">
                 <Avatar.Image source={{
                   uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2',

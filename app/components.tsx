@@ -44,6 +44,7 @@ import dayjs from 'dayjs';
 import { router } from "expo-router";
 
 const StyledHugeiconsIcon = withUniwind(HugeiconsIcon);
+const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 const AvatarVariants = () => {
   return (
@@ -778,9 +779,9 @@ export default function ComponentsScreen() {
   const { toggleTheme, isLight } = useAppTheme();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="px-4 bg-background">
-        <AppButton className="self-end" onPress={() => router.push("/(auth)/(tabs)")} label="Back" />
+        <AppButton className="self-end" onPress={() => router.navigate("/(auth)/(tabs)")} label="Back" />
         <View className="py-4 gap-y-2">
           <AppText className="text-lg font-medium">Switch theme</AppText>
           <Pressable
@@ -853,7 +854,7 @@ export default function ComponentsScreen() {
         </View>
         <Separator />
       </ScrollView>
-    </SafeAreaView>
+    </StyledSafeAreaView>
   );
 }
 

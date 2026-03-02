@@ -248,7 +248,7 @@ function TimesheetListRow({
   return (
     <Pressable
       className="border-b border-darkgray/10"
-      onPress={day.arrived ? () => router.push({
+      onPress={day.arrived ? () => router.navigate({
         pathname: '/request/create',
         params: {
           title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,

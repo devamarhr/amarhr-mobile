@@ -42,11 +42,11 @@ export default function ContractsRulesScreen() {
       <View className="flex-1 px-4">
         <AppHeader title="Гэрээ & дүрэм журам" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <DocumentItem label="Байгууллагын дотоод дүрэм журам" onPress={() => router.push({
+          <DocumentItem label="Байгууллагын дотоод дүрэм журам" onPress={() => router.navigate({
             pathname: '/pdf-view', params: { title: 'Дотоод дүрэм журам', url: 'https://assets.withfra.me/pdf/sample.pdf' }
           })} />
           <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Ажлын байрны тодорхойлолт" onPress={() => router.push({
+          <DocumentItem label="Ажлын байрны тодорхойлолт" onPress={() => router.navigate({
             pathname: '/pdf-view', params: { title: 'Ажлын байрны тодорхойлолт', url: 'https://assets.withfra.me/pdf/sample.pdf' }
           })} />
           <Separator className="bg-darkgray/12" />

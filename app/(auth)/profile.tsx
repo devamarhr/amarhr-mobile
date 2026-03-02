@@ -16,6 +16,7 @@ import {
   LicenseIcon, SmartPhone01Icon, Logout05Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { AppSwitch } from "@/components/app-switch";
+import { AppButton } from "@/components/app-button";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -69,7 +70,7 @@ export default function ProfileScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title="Профайл" showBack />
+        <AppHeader title="Профайл" backHref="/(auth)/(tabs)" />
         <View className="items-center mt-4 mb-6">
           <Avatar alt="Profile" className="w-32.5 h-32.5">
             <Avatar.Image source={{
@@ -87,25 +88,25 @@ export default function ProfileScreen() {
             <MenuItem
               icon={UserIcon}
               label="Хувийн мэдээлэл"
-              onPress={() => router.push('/personal-info')}
+              onPress={() => router.navigate('/personal-info')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={Building06StrokeStandard}
               label="Ажлын байрны мэдээлэл"
-              onPress={() => router.push('/work-info')}
+              onPress={() => router.navigate('/work-info')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={Agreement03Icon}
               label="Хөдөлмөрийн гэрээний мэдээлэл"
-              onPress={() => router.push('/work-contract')}
+              onPress={() => router.navigate('/work-contract')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={LicenseIcon}
               label="Гэрээ & дүрэм журам"
-              onPress={() => router.push('/contracts-rules')}
+              onPress={() => router.navigate('/contracts-rules')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
@@ -159,12 +160,8 @@ export default function ProfileScreen() {
               </Dialog.Description>
             </View>
             <View className="flex-row justify-end gap-3">
-              <Button variant="ghost" size="sm" onPress={() => setLogoutDialogOpen(false)}>
-                <Button.Label>Үгүй</Button.Label>
-              </Button>
-              <Button size="sm" className="bg-red" onPress={handleLogout}>
-                <Button.Label className="text-white">Тийм</Button.Label>
-              </Button>
+              <AppButton label="Үгүй" className="border-transparent bg-transparent" onPress={() => setLogoutDialogOpen(false)} />
+              <AppButton label="Тийм" labelClassName="text-white" className="bg-red" onPress={handleLogout} />
             </View>
           </Dialog.Content>
         </Dialog.Portal>

@@ -1,5 +1,4 @@
 import { Stack, Redirect } from 'expo-router';
-import 'react-native-reanimated';
 import { View } from "react-native";
 import { useAuthStore } from '@/store/auth-store';
 
@@ -25,6 +24,15 @@ export default function AuthLayout() {
     <View className="flex-1 bg-background">
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="personal-info/index" />
+        <Stack.Screen name="personal-info/edit" />
+        <Stack.Screen name="work-info" />
+        <Stack.Screen name="work-contract" />
+        <Stack.Screen name="contracts-rules" />
+        <Stack.Screen name="contact" />
+        <Stack.Screen name="pdf-view" />
+        <Stack.Screen name="request/create" />
       </Stack>
     </View>
   );

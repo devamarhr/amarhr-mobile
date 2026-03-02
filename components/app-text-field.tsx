@@ -137,7 +137,7 @@ export function AppTextField({
       animation={animation}
     >
       {label && (
-        <Label isRequired={isRequired}>
+        <Label isRequired={isRequired} className="px-0">
           <Label.Text className={cn('text-sm font-normal text-darkgray', labelClassName)}>
             {label}
           </Label.Text>

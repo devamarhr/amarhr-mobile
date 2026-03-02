@@ -14,6 +14,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { MinusSignIcon, PlusSignIcon } from "@hugeicons-pro/core-stroke-standard";
 import React, { useState } from "react";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -116,8 +117,12 @@ export default function PersonalInfoEditScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title="Мэдээлэл засах" showBack />
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <AppHeader title="Мэдээлэл засах" backHref="/personal-info" />
+        <KeyboardAwareScrollView
+          style={{flex:1}}
+          showsVerticalScrollIndicator={false}
+          bottomOffset={20}
+        >
           <View className="gap-6 pb-10">
             <Controller
               control={control}
@@ -166,8 +171,8 @@ export default function PersonalInfoEditScreen() {
                       label="Эмэгтэй"
                       className="flex-1 bg-white border-darkgray/30"
                       labelClassName={cn(
-                        "text-black",
-                        value === 'female' && 'text-darkgray/50'
+                        "text-darkgray/50",
+                        value === 'female' && 'text-black'
                       )}
                       isDisabled={value === 'female'}
                       onPress={() => onChange('female')}
@@ -176,8 +181,8 @@ export default function PersonalInfoEditScreen() {
                       label="Эрэгтэй"
                       className="flex-1 bg-white border-darkgray/30"
                       labelClassName={cn(
-                        "text-black",
-                        value === 'male' && 'text-darkgray/50'
+                        "text-darkgray/50",
+                        value === 'male' && 'text-black'
                       )}
                       isDisabled={value === 'male'}
                       onPress={() => onChange('male')}
@@ -413,8 +418,8 @@ export default function PersonalInfoEditScreen() {
                             label="Охин"
                             className="flex-1 bg-white border-darkgray/30 rounded-full"
                             labelClassName={cn(
-                              "text-black",
-                              value === 'girl' && 'text-darkgray/50'
+                              "text-darkgray/50",
+                              value === 'girl' && 'text-black'
                             )}
                             isDisabled={value === 'girl'}
                             onPress={() => onChange('girl')}
@@ -423,8 +428,8 @@ export default function PersonalInfoEditScreen() {
                             label="Хүү"
                             className="flex-1 bg-white border-darkgray/30 rounded-full"
                             labelClassName={cn(
-                              "text-black",
-                              value === 'boy' && 'text-darkgray/50'
+                              "text-darkgray/50",
+                              value === 'boy' && 'text-black'
                             )}
                             isDisabled={value === 'boy'}
                             onPress={() => onChange('boy')}
@@ -451,7 +456,6 @@ export default function PersonalInfoEditScreen() {
                           placeholder="0000/00/00"
                           isRequired
                           isInvalid={!!fieldError}
-                          errorMessage={fieldError?.message}
                         />
                       );
                     }}
@@ -506,7 +510,7 @@ export default function PersonalInfoEditScreen() {
               className="mt-4 rounded border-darkgray/60"
             />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </View>
     </StyledSafeAreaView>
   );

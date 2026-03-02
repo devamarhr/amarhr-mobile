@@ -230,7 +230,7 @@ export default function RequestScreen() {
   const [activeTab, setActiveTab] = useState(0);
 
   const handleItemPress = (item: RequestItem) => {
-    router.push({
+    router.navigate({
       pathname: '/request/create',
       params: {
         title: item.label,

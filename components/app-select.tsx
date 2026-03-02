@@ -236,12 +236,14 @@ export function AppSelect({
               },
             }}
           >
-            <View className="px-4 py-5">
-              <AppText className="text-base font-medium text-center">
-                {displayTitle}
-              </AppText>
+            <View className="flex-row px-4 py-5 justify-between">
+              <View className="flex-1">
+                <AppText className="text-base font-medium text-center">
+                  {displayTitle}
+                </AppText>
+              </View>
               <PressableFeedback
-                className="absolute right-4 top-5"
+                className=""
                 onPress={() => setIsOpen(false)}
               >
                 <HugeiconsIcon icon={MultiplicationSignIcon} color="#6A6A6A" size={24} />

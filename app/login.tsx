@@ -6,7 +6,8 @@ import { Label, InputOTP, FieldError, TextField, Input, Description, useToast } 
 import { AppInputOTPSlot } from '@/components/app-input-otp-slot';
 import { AppToast } from '@/components/app-toast';
 import { useState, useEffect } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -16,6 +17,7 @@ import { Image } from "expo-image";
 import { withUniwind } from "uniwind";
 
 const StyledImage = withUniwind(Image);
+const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type PhoneFormData = {
   phoneNumber: string;
@@ -167,8 +169,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      <ScrollView className="px-4 bg-background">
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+      <KeyboardAwareScrollView
+        style={{flex:1,paddingHorizontal:16}}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bottomOffset={20}
+      >
         <View className="mt-20 items-center mb-8">
           <StyledImage
             source={require('../assets/images/logo.png')}
@@ -255,7 +262,7 @@ export default function LoginScreen() {
 
               <View className="flex-row items-center justify-center gap-2">
                 <AppText className="text-sm text-muted">
-                  Код ирсэнгүй юу?
+                  Код дахин авах
                 </AppText>
                 {resendTimer > 0 ? (
                   <AppText className="text-sm text-muted">
@@ -263,7 +270,7 @@ export default function LoginScreen() {
                   </AppText>
                 ) : (
                   <AppButton
-                    label="Дахин илгээх"
+                    label="Код илгээх"
                     onPress={handleResendOtp}
                     isLoading={isResending}
                     className="h-auto py-0 border-0 bg-transparent"
@@ -285,7 +292,7 @@ export default function LoginScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </KeyboardAwareScrollView>
+    </StyledSafeAreaView>
   );
 }

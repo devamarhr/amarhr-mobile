@@ -21,6 +21,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -549,7 +550,11 @@ export default function RequestCreateScreen() {
           {renderHeaderInfo()}
         </View>
 
-        <ScrollView className="flex-1 px-4 bg-background" showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView
+          style={{flex:1,paddingHorizontal: 16,backgroundColor: "#ffffff"}}
+          showsVerticalScrollIndicator={false}
+          bottomOffset={20}
+        >
           <View className="gap-6 pb-10 pt-7.5">
             {renderFormFields()}
 
@@ -589,7 +594,7 @@ export default function RequestCreateScreen() {
               </View>
             ))}
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10 }}>
           <AppButton
