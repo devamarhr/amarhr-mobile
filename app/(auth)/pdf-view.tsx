@@ -13,7 +13,7 @@ export default function PdfViewScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title={title || 'Баримт бичиг'} showBack />
+        <AppHeader backTitle={title || 'Баримт бичиг'} showBack />
         <WebView
           source={{ uri: url || '' }}
           className="flex-1 mt-2"

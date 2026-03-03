@@ -204,7 +204,7 @@ export default function RequestCreateScreen() {
       <View className="flex-row gap-3">
         <View className="flex-1 gap-2">
             <AppText className="text-sm text-darkgray">Нийт ажлын хоног</AppText>
-            <View className="flex-1 bg-gray/10 rounded-lg h-11 px-3 justify-center">
+            <View className="bg-gray/10 rounded-lg h-11 px-3 justify-center">
               <AppText className="text-sm">{totalDays ?? '-'} хоног</AppText>
             </View>
         </View>
@@ -535,15 +535,11 @@ export default function RequestCreateScreen() {
     <View className="flex-1 bg-lightblue">
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
-          title=""
+          backTitle="Буцах"
+          backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={
-            <View className="flex-row gap-2 items-center">
-              <HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />
-              <AppText className="text-sm font-medium text-darkblue">Буцах</AppText>
-            </View>
-          }
+          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
         <View className="px-4 pb-7.5 gap-5">
           <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>

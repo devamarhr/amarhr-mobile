@@ -117,7 +117,7 @@ export default function PersonalInfoEditScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title="Мэдээлэл засах" backHref="/personal-info" />
+        <AppHeader backTitle="Мэдээлэл засах" backHref="/personal-info" />
         <KeyboardAwareScrollView
           style={{flex:1}}
           showsVerticalScrollIndicator={false}

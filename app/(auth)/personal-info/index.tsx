@@ -60,7 +60,7 @@ export default function PersonalInfoScreen() {
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader
-          title="Хувийн мэдээлэл"
+          backTitle="Хувийн мэдээлэл"
           backHref="/profile"
           rightContent={
             <Pressable onPress={() => router.navigate('/personal-info/edit')}>

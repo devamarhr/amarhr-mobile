@@ -145,7 +145,7 @@ export default function ContactScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
-        <AppHeader title="Холбоо барих жагсаалт" showBack className="px-4" />
+        <AppHeader backTitle="Холбоо барих жагсаалт" showBack className="px-4" />
         <View className="px-4 mb-5">
           <AppTextField
             className="rounded-full"

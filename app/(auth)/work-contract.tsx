@@ -29,7 +29,7 @@ export default function ContractInfoScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
-        <AppHeader title="Хөд/гэрээний мэдээлэл" showBack className="px-4" />
+        <AppHeader backTitle="Хөд/гэрээний мэдээлэл" showBack className="px-4" />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4">
             <InfoField label="Хөдөлмөрийн гэрээ" value="Хугацаатай" />

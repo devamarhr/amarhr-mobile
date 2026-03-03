@@ -40,7 +40,7 @@ export default function ContractsRulesScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title="Гэрээ & дүрэм журам" showBack />
+        <AppHeader backTitle="Гэрээ & дүрэм журам" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <DocumentItem label="Байгууллагын дотоод дүрэм журам" onPress={() => router.navigate({
             pathname: '/pdf-view', params: { title: 'Дотоод дүрэм журам', url: 'https://assets.withfra.me/pdf/sample.pdf' }
