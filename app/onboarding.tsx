@@ -5,6 +5,7 @@ import { AppSelect, SelectOption } from '@/components/app-select';
 import { useAuthStore, type ProfileFormData } from '@/store/auth-store';
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, Image } from 'react-native';
+import Animated, { SlideInRight, SlideInLeft } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
@@ -15,14 +16,13 @@ import {
   MinusSignIcon,
   PlusSignIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import PagerView from "react-native-pager-view";
 import { cn, Label } from 'heroui-native';
 import { withUniwind } from "uniwind";
 import { AppDatePicker } from "@/components/app-date-picker";
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { AppHeader } from "@/components/app-header";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
-const StyledPagerView = withUniwind(PagerView);
-
 
 const nationalityOptions: SelectOption[] = [
   { value: 'mongolia', label: 'Монгол' },
@@ -73,7 +73,7 @@ const bankOptions: SelectOption[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const pagerRef = useRef<PagerView>(null);
+  const prevPageRef = useRef(0);
   const [currentPage, setCurrentPage] = useState(0);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
@@ -387,7 +387,7 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <View className="flex-1">
           {fields.map((field, index) => (
             <View key={field.id} className="flex-row gap-3 pb-6">
               <View className="flex-1">
@@ -447,7 +447,6 @@ export default function OnboardingScreen() {
                         placeholder="0000/00/00"
                         isRequired
                         isInvalid={!!fieldError}
-                        errorMessage={fieldError?.message}
                       />
                     );
                   }}
@@ -455,7 +454,7 @@ export default function OnboardingScreen() {
               </View>
             </View>
           ))}
-          </ScrollView>
+          </View>
         </View>
       );
     };
@@ -676,37 +675,39 @@ export default function OnboardingScreen() {
 
     // Move to next page if validation passed
     if (currentPage < totalPages - 1) {
-      pagerRef.current?.setPage(currentPage + 1);
+      prevPageRef.current = currentPage;
+      setCurrentPage(currentPage + 1);
     }
   };
 
   const handleBack = () => {
     if (currentPage > 0) {
-      pagerRef.current?.setPage(currentPage - 1);
+      prevPageRef.current = currentPage;
+      setCurrentPage(currentPage - 1);
     }
   };
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <View className="pb-7.5">
-          <AppText className="text-xl font-medium">Компанийн нэр</AppText>
-        </View>
+        <AppHeader title="Компанийн нэр" />
 
-        <StyledPagerView
-          ref={pagerRef}
-          className="flex-1"
-          initialPage={0}
-          onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
-          scrollEnabled={false}
-          overdrag={false}
+        <KeyboardAwareScrollView
+          style={{flex:1}}
+          showsVerticalScrollIndicator={false}
+          bottomOffset={20}
         >
-          {pages.map((PageComponent, index) => (
-            <View key={index.toString()}>
-              <PageComponent />
-            </View>
-          ))}
-        </StyledPagerView>
+          <Animated.View
+            key={currentPage}
+            entering={currentPage >= prevPageRef.current ? SlideInRight.duration(300) : SlideInLeft.duration(300)}
+            style={{ flex: 1 }}
+          >
+            {(() => {
+              const PageComponent = pages[currentPage];
+              return <PageComponent />;
+            })()}
+          </Animated.View>
+        </KeyboardAwareScrollView>
 
         <View className="flex-row justify-between gap-3 pt-4">
           {currentPage > 0 ? (
