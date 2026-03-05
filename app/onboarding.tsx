@@ -79,6 +79,7 @@ export default function OnboardingScreen() {
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
+  const companyName = useAuthStore((state) => state.companyName);
 
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -690,7 +691,7 @@ export default function OnboardingScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader title="Компанийн нэр" />
+        <AppHeader title={companyName ?? ''} />
 
         <KeyboardAwareScrollView
           style={{flex:1}}

@@ -131,6 +131,9 @@ export default function LoginScreen() {
 
       // Save to store
       setToken(mockToken, phoneNumber);
+      // TODO: Replace with actual values from API response
+      useAuthStore.getState().setAttendanceType('location');
+      useAuthStore.setState({ companyName: 'Datacom' });
 
       // Navigate based on onboarding status
       if (!hasCompletedOnboarding) {

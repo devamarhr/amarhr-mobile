@@ -2,7 +2,7 @@ import { AppText } from '@/components/app-text';
 import { cn, FieldError, Label, PressableFeedback } from 'heroui-native';
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DatePicker from 'react-native-date-picker';
 import dayjs from 'dayjs';
 
 interface AppDatePickerProps {
@@ -170,12 +170,18 @@ export function AppDatePicker({
         </FieldError>
       )}
 
-      <DateTimePickerModal
-        isVisible={isOpen}
+      <DatePicker
+        modal
+        open={isOpen}
         mode={mode}
         date={value || new Date()}
         minimumDate={minimumDate}
         maximumDate={maximumDate}
+        locale="mn"
+        is24hourSource="locale"
+        title={label ?? ''}
+        confirmText="Сонгох"
+        cancelText="Болих"
         onConfirm={(selectedDate) => {
           setIsOpen(false);
           onValueChange?.(selectedDate);

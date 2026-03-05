@@ -1,4 +1,4 @@
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from "expo-router";
 import { Avatar } from "heroui-native";
 import { withUniwind } from "uniwind";
@@ -14,6 +14,9 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import PagerView from 'react-native-pager-view';
 import dayjs from 'dayjs';
+import NetInfo from '@react-native-community/netinfo';
+import * as Location from 'expo-location';
+import { useAuthStore } from "@/store/auth-store";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -28,7 +31,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [activeAnnouncementIndex, setActiveAnnouncementIndex] = useState(0);
-  const [clockedIn, setClockedIn] = useState(true);
+  const companyName = useAuthStore((state) => state.companyName);
+  const attendanceType = useAuthStore((state) => state.attendanceType);
+  const { toggleSupervisor } = useAuthStore();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -45,7 +50,7 @@ export default function HomeScreen() {
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <View className="flex-row justify-between items-center py-[7px]">
-          <AppText className="text-xl font-medium">Датаком</AppText>
+          <AppText className="text-xl font-medium">{companyName}</AppText>
           <View className="flex-row gap-4 items-center">
             <Pressable onPress={() => router.navigate('/contact')}>
               <HugeiconsIcon icon={UserMultipleIcon} color="#222222" size={24} />
@@ -101,7 +106,7 @@ export default function HomeScreen() {
 
         <View className="flex-row justify-around mt-10 px-4">
           <View className="items-center">
-            <HugeiconsIcon icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
+            <HugeiconsIcon onPress={toggleSupervisor} icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
             <AppText className="text-xl mt-2">09:12</AppText>
           </View>
           <View className="items-center">
@@ -116,7 +121,26 @@ export default function HomeScreen() {
 
         <View className="flex-1 items-center justify-center">
           <Pressable
-            onPress={() => setClockedIn(!clockedIn)}
+            onPress={async () => {
+              if (attendanceType === 'wifi') {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert('Зөвшөөрөл', 'WiFi мэдээлэл авахын тулд байршлын зөвшөөрөл шаардлагатай.');
+                  return;
+                }
+                const state = await NetInfo.fetch();
+                console.log(state.details);
+                const ssid = state.type === 'wifi' ? (state.details as { ssid?: string })?.ssid : null;
+                if (!ssid) {
+                  Alert.alert('WiFi холбогдоогүй', 'WiFi сүлжээнд холбогдсон байх шаардлагатай.');
+                  return;
+                }
+              } else if (attendanceType === 'location') {
+                router.navigate('/attendance-map');
+              } else {
+                console.log("no attendance method");
+              }
+            }}
             className="w-[180px] h-[180px] rounded-full"
             style={{
               backgroundColor: '#FFFFFF',
@@ -130,7 +154,7 @@ export default function HomeScreen() {
             }}
           >
             <AppText className="text-2xl">
-              {clockedIn ? 'Тарлаа' : 'Ирлээ'}
+              Ирлээ
             </AppText>
           </Pressable>
         </View>

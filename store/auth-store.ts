@@ -33,6 +33,8 @@ interface AuthState {
   userName: string | null;
   hasCompletedOnboarding: boolean;
   isSupervisor: boolean;
+  companyName: string | null;
+  attendanceType: 'wifi' | 'location' | null;
 
   // Onboarding data
   lastName: string | null;
@@ -54,6 +56,7 @@ interface AuthState {
 
   // Actions
   setToken: (token: string, phoneNumber: string) => void;
+  setAttendanceType: (type: 'wifi' | 'location') => void;
   completeOnboarding: (data: ProfileFormData) => void;
   logout: () => void;
   clearAuth: () => void;
@@ -69,6 +72,8 @@ export const useAuthStore = create<AuthState>()(
       userName: null,
       hasCompletedOnboarding: false,
       isSupervisor: false,
+      companyName: null,
+      attendanceType: null,
       lastName: null,
       firstName: null,
       gender: null,
@@ -88,6 +93,10 @@ export const useAuthStore = create<AuthState>()(
 
       setToken: (token: string, phoneNumber: string) => {
         set({ token, phoneNumber, isAuthenticated: true });
+      },
+
+      setAttendanceType: (type: 'wifi' | 'location') => {
+        set({ attendanceType: type });
       },
 
       completeOnboarding: (data) => {
@@ -121,6 +130,8 @@ export const useAuthStore = create<AuthState>()(
           userName: null,
           hasCompletedOnboarding: false,
           isSupervisor: false,
+          companyName: null,
+          attendanceType: null,
           lastName: null,
           firstName: null,
           gender: null,
@@ -148,6 +159,8 @@ export const useAuthStore = create<AuthState>()(
           userName: null,
           hasCompletedOnboarding: false,
           isSupervisor: false,
+          companyName: null,
+          attendanceType: null,
           lastName: null,
           firstName: null,
           gender: null,
