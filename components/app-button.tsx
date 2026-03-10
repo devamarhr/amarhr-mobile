@@ -78,7 +78,7 @@ export function AppButton({
     // Fall back to default label rendering
     if (label) {
       return (
-        <Button.Label numberOfLines={1} className={cn(
+        <Button.Label className={cn(
           'text-black text-sm font-medium',
           isDisabled && 'text-white',
           labelClassName

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Child = {
-  gender: 'boy' | 'girl';
+  gender: 'female' | 'male';
   birthDate: string;
 };
 
@@ -17,11 +17,11 @@ export interface ProfileFormData {
   email: string;
   emergencyContact: string;
   emergencyRelationship: string;
-  city: string;
-  district: string;
-  address: string;
+  aimag: string;
+  soum: string;
+  street: string;
   children: Child[];
-  salaryAccount: string;
+  bankAccount: string;
   bank: string;
   profileImage?: string;
 }
@@ -46,11 +46,11 @@ interface AuthState {
   email: string | null;
   emergencyContact: string | null;
   emergencyRelationship: string | null;
-  city: string | null;
-  district: string | null;
-  address: string | null;
+  aimag: string | null;
+  soum: string | null;
+  street: string | null;
   children: Child[];
-  salaryAccount: string | null;
+  bankAccount: string | null;
   bank: string | null;
   profileImage: string | null;
 
@@ -83,11 +83,11 @@ export const useAuthStore = create<AuthState>()(
       email: null,
       emergencyContact: null,
       emergencyRelationship: null,
-      city: null,
-      district: null,
-      address: null,
+      aimag: null,
+      soum: null,
+      street: null,
       children: [],
-      salaryAccount: null,
+      bankAccount: null,
       bank: null,
       profileImage: null,
 
@@ -110,14 +110,13 @@ export const useAuthStore = create<AuthState>()(
           email: data.email,
           emergencyContact: data.emergencyContact,
           emergencyRelationship: data.emergencyRelationship,
-          city: data.city,
-          district: data.district,
-          address: data.address,
+          aimag: data.aimag,
+          soum: data.soum,
+          street: data.street,
           children: data.children,
-          salaryAccount: data.salaryAccount,
+          bankAccount: data.bankAccount,
           bank: data.bank,
           profileImage: data.profileImage ?? null,
-          userName: `${data.firstName} ${data.lastName}`,
           hasCompletedOnboarding: true,
         });
       },
@@ -141,11 +140,11 @@ export const useAuthStore = create<AuthState>()(
           email: null,
           emergencyContact: null,
           emergencyRelationship: null,
-          city: null,
-          district: null,
-          address: null,
+          aimag: null,
+          soum: null,
+          street: null,
           children: [],
-          salaryAccount: null,
+          bankAccount: null,
           bank: null,
           profileImage: null,
         });
@@ -170,11 +169,11 @@ export const useAuthStore = create<AuthState>()(
           email: null,
           emergencyContact: null,
           emergencyRelationship: null,
-          city: null,
-          district: null,
-          address: null,
+          aimag: null,
+          soum: null,
+          street: null,
           children: [],
-          salaryAccount: null,
+          bankAccount: null,
           bank: null,
           profileImage: null,
         });

@@ -285,7 +285,7 @@ export default function OnboardingScreen() {
       <View className="gap-6">
         <Controller
           control={control}
-          name="city"
+          name="aimag"
           rules={{ required: 'Хот/аймаг сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = cityOptions.find(opt => opt.value === value);
@@ -297,15 +297,15 @@ export default function OnboardingScreen() {
                 options={cityOptions}
                 placeholder="Сонгох"
                 isRequired
-                errorMessage={errors.city?.message}
-                isInvalid={!!errors.city}
+                errorMessage={errors.aimag?.message}
+                isInvalid={!!errors.aimag}
               />
             );
           }}
         />
         <Controller
           control={control}
-          name="district"
+          name="soum"
           rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = districtOptions.find(opt => opt.value === value);
@@ -317,15 +317,15 @@ export default function OnboardingScreen() {
                 options={districtOptions}
                 placeholder="Сонгох"
                 isRequired
-                errorMessage={errors.district?.message}
-                isInvalid={!!errors.district}
+                errorMessage={errors.soum?.message}
+                isInvalid={!!errors.soum}
               />
             );
           }}
         />
         <Controller
           control={control}
-          name="address"
+          name="street"
           rules={{ required: 'Хаяг оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
@@ -338,8 +338,8 @@ export default function OnboardingScreen() {
               multiline
               numberOfLines={4}
               isRequired
-              errorMessage={errors.address?.message}
-              isInvalid={!!errors.address}
+              errorMessage={errors.street?.message}
+              isInvalid={!!errors.street}
             />
           )}
         />
@@ -348,7 +348,7 @@ export default function OnboardingScreen() {
 
     const Page4 = () => {
       const addChild = () => {
-        append({ gender: 'girl', birthDate: '' });
+        append({ gender: 'female', birthDate: '' });
       };
 
       const removeChild = () => {
@@ -408,20 +408,20 @@ export default function OnboardingScreen() {
                           className="flex-1 bg-white border-darkgray/30 rounded-full"
                           labelClassName={cn(
                             "text-darkgray/50",
-                            value === 'girl' && 'text-black'
+                            value === 'female' && 'text-black'
                           )}
-                          isDisabled={value === 'girl'}
-                          onPress={() => onChange('girl')}
+                          isDisabled={value === 'female'}
+                          onPress={() => onChange('female')}
                         />
                         <AppButton
                           label="Хүү"
                           className="flex-1 bg-white border-darkgray/30 rounded-full"
                           labelClassName={cn(
                             "text-darkgray/50",
-                            value === 'boy' && 'text-black'
+                            value === 'male' && 'text-black'
                           )}
-                          isDisabled={value === 'boy'}
-                          onPress={() => onChange('boy')}
+                          isDisabled={value === 'male'}
+                          onPress={() => onChange('male')}
                         />
                       </View>
                     </View>
@@ -464,7 +464,7 @@ export default function OnboardingScreen() {
       <View className="gap-6">
         <Controller
           control={control}
-          name="salaryAccount"
+          name="bankAccount"
           rules={{ required: 'Цалингийн данс оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
@@ -475,8 +475,8 @@ export default function OnboardingScreen() {
               placeholder="Дансны дугаар"
               keyboardType="numeric"
               isRequired
-              errorMessage={errors.salaryAccount?.message}
-              isInvalid={!!errors.salaryAccount}
+              errorMessage={errors.bankAccount?.message}
+              isInvalid={!!errors.bankAccount}
             />
           )}
         />
@@ -609,11 +609,11 @@ export default function OnboardingScreen() {
       email: '',
       emergencyContact: '',
       emergencyRelationship: '',
-      city: 'ulaanbaatar',
-      district: '',
-      address: '',
+      aimag: 'ulaanbaatar',
+      soum: '',
+      street: '',
       children: [],
-      salaryAccount: '',
+      bankAccount: '',
       bank: '',
     },
   });
@@ -659,9 +659,9 @@ export default function OnboardingScreen() {
     const pageFields: Record<number, (keyof ProfileFormData)[]> = {
       0: ['lastName', 'firstName', 'gender', 'nationality', 'familyName'],
       1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelationship'],
-      2: ['city', 'district', 'address'],
+      2: ['aimag', 'soum', 'street'],
       3: ['children'],
-      4: ['salaryAccount', 'bank'],
+      4: ['bankAccount', 'bank'],
       5: [], // Page 6 (profile image) is optional
     };
 

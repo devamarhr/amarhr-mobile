@@ -68,7 +68,7 @@ const bankOptions: SelectOption[] = [
 
 export default function PersonalInfoEditScreen() {
   const router = useRouter();
-  const { lastName, firstName, gender, nationality, familyName, phoneNumber, registerNumber, email, emergencyContact, emergencyRelationship, city, district, address, children, salaryAccount, bank } = useAuthStore();
+  const { lastName, firstName, gender, nationality, familyName, phoneNumber, registerNumber, email, emergencyContact, emergencyRelationship, aimag, soum, street, children, bankAccount, bank } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -86,11 +86,11 @@ export default function PersonalInfoEditScreen() {
       email: email ?? '',
       emergencyContact: emergencyContact ?? '',
       emergencyRelationship: emergencyRelationship ?? 'parent',
-      city: city ?? 'ulaanbaatar',
-      district: district ?? '',
-      address: address ?? '',
+      aimag: aimag ?? 'ulaanbaatar',
+      soum: soum ?? '',
+      street: street ?? '',
       children: children ?? [],
-      salaryAccount: salaryAccount ?? '',
+      bankAccount: bankAccount ?? '',
       bank: bank ?? 'khan',
     },
   });
@@ -311,7 +311,7 @@ export default function PersonalInfoEditScreen() {
             />
             <Controller
               control={control}
-              name="city"
+              name="aimag"
               rules={{ required: 'Хот/аймаг сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
                 const selectedOption = cityOptions.find(opt => opt.value === value);
@@ -323,15 +323,15 @@ export default function PersonalInfoEditScreen() {
                     options={cityOptions}
                     placeholder="Сонгох"
                     isRequired
-                    errorMessage={errors.city?.message}
-                    isInvalid={!!errors.city}
+                    errorMessage={errors.aimag?.message}
+                    isInvalid={!!errors.aimag}
                   />
                 );
               }}
             />
             <Controller
               control={control}
-              name="district"
+              name="soum"
               rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
                 const selectedOption = districtOptions.find(opt => opt.value === value);
@@ -343,15 +343,15 @@ export default function PersonalInfoEditScreen() {
                     options={districtOptions}
                     placeholder="Сонгох"
                     isRequired
-                    errorMessage={errors.district?.message}
-                    isInvalid={!!errors.district}
+                    errorMessage={errors.soum?.message}
+                    isInvalid={!!errors.soum}
                   />
                 );
               }}
             />
             <Controller
               control={control}
-              name="address"
+              name="street"
               rules={{ required: 'Хаяг оруулна уу' }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
@@ -364,8 +364,8 @@ export default function PersonalInfoEditScreen() {
                   multiline
                   numberOfLines={4}
                   isRequired
-                  errorMessage={errors.address?.message}
-                  isInvalid={!!errors.address}
+                  errorMessage={errors.street?.message}
+                  isInvalid={!!errors.street}
                 />
               )}
             />
@@ -395,7 +395,7 @@ export default function PersonalInfoEditScreen() {
                   className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                   isIconOnly
                   leftIcon={<HugeiconsIcon icon={PlusSignIcon} color="#222222" size={20} />}
-                  onPress={() => append({ gender: 'girl', birthDate: '' })}
+                  onPress={() => append({ gender: 'female', birthDate: '' })}
                 />
               </View>
             </View>
@@ -419,20 +419,20 @@ export default function PersonalInfoEditScreen() {
                             className="flex-1 bg-white border-darkgray/30 rounded-full"
                             labelClassName={cn(
                               "text-darkgray/50",
-                              value === 'girl' && 'text-black'
+                              value === 'female' && 'text-black'
                             )}
-                            isDisabled={value === 'girl'}
-                            onPress={() => onChange('girl')}
+                            isDisabled={value === 'female'}
+                            onPress={() => onChange('female')}
                           />
                           <AppButton
                             label="Хүү"
                             className="flex-1 bg-white border-darkgray/30 rounded-full"
                             labelClassName={cn(
                               "text-darkgray/50",
-                              value === 'boy' && 'text-black'
+                              value === 'male' && 'text-black'
                             )}
-                            isDisabled={value === 'boy'}
-                            onPress={() => onChange('boy')}
+                            isDisabled={value === 'male'}
+                            onPress={() => onChange('male')}
                           />
                         </View>
                       </View>
@@ -466,7 +466,7 @@ export default function PersonalInfoEditScreen() {
 
             <Controller
               control={control}
-              name="salaryAccount"
+              name="bankAccount"
               rules={{ required: 'Цалингийн данс оруулна уу' }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
@@ -477,8 +477,8 @@ export default function PersonalInfoEditScreen() {
                   placeholder="Дансны дугаар"
                   keyboardType="numeric"
                   isRequired
-                  errorMessage={errors.salaryAccount?.message}
-                  isInvalid={!!errors.salaryAccount}
+                  errorMessage={errors.bankAccount?.message}
+                  isInvalid={!!errors.bankAccount}
                 />
               )}
             />

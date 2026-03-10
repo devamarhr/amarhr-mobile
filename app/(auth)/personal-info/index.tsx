@@ -52,9 +52,9 @@ export default function PersonalInfoScreen() {
   const fullName = `${store.lastName ?? ''} ${store.firstName ?? ''}`.trim();
   const genderDisplay = store.gender === 'male' ? 'Эрэгтэй' : store.gender === 'female' ? 'Эмэгтэй' : null;
   const emergencyDisplay = [store.emergencyContact, store.emergencyRelationship ? relationshipLabels[store.emergencyRelationship] : null].filter(Boolean).join(' /') + (store.emergencyRelationship ? '/' : '');
-  const addressDisplay = [store.city ? cityLabels[store.city] : null, store.district ? districtLabels[store.district] : null, store.address].filter(Boolean).join(', ');
+  const addressDisplay = [store.aimag ? cityLabels[store.aimag] : null, store.soum ? districtLabels[store.soum] : null, store.street].filter(Boolean).join(', ');
   const childrenCount = store.children?.length ?? 0;
-  const salaryDisplay = [store.salaryAccount, store.bank ? bankLabels[store.bank] : null].filter(Boolean).join(' /') + (store.bank ? '/' : '');
+  const salaryDisplay = [store.bankAccount, store.bank ? bankLabels[store.bank] : null].filter(Boolean).join(' /') + (store.bank ? '/' : '');
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>

@@ -36,14 +36,9 @@ import { useReanimatedKeyboardAnimation, useWindowDimensions } from "react-nativ
 import Animated, { FadeInLeft, FadeInRight, FadeOut, useAnimatedStyle, ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
-import { LinearGradient } from "expo-linear-gradient";
-import { BottomSheetModalProvider, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import dayjs from 'dayjs';
 import { router } from "expo-router";
 
-const StyledHugeiconsIcon = withUniwind(HugeiconsIcon);
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 const AvatarVariants = () => {
