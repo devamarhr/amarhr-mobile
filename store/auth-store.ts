@@ -26,15 +26,38 @@ export interface ProfileFormData {
   profileImage?: string;
 }
 
-interface AuthState {
-  token: string | null;
-  phoneNumber: string | null;
-  isAuthenticated: boolean;
-  userName: string | null;
+export interface ProfileData {
   hasCompletedOnboarding: boolean;
   isSupervisor: boolean;
   companyName: string | null;
-  attendanceType: 'wifi' | 'location' | null;
+  attendanceType: 'wifi' | 'location';
+
+  lastName: string | null;
+  firstName: string | null;
+  gender: 'male' | 'female' | null;
+  nationality: string | null;
+  familyName: string | null;
+  registerNumber: string | null;
+  email: string | null;
+  emergencyContact: string | null;
+  emergencyRelationship: string | null;
+  aimag: string | null;
+  soum: string | null;
+  street: string | null;
+  children: Child[];
+  bankAccount: string | null;
+  bank: string | null;
+  profileImage: string | null;
+}
+
+interface AuthState {
+  token: string | null;
+  phone: string | null;
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  isSupervisor: boolean;
+  companyName: string | null;
+  attendanceType: 'wifi' | 'location';
 
   // Onboarding data
   lastName: string | null;
@@ -55,7 +78,8 @@ interface AuthState {
   profileImage: string | null;
 
   // Actions
-  setToken: (token: string, phoneNumber: string) => void;
+  setToken: (token: string, phone: string) => void;
+  setInitialData: (data: ProfileData) => void;
   setAttendanceType: (type: 'wifi' | 'location') => void;
   completeOnboarding: (data: ProfileFormData) => void;
   logout: () => void;
@@ -67,13 +91,12 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
-      phoneNumber: null,
+      phone: null,
       isAuthenticated: false,
-      userName: null,
       hasCompletedOnboarding: false,
       isSupervisor: false,
       companyName: null,
-      attendanceType: null,
+      attendanceType: 'location',
       lastName: null,
       firstName: null,
       gender: null,
@@ -91,8 +114,33 @@ export const useAuthStore = create<AuthState>()(
       bank: null,
       profileImage: null,
 
-      setToken: (token: string, phoneNumber: string) => {
-        set({ token, phoneNumber, isAuthenticated: true });
+      setToken: (token: string, phone: string) => {
+        set({ token, phone, isAuthenticated: true });
+      },
+
+      setInitialData: (data: ProfileData) => {
+        set({
+          hasCompletedOnboarding: data.hasCompletedOnboarding,
+          isSupervisor: data.isSupervisor,
+          companyName: data.companyName,
+          attendanceType: data.attendanceType,
+          lastName: data.lastName,
+          firstName: data.firstName,
+          gender: data.gender,
+          nationality: data.nationality,
+          familyName: data.familyName,
+          registerNumber: data.registerNumber,
+          email: data.email,
+          emergencyContact: data.emergencyContact,
+          emergencyRelationship: data.emergencyRelationship,
+          aimag: data.aimag,
+          soum: data.soum,
+          street: data.street,
+          children: data.children,
+          bankAccount: data.bankAccount,
+          bank: data.bank,
+          profileImage: data.profileImage ?? null,
+        });
       },
 
       setAttendanceType: (type: 'wifi' | 'location') => {
@@ -124,13 +172,12 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({
           token: null,
-          phoneNumber: null,
+          phone: null,
           isAuthenticated: false,
-          userName: null,
           hasCompletedOnboarding: false,
           isSupervisor: false,
           companyName: null,
-          attendanceType: null,
+          attendanceType: 'location',
           lastName: null,
           firstName: null,
           gender: null,
@@ -153,13 +200,12 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         set({
           token: null,
-          phoneNumber: null,
+          phone: null,
           isAuthenticated: false,
-          userName: null,
           hasCompletedOnboarding: false,
           isSupervisor: false,
           companyName: null,
-          attendanceType: null,
+          attendanceType: 'location',
           lastName: null,
           firstName: null,
           gender: null,

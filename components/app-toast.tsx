@@ -144,7 +144,7 @@ export function AppToast({
 
   return (
     <Toast variant={variant} className="flex-row gap-3 shadow-lg shadow-black/15" {...toastProps}>
-      {icon && <View className={iconContainerClassName}>{icon}</View>}
+      {icon && <View className={cn('justify-center',iconContainerClassName)}>{icon}</View>}
 
       <View className={cn('flex-1',contentContainerClassName)}>
         {title && <Toast.Title className={titleClassName}>{title}</Toast.Title>}

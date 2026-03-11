@@ -74,7 +74,7 @@ export default function PersonalInfoScreen() {
           <InfoField label="Регистрийн дугаар" value={store.registerNumber} />
           <InfoField label="Иргэншил" value={store.nationality ? nationalityLabels[store.nationality] : null} />
           <InfoField label="Ургийн овог" value={store.familyName} />
-          <InfoField label="Утасны дугаар" value={store.phoneNumber} />
+          <InfoField label="Утасны дугаар" value={store.phone} />
           <InfoField label="И-мэйл хаяг" value={store.email} />
           <InfoField label="Яаралтай үед холбоо барих дугаар" value={emergencyDisplay || null} />
           <InfoField label="Оршин суугаа хаяг" value={addressDisplay || null} />

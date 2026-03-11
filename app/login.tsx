@@ -1,42 +1,47 @@
 import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
 import { AppTextField } from '@/components/app-text-field';
-import { useAuthStore } from '@/store/auth-store';
+import { ProfileData, useAuthStore } from '@/store/auth-store';
 import { Label, InputOTP, FieldError, TextField, Input, Description, useToast } from 'heroui-native';
 import { AppInputOTPSlot } from '@/components/app-input-otp-slot';
 import { AppToast } from '@/components/app-toast';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Lock, LockIcon, PhoneArrowDownIcon, SmartPhone01Icon } from "@hugeicons-pro/core-stroke-standard";
+import { Alert01Icon, Lock, LockIcon, PhoneArrowDownIcon, SmartPhone01Icon } from "@hugeicons-pro/core-stroke-standard";
 import { Image } from "expo-image";
 import { withUniwind } from "uniwind";
+import { Config } from "@/config/config";
+import { api } from "@/config/api";
 
 const StyledImage = withUniwind(Image);
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type PhoneFormData = {
-  phoneNumber: string;
+  phone: string;
 };
+
+const RESEND_TIME = 5;
 
 export default function LoginScreen() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const setToken = useAuthStore((state) => state.setToken);
+  const setInitialData = useAuthStore((state) => state.setInitialData);
 
   const { toast } = useToast();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
-  const [resendTimer, setResendTimer] = useState(90);
+  const [resendTimer, setResendTimer] = useState(RESEND_TIME);
 
   const {
     control,
@@ -44,7 +49,7 @@ export default function LoginScreen() {
     formState: { errors },
   } = useForm<PhoneFormData>({
     defaultValues: {
-      phoneNumber: '',
+      phone: '',
     },
   });
 
@@ -75,23 +80,28 @@ export default function LoginScreen() {
   const handleRequestOtp = async (data: PhoneFormData) => {
     setIsLoading(true);
     setError('');
-    setPhoneNumber(data.phoneNumber);
+    setPhone(data.phone);
 
     try {
-      // TODO: Replace with your actual API call
-      // const response = await fetch('YOUR_API/request-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phoneNumber: data.phoneNumber }),
-      // });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Move to OTP step
-      setStep('otp');
-    } catch {
-      setError('Failed to send OTP. Please try again.');
+      const res = await api({path: '/send-otp', method: 'POST', data: {phone: data.phone}})
+      if(res.status === 200){
+        setStep('otp');
+      }else{
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      setError('Алдаа гарлаа. Дахин оролдоно уу.');
     } finally {
       setIsLoading(false);
     }
@@ -104,42 +114,48 @@ export default function LoginScreen() {
       return;
     }
 
-    if (otp !== '123456') {
-      setError('Баталгаажуулах код буруу байна');
-      toast.show({
-        component: (props) => (
-          <AppToast
-            {...props}
-            variant="danger"
-            title="Баталгаажуулах код буруу байна"
-            description="Зөв кодоо дахин оруулна уу"
-          />
-        ),
-      });
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await api<ProfileData & {token: string|null}>({path: '/verify-otp', method: 'POST', data: {phone: phone, code: otp}})
+      if(res.status === 200){
+        const token = res.data['token']
+        if(token === null){
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="danger"
+                title="Алдаа"
+                description="Нэвтрэхэд алдаа гарлаа"
+                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              />
+            ),
+          });
+        }else{
+          setInitialData(res.data);
+          setToken(token, phone);
 
-      // Mock token - replace with actual token from API
-      const mockToken = 'mock_jwt_token_' + Date.now();
-
-      // Save to store
-      setToken(mockToken, phoneNumber);
-      // TODO: Replace with actual values from API response
-      useAuthStore.getState().setAttendanceType('location');
-      useAuthStore.setState({ companyName: 'Datacom' });
-
-      // Navigate based on onboarding status
-      if (!hasCompletedOnboarding) {
-        router.replace('/onboarding');
-      } else {
-        router.replace('/(auth)/(tabs)');
+          // Navigate based on onboarding status
+          if (!hasCompletedOnboarding) {
+            router.replace('/onboarding');
+          } else {
+            router.replace('/(auth)/(tabs)');
+          }
+        }
+      }else{
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
       }
     } catch {
       setError('Алдаа гарлаа. Дахин оролдоно уу.');
@@ -152,20 +168,26 @@ export default function LoginScreen() {
   const handleResendOtp = async () => {
     setIsResending(true);
     setError('');
-    setResendTimer(90); // Reset timer
+    setResendTimer(RESEND_TIME); // Reset timer
+    setOtp('');
 
     try {
-      // TODO: Replace with your actual API call
-      // const response = await fetch('YOUR_API/request-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phoneNumber }),
-      // });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await api({path: '/send-otp', method: 'POST', data: {phone: phone}})
+      if(res.status !== 200){
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
     } catch {
-      setError('Failed to resend OTP. Please try again.');
+      setError('Алдаа гарлаа. Дахин оролдоно уу.');
     } finally {
       setIsResending(false);
     }
@@ -189,7 +211,7 @@ export default function LoginScreen() {
           <View className="gap-6">
             <Controller
               control={control}
-              name="phoneNumber"
+              name="phone"
               rules={{
                 required: 'Утасны дугаар оруулна уу',
                 pattern: {
@@ -204,8 +226,8 @@ export default function LoginScreen() {
                   keyboardType="phone-pad"
                   value={value}
                   onChangeText={onChange}
-                  isInvalid={!!errors.phoneNumber || !!error}
-                  errorMessage={errors.phoneNumber?.message || error}
+                  isInvalid={!!errors.phone || !!error}
+                  errorMessage={errors.phone?.message || error}
                   leftIcon={
                     <HugeiconsIcon icon={SmartPhone01Icon} size={22} />
                   }
@@ -226,7 +248,7 @@ export default function LoginScreen() {
             <View className="gap-3">
               <AppText className="text-xl text-center">Баталгаажуулах код</AppText>
               <AppText className="text-sm text-muted text-center">
-                {phoneNumber} дугаарт илгээсэн кодыг оруулна уу
+                {phone} дугаарт илгээсэн кодыг оруулна уу
               </AppText>
             </View>
 
@@ -288,7 +310,7 @@ export default function LoginScreen() {
                   setStep('phone');
                   setOtp('');
                   setError('');
-                  setResendTimer(90);
+                  setResendTimer(RESEND_TIME);
                 }}
                 className="border-gray/30"
               />
