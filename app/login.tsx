@@ -25,7 +25,7 @@ type PhoneFormData = {
   phone: string;
 };
 
-const RESEND_TIME = 5;
+const RESEND_TIME = 90;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -83,7 +83,7 @@ export default function LoginScreen() {
     setPhone(data.phone);
 
     try {
-      const res = await api({path: '/send-otp', method: 'POST', data: {phone: data.phone}})
+      const res = await api({path: '/send-otp', method: 'POST', data: {phone: data.phone}, auth: false})
       if(res.status === 200){
         setStep('otp');
       }else{
@@ -92,7 +92,7 @@ export default function LoginScreen() {
             <AppToast
               {...props}
               variant="danger"
-              title="Алдаа"
+              // title="Алдаа"
               description={res.message}
               icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
             />
@@ -118,7 +118,7 @@ export default function LoginScreen() {
     setError('');
 
     try {
-      const res = await api<ProfileData & {token: string|null}>({path: '/verify-otp', method: 'POST', data: {phone: phone, code: otp}})
+      const res = await api<ProfileData & {token: string|null}>({path: '/verify-otp', method: 'POST', auth: false, data: {phone: phone, code: otp}})
       if(res.status === 200){
         const token = res.data['token']
         if(token === null){
@@ -127,7 +127,7 @@ export default function LoginScreen() {
               <AppToast
                 {...props}
                 variant="danger"
-                title="Алдаа"
+                // title="Алдаа"
                 description="Нэвтрэхэд алдаа гарлаа"
                 icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
               />
@@ -136,13 +136,6 @@ export default function LoginScreen() {
         }else{
           setInitialData(res.data);
           setToken(token, phone);
-
-          // Navigate based on onboarding status
-          if (!hasCompletedOnboarding) {
-            router.replace('/onboarding');
-          } else {
-            router.replace('/(auth)/(tabs)');
-          }
         }
       }else{
         toast.show({
@@ -150,7 +143,7 @@ export default function LoginScreen() {
             <AppToast
               {...props}
               variant="danger"
-              title="Алдаа"
+              // title="Алдаа"
               description={res.message}
               icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
             />
@@ -172,14 +165,14 @@ export default function LoginScreen() {
     setOtp('');
 
     try {
-      const res = await api({path: '/send-otp', method: 'POST', data: {phone: phone}})
+      const res = await api({path: '/send-otp', method: 'POST', data: {phone: phone}, auth: false})
       if(res.status !== 200){
         toast.show({
           component: (props) => (
             <AppToast
               {...props}
               variant="danger"
-              title="Алдаа"
+              // title="Алдаа"
               description={res.message}
               icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
             />

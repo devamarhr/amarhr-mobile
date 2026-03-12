@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { PencilEdit02Icon } from "@hugeicons-pro/core-stroke-standard";
 import { useAuthStore } from '@/store/auth-store';
 import { useRouter } from 'expo-router';
+import { useSelectOptions } from '@/hooks/use-select-options';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -20,41 +21,27 @@ function InfoField({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-const nationalityLabels: Record<string, string> = {
-  mongolia: 'Монгол', china: 'Хятад', russia: 'Орос',
-  korea: 'Солонгос', japan: 'Япон', usa: 'АНУ', other: 'Бусад',
-};
-
-const relationshipLabels: Record<string, string> = {
-  parent: 'Эцэг эх', spouse: 'Эхнэр/нөхөр', sibling: 'Ах/эгч/дүү',
-  child: 'Хүүхэд', friend: 'Найз', other: 'Бусад',
-};
-
-const cityLabels: Record<string, string> = {
-  ulaanbaatar: 'Улаанбаатар', darkhan: 'Дархан',
-  erdenet: 'Эрдэнэт', choibalsan: 'Чойбалсан', other: 'Бусад',
-};
-
-const districtLabels: Record<string, string> = {
-  bgd: 'Баянгол', bzd: 'Баянзүрх', shd: 'Сонгинохайрхан',
-  chd: 'Чингэлтэй', hud: 'Хан-Уул', sud: 'Сүхбаатар', other: 'Бусад',
-};
-
-const bankLabels: Record<string, string> = {
-  khan: 'Хаан банк', tdb: 'Худалдаа хөгжлийн банк', golomt: 'Голомт банк',
-  state: 'Төрийн банк', xac: 'Хас банк', capitron: 'Капитрон банк', other: 'Бусад',
-};
+function findLabel(options: { value: string; label: string }[], value: string | null): string | null {
+  if (!value) return null;
+  return options.find(opt => opt.value === value)?.label ?? value;
+}
 
 export default function PersonalInfoScreen() {
   const router = useRouter();
   const store = useAuthStore();
+  const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
 
   const fullName = `${store.lastName ?? ''} ${store.firstName ?? ''}`.trim();
   const genderDisplay = store.gender === 'male' ? 'Эрэгтэй' : store.gender === 'female' ? 'Эмэгтэй' : null;
-  const emergencyDisplay = [store.emergencyContact, store.emergencyRelationship ? relationshipLabels[store.emergencyRelationship] : null].filter(Boolean).join(' /') + (store.emergencyRelationship ? '/' : '');
-  const addressDisplay = [store.aimag ? cityLabels[store.aimag] : null, store.soum ? districtLabels[store.soum] : null, store.street].filter(Boolean).join(', ');
+  const emergencyRelationLabel = findLabel(relationshipOptions, store.emergencyRelation);
+  const emergencyDisplay = store.emergencyContact ? `${store.emergencyContact} /${emergencyRelationLabel}/` : null;
+  const aimagLabel = findLabel(addressOptions, store.aimag);
+  const soumOptions = addressOptions.find(c => c.value === store.aimag)?.children ?? [];
+  const soumLabel = findLabel(soumOptions, store.soum);
+  const addressDisplay = [aimagLabel, soumLabel, store.street].filter(Boolean).join(', ');
   const childrenCount = store.children?.length ?? 0;
-  const salaryDisplay = [store.bankAccount, store.bank ? bankLabels[store.bank] : null].filter(Boolean).join(' /') + (store.bank ? '/' : '');
+  const bankLabel = findLabel(bankOptions, store.bank);
+  const salaryDisplay = store.bankAccount ? `${store.bankAccount} /${bankLabel}/` : null;
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -72,7 +59,7 @@ export default function PersonalInfoScreen() {
           <InfoField label="Овог Нэр" value={fullName} />
           <InfoField label="Хүйс" value={genderDisplay} />
           <InfoField label="Регистрийн дугаар" value={store.registerNumber} />
-          <InfoField label="Иргэншил" value={store.nationality ? nationalityLabels[store.nationality] : null} />
+          <InfoField label="Иргэншил" value={findLabel(nationalityOptions, store.nationality)} />
           <InfoField label="Ургийн овог" value={store.familyName} />
           <InfoField label="Утасны дугаар" value={store.phone} />
           <InfoField label="И-мэйл хаяг" value={store.email} />

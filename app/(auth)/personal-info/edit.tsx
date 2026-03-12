@@ -1,79 +1,40 @@
 import { View, ScrollView } from 'react-native';
-import { cn, Label } from 'heroui-native';
+import { cn, Label, useToast } from 'heroui-native';
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
 import { AppButton } from "@/components/app-button";
-import { AppSelect, SelectOption } from "@/components/app-select";
+import { AppSelect } from "@/components/app-select";
+import { useSelectOptions } from '@/hooks/use-select-options';
 import { AppDatePicker } from "@/components/app-date-picker";
-import { useAuthStore, type ProfileFormData } from '@/store/auth-store';
+import { useAuthStore, type ProfileFormData, ProfileData } from '@/store/auth-store';
 import { useRouter } from 'expo-router';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { MinusSignIcon, PlusSignIcon } from "@hugeicons-pro/core-stroke-standard";
+import { Alert01Icon, CheckmarkCircle02Icon, MinusSignIcon, PlusSignIcon } from "@hugeicons-pro/core-stroke-standard";
 import React, { useState } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { api } from "@/config/api";
+import { AppToast } from "@/components/app-toast";
+import dayjs from "dayjs";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-
-const nationalityOptions: SelectOption[] = [
-  { value: 'mongolia', label: 'Монгол' },
-  { value: 'china', label: 'Хятад' },
-  { value: 'russia', label: 'Орос' },
-  { value: 'korea', label: 'Солонгос' },
-  { value: 'japan', label: 'Япон' },
-  { value: 'usa', label: 'АНУ' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const relationshipOptions: SelectOption[] = [
-  { value: 'parent', label: 'Эцэг эх' },
-  { value: 'spouse', label: 'Эхнэр/нөхөр' },
-  { value: 'sibling', label: 'Ах/эгч/дүү' },
-  { value: 'child', label: 'Хүүхэд' },
-  { value: 'friend', label: 'Найз' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const cityOptions: SelectOption[] = [
-  { value: 'ulaanbaatar', label: 'Улаанбаатар' },
-  { value: 'darkhan', label: 'Дархан' },
-  { value: 'erdenet', label: 'Эрдэнэт' },
-  { value: 'choibalsan', label: 'Чойбалсан' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const districtOptions: SelectOption[] = [
-  { value: 'bgd', label: 'Баянгол' },
-  { value: 'bzd', label: 'Баянзүрх' },
-  { value: 'shd', label: 'Сонгинохайрхан' },
-  { value: 'chd', label: 'Чингэлтэй' },
-  { value: 'hud', label: 'Хан-Уул' },
-  { value: 'sud', label: 'Сүхбаатар' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const bankOptions: SelectOption[] = [
-  { value: 'khan', label: 'Хаан банк' },
-  { value: 'tdb', label: 'Худалдаа хөгжлийн банк' },
-  { value: 'golomt', label: 'Голомт банк' },
-  { value: 'state', label: 'Төрийн банк' },
-  { value: 'xac', label: 'Хас банк' },
-  { value: 'capitron', label: 'Капитрон банк' },
-  { value: 'other', label: 'Бусад' },
-];
-
 export default function PersonalInfoEditScreen() {
   const router = useRouter();
-  const { lastName, firstName, gender, nationality, familyName, phoneNumber, registerNumber, email, emergencyContact, emergencyRelationship, aimag, soum, street, children, bankAccount, bank } = useAuthStore();
+  const { lastName, firstName, gender, nationality, familyName, phone, registerNumber, email, emergencyContact, emergencyRelation, aimag, soum, street, children, bankAccount, bank } = useAuthStore();
+  const setInitialData = useAuthStore((state) => state.setInitialData);
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
 
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormData>({
     defaultValues: {
@@ -85,7 +46,7 @@ export default function PersonalInfoEditScreen() {
       registerNumber: registerNumber ?? '',
       email: email ?? '',
       emergencyContact: emergencyContact ?? '',
-      emergencyRelationship: emergencyRelationship ?? 'parent',
+      emergencyRelation: emergencyRelation ?? 'parent',
       aimag: aimag ?? 'ulaanbaatar',
       soum: soum ?? '',
       street: street ?? '',
@@ -103,10 +64,35 @@ export default function PersonalInfoEditScreen() {
   const handleSave = async (data: ProfileFormData) => {
     setIsLoading(true);
     try {
-      // TODO: save to API
       console.log(JSON.stringify(data));
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      router.back();
+      const res = await api<ProfileData>({path: '/profile/update', method: "PUT", data});
+      if(res.status === 200){
+        setInitialData(res.data);
+        toast.show({
+          component: (props: any) => (
+            <AppToast
+              {...props}
+              variant="success"
+              // title="Амжилттай"
+              description={res.message}
+              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            />
+          ),
+        });
+        router.back();
+      }else{
+        toast.show({
+          component: (props: any) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              // title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
     } catch (error) {
       console.error('Save error:', error);
     } finally {
@@ -244,7 +230,7 @@ export default function PersonalInfoEditScreen() {
             />
             <AppTextField
               label="Утасны дугаар"
-              value={phoneNumber ?? ''}
+              value={phone ?? ''}
               isDisabled
             />
             <Controller
@@ -291,7 +277,7 @@ export default function PersonalInfoEditScreen() {
             />
             <Controller
               control={control}
-              name="emergencyRelationship"
+              name="emergencyRelation"
               rules={{ required: 'Хэн болох оруулна уу' }}
               render={({ field: { onChange, value } }) => {
                 const selectedOption = relationshipOptions.find(opt => opt.value === value);
@@ -303,8 +289,8 @@ export default function PersonalInfoEditScreen() {
                     options={relationshipOptions}
                     placeholder="Сонгох"
                     isRequired
-                    errorMessage={errors.emergencyRelationship?.message}
-                    isInvalid={!!errors.emergencyRelationship}
+                    errorMessage={errors.emergencyRelation?.message}
+                    isInvalid={!!errors.emergencyRelation}
                   />
                 );
               }}
@@ -314,13 +300,16 @@ export default function PersonalInfoEditScreen() {
               name="aimag"
               rules={{ required: 'Хот/аймаг сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
-                const selectedOption = cityOptions.find(opt => opt.value === value);
+                const selectedOption = addressOptions.find(opt => opt.value === value);
                 return (
                   <AppSelect
                     label="Оршин суугаа Хот/аймаг"
                     value={selectedOption}
-                    onValueChange={(option) => onChange(option?.value)}
-                    options={cityOptions}
+                    onValueChange={(option) => {
+                      onChange(option?.value);
+                      setValue('soum', '');
+                    }}
+                    options={addressOptions}
                     placeholder="Сонгох"
                     isRequired
                     errorMessage={errors.aimag?.message}
@@ -334,13 +323,15 @@ export default function PersonalInfoEditScreen() {
               name="soum"
               rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
-                const selectedOption = districtOptions.find(opt => opt.value === value);
+                const selectedAimag = watch('aimag');
+                const soumOptions = addressOptions.find(c => c.value === selectedAimag)?.children ?? [];
+                const selectedOption = soumOptions.find(opt => opt.value === value);
                 return (
                   <AppSelect
                     label="Дүүрэг/сум"
                     value={selectedOption}
                     onValueChange={(option) => onChange(option?.value)}
-                    options={districtOptions}
+                    options={soumOptions}
                     placeholder="Сонгох"
                     isRequired
                     errorMessage={errors.soum?.message}
@@ -452,7 +443,9 @@ export default function PersonalInfoEditScreen() {
                           label="Төрсөн огноо"
                           mode="date"
                           value={dateValue}
-                          onValueChange={(date) => onChange(date ? date.toISOString() : '')}
+                          onValueChange={(date) => {
+                            onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
+                          }}
                           placeholder="0000/00/00"
                           isRequired
                           isInvalid={!!fieldError}

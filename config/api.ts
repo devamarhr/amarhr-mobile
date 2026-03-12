@@ -52,3 +52,42 @@ export async function api<T = unknown>({
     message: responseData['message'],
   };
 }
+
+export async function uploadFile<T = unknown>(
+  path: string,
+  fileUri: string,
+  fieldName = 'file',
+): Promise<ApiResponse<T>> {
+  const url = `${Config.API_URL}${path}`;
+
+  const fileName = fileUri.split('/').pop() ?? 'photo.jpg';
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+  const formData = new FormData();
+  formData.append(fieldName, {
+    uri: fileUri,
+    name: fileName,
+    type: mimeType,
+  } as any);
+
+  const headers: Record<string, string> = {};
+  const token = useAuthStore.getState().token;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  const responseData = await response.json();
+
+  return {
+    data: responseData as T,
+    status: response.status,
+    message: responseData['message'],
+  };
+}

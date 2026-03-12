@@ -54,7 +54,7 @@ function MenuItem({ icon, label, labelClassName, subtitle, onPress, trailing }: 
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { lastName, firstName, logout } = useAuthStore();
+  const { profileImage, lastName, firstName, jobPosition, logout } = useAuthStore();
   const [timeRegistration, setTimeRegistration] = useState(true);
   const [showContact, setShowContact] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -65,7 +65,7 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
-  const fullName = `${lastName ?? ''} ${firstName ?? ''}`.trim() || 'Хэрэглэгч';
+  const fullName = `${lastName ?? ''} ${firstName ?? ''}`.trim() || ' ';
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -74,14 +74,14 @@ export default function ProfileScreen() {
         <View className="items-center mt-4 mb-6">
           <Avatar alt="Profile" className="w-32.5 h-32.5">
             <Avatar.Image source={{
-              uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2',
+              uri: profileImage ?? '',
             }} />
             <Avatar.Fallback classNames={{ text: "text-black text-2xl" }}>
-              {(firstName?.[0] ?? '') + (lastName?.[0] ?? '')}
+              {(lastName?.[0] ?? '') + (firstName?.[0] ?? '')}
             </Avatar.Fallback>
           </Avatar>
           <AppText className="text-base font-medium mt-1">{fullName}</AppText>
-          <AppText className="text-sm text-darkgray">Бизнес төлөвлөлтийн туслах</AppText>
+          <AppText className="text-sm text-darkgray">{jobPosition}</AppText>
         </View>
         <View className="flex-1">
           <View className="flex-1 mt-2">

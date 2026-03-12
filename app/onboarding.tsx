@@ -1,8 +1,11 @@
 import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
 import { AppTextField } from '@/components/app-text-field';
-import { AppSelect, SelectOption } from '@/components/app-select';
-import { useAuthStore, type ProfileFormData } from '@/store/auth-store';
+import { AppSelect } from '@/components/app-select';
+import { useAuthStore, type ProfileFormData, ProfileData } from '@/store/auth-store';
+import { useSelectOptions } from '@/hooks/use-select-options';
+import { api, uploadFile } from '@/config/api';
+import dayjs from 'dayjs';
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, Image } from 'react-native';
 import Animated, { SlideInRight, SlideInLeft } from 'react-native-reanimated';
@@ -12,64 +15,19 @@ import { Redirect, useRouter } from 'expo-router';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
+  Alert01Icon,
   ArrowLeft01Icon,
   MinusSignIcon,
   PlusSignIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import { cn, Label } from 'heroui-native';
+import { cn, Label, useToast } from 'heroui-native';
 import { withUniwind } from "uniwind";
 import { AppDatePicker } from "@/components/app-date-picker";
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { AppHeader } from "@/components/app-header";
+import { AppToast } from "@/components/app-toast";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
-
-const nationalityOptions: SelectOption[] = [
-  { value: 'mongolia', label: 'Монгол' },
-  { value: 'china', label: 'Хятад' },
-  { value: 'russia', label: 'Орос' },
-  { value: 'korea', label: 'Солонгос' },
-  { value: 'japan', label: 'Япон' },
-  { value: 'usa', label: 'АНУ' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const relationshipOptions: SelectOption[] = [
-  { value: 'parent', label: 'Эцэг эх' },
-  { value: 'spouse', label: 'Эхнэр/нөхөр' },
-  { value: 'sibling', label: 'Ах/эгч/дүү' },
-  { value: 'child', label: 'Хүүхэд' },
-  { value: 'friend', label: 'Найз' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const cityOptions: SelectOption[] = [
-  { value: 'ulaanbaatar', label: 'Улаанбаатар' },
-  { value: 'darkhan', label: 'Дархан' },
-  { value: 'erdenet', label: 'Эрдэнэт' },
-  { value: 'choibalsan', label: 'Чойбалсан' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const districtOptions: SelectOption[] = [
-  { value: 'bgd', label: 'Баянгол' },
-  { value: 'bzd', label: 'Баянзүрх' },
-  { value: 'shd', label: 'Сонгинохайрхан' },
-  { value: 'chd', label: 'Чингэлтэй' },
-  { value: 'hud', label: 'Хан-Уул' },
-  { value: 'sud', label: 'Сүхбаатар' },
-  { value: 'other', label: 'Бусад' },
-];
-
-const bankOptions: SelectOption[] = [
-  { value: 'khan', label: 'Хаан банк' },
-  { value: 'tdb', label: 'Худалдаа хөгжлийн банк' },
-  { value: 'golomt', label: 'Голомт банк' },
-  { value: 'state', label: 'Төрийн банк' },
-  { value: 'xac', label: 'Хас банк' },
-  { value: 'capitron', label: 'Капитрон банк' },
-  { value: 'other', label: 'Бусад' },
-];
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -77,12 +35,15 @@ export default function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
-  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
-  const phoneNumber = useAuthStore((state) => state.phoneNumber);
+  const phone = useAuthStore((state) => state.phone);
   const companyName = useAuthStore((state) => state.companyName);
+  const authState = useAuthStore.getState();
+  const setInitialData = useAuthStore((state) => state.setInitialData);
+  const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(authState.profileImage ?? null);
+  const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
 
   // Function that returns array of page components
   const getPages = () => {
@@ -158,6 +119,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="nationality"
+          rules={{ required: 'Иргэншил сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = nationalityOptions.find(opt => opt.value === value);
             return (
@@ -213,7 +175,7 @@ export default function OnboardingScreen() {
         />
         <AppTextField
           label="Утасны дугаар"
-          value={phoneNumber ?? ''}
+          value={phone ?? ''}
           isDisabled
         />
         <Controller
@@ -260,8 +222,8 @@ export default function OnboardingScreen() {
         />
         <Controller
           control={control}
-          name="emergencyRelationship"
-          rules={{ required: 'Хэн болох оруулна уу' }}
+          name="emergencyRelation"
+          rules={{ required: 'Хэн болохыг сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = relationshipOptions.find(opt => opt.value === value);
             return (
@@ -271,8 +233,8 @@ export default function OnboardingScreen() {
                 onValueChange={(option) => onChange(option?.value)}
                 options={relationshipOptions}
                 placeholder="Сонгох"
-                errorMessage={errors.emergencyRelationship?.message}
-                isInvalid={!!errors.emergencyRelationship}
+                errorMessage={errors.emergencyRelation?.message}
+                isInvalid={!!errors.emergencyRelation}
                 isRequired
               />
             );
@@ -281,48 +243,55 @@ export default function OnboardingScreen() {
       </View>
     );
 
-    const Page3 = () => (
-      <View className="gap-6">
-        <Controller
-          control={control}
-          name="aimag"
-          rules={{ required: 'Хот/аймаг сонгоно уу' }}
-          render={({ field: { onChange, value } }) => {
-            const selectedOption = cityOptions.find(opt => opt.value === value);
-            return (
-              <AppSelect
-                label="Оршин суугаа Хот/аймаг"
-                value={selectedOption}
-                onValueChange={(option) => onChange(option?.value)}
-                options={cityOptions}
-                placeholder="Сонгох"
-                isRequired
-                errorMessage={errors.aimag?.message}
-                isInvalid={!!errors.aimag}
-              />
-            );
-          }}
-        />
-        <Controller
-          control={control}
-          name="soum"
-          rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
-          render={({ field: { onChange, value } }) => {
-            const selectedOption = districtOptions.find(opt => opt.value === value);
-            return (
-              <AppSelect
-                label="Дүүрэг/сум"
-                value={selectedOption}
-                onValueChange={(option) => onChange(option?.value)}
-                options={districtOptions}
-                placeholder="Сонгох"
-                isRequired
-                errorMessage={errors.soum?.message}
-                isInvalid={!!errors.soum}
-              />
-            );
-          }}
-        />
+    const Page3 = () => {
+      const selectedAimag = watch('aimag');
+      const soumOptions = addressOptions.find(c => c.value === selectedAimag)?.children ?? [];
+
+      return (
+        <View className="gap-6">
+          <Controller
+            control={control}
+            name="aimag"
+            rules={{ required: 'Хот/аймаг сонгоно уу' }}
+            render={({ field: { onChange, value } }) => {
+              const selectedOption = addressOptions.find(opt => opt.value === value);
+              return (
+                <AppSelect
+                  label="Оршин суугаа Хот/аймаг"
+                  value={selectedOption}
+                  onValueChange={(option) => {
+                    onChange(option?.value);
+                    setValue('soum', '');
+                  }}
+                  options={addressOptions}
+                  placeholder="Сонгох"
+                  isRequired
+                  errorMessage={errors.aimag?.message}
+                  isInvalid={!!errors.aimag}
+                />
+              );
+            }}
+          />
+          <Controller
+            control={control}
+            name="soum"
+            rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
+            render={({ field: { onChange, value } }) => {
+              const selectedOption = soumOptions.find(opt => opt.value === value);
+              return (
+                <AppSelect
+                  label="Дүүрэг/сум"
+                  value={selectedOption}
+                  onValueChange={(option) => onChange(option?.value)}
+                  options={soumOptions}
+                  placeholder="Сонгох"
+                  isRequired
+                  errorMessage={errors.soum?.message}
+                  isInvalid={!!errors.soum}
+                />
+              );
+            }}
+          />
         <Controller
           control={control}
           name="street"
@@ -344,7 +313,8 @@ export default function OnboardingScreen() {
           )}
         />
       </View>
-    );
+      );
+    };
 
     const Page4 = () => {
       const addChild = () => {
@@ -443,7 +413,7 @@ export default function OnboardingScreen() {
                         mode="date"
                         value={dateValue}
                         onValueChange={(date) => {
-                          onChange(date ? date.toISOString() : '');
+                          onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
                         }}
                         placeholder="0000/00/00"
                         isRequired
@@ -483,7 +453,7 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="bank"
-          rules={{ required: 'Банк оруулна уу' }}
+          rules={{ required: 'Банк сонгоно уу' }}
           render={({ field: { onChange, value } }) => {
             const selectedOption = bankOptions.find(opt => opt.value === value);
             return (
@@ -523,6 +493,15 @@ export default function OnboardingScreen() {
 
         if (!result.canceled && result.assets[0]) {
           setProfileImage(result.assets[0].uri);
+          const uri = result.assets[0].uri;
+          try {
+            const res = await uploadFile<{ name: string; path: string }>('/file-upload', uri);
+            if (res.status === 200) {
+              setValue('profileImage', res.data.name, { shouldValidate: true });
+            }
+          } catch (error) {
+            console.error('Image upload error:', error);
+          }
         }
       };
 
@@ -543,7 +522,16 @@ export default function OnboardingScreen() {
         });
 
         if (!result.canceled && result.assets[0]) {
-          setProfileImage(result.assets[0].uri);
+          const uri = result.assets[0].uri;
+          setProfileImage(uri);
+          try {
+            const res = await uploadFile<{ name: string; path: string }>('/file-upload', uri);
+            if (res.status === 200) {
+              setValue('profileImage', res.data.name, { shouldValidate: true });
+            }
+          } catch (error) {
+            console.error('Image upload error:', error);
+          }
         }
       };
 
@@ -568,6 +556,10 @@ export default function OnboardingScreen() {
               </View>
             </View>
           </View>
+
+          {errors.profileImage && (
+            <AppText className="text-red text-sm">{errors.profileImage.message}</AppText>
+          )}
 
           <View className="flex-row gap-3 w-full mt-4">
             <AppButton
@@ -597,26 +589,32 @@ export default function OnboardingScreen() {
     control,
     handleSubmit,
     trigger,
+    watch,
+    setValue,
+    register,
     formState: { errors },
   } = useForm<ProfileFormData>({
     defaultValues: {
-      lastName: '',
-      firstName: '',
-      gender: 'male',
-      nationality: 'mongolia',
-      familyName: '',
-      registerNumber: '',
-      email: '',
-      emergencyContact: '',
-      emergencyRelationship: '',
-      aimag: 'ulaanbaatar',
-      soum: '',
-      street: '',
-      children: [],
-      bankAccount: '',
-      bank: '',
+      lastName: authState.lastName ?? '',
+      firstName: authState.firstName ?? '',
+      gender: authState.gender ?? 'male',
+      nationality: authState.nationality ?? 'mongolian',
+      familyName: authState.familyName ?? '',
+      registerNumber: authState.registerNumber ?? '',
+      email: authState.email ?? '',
+      emergencyContact: authState.emergencyContact ?? '',
+      emergencyRelation: authState.emergencyRelation ?? '',
+      aimag: authState.aimag ?? '',
+      soum: authState.soum ?? '',
+      street: authState.street ?? '',
+      children: authState.children ?? [],
+      bankAccount: authState.bankAccount ?? '',
+      bank: authState.bank ?? '',
+      profileImage: authState.profileImage ?? '',
     },
   });
+
+  register('profileImage', { required: 'Профайл зураг оруулна уу' });
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -639,14 +637,22 @@ export default function OnboardingScreen() {
     console.log(JSON.stringify(data))
 
     try {
-      // Simulate API call (replace with actual API later)
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Save to store
-      completeOnboarding(data);
-
-      // Navigate to home
-      router.replace('/(auth)/(tabs)');
+      const res = await api<ProfileData>({path: '/profile/update', method: "PUT", data});
+      if(res.status === 200){
+        setInitialData(res.data)
+      }else{
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              // title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
     } catch (error) {
       console.error('Onboarding error:', error);
     } finally {
@@ -658,11 +664,11 @@ export default function OnboardingScreen() {
     // Define which fields to validate for each page
     const pageFields: Record<number, (keyof ProfileFormData)[]> = {
       0: ['lastName', 'firstName', 'gender', 'nationality', 'familyName'],
-      1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelationship'],
+      1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelation'],
       2: ['aimag', 'soum', 'street'],
       3: ['children'],
       4: ['bankAccount', 'bank'],
-      5: [], // Page 6 (profile image) is optional
+      5: ['profileImage'],
     };
 
     // Validate current page fields
@@ -703,10 +709,7 @@ export default function OnboardingScreen() {
             entering={currentPage >= prevPageRef.current ? SlideInRight.duration(300) : SlideInLeft.duration(300)}
             style={{ flex: 1 }}
           >
-            {(() => {
-              const PageComponent = pages[currentPage];
-              return <PageComponent />;
-            })()}
+            {pages[currentPage]()}
           </Animated.View>
         </KeyboardAwareScrollView>
 

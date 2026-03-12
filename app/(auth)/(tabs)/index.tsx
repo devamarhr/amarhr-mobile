@@ -31,9 +31,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [activeAnnouncementIndex, setActiveAnnouncementIndex] = useState(0);
+  const { profileImage, lastName, firstName } = useAuthStore();
   const companyName = useAuthStore((state) => state.companyName);
   const attendanceType = useAuthStore((state) => state.attendanceType);
-  const { toggleSupervisor } = useAuthStore();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,9 +58,11 @@ export default function HomeScreen() {
             <Pressable onPress={() => router.navigate('/profile')}>
               <Avatar alt="Profile" className="w-10 h-10">
                 <Avatar.Image source={{
-                  uri: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2',
+                  uri: profileImage ?? '',
                 }} />
-                <Avatar.Fallback classNames={{ text: "text-black" }}>AC</Avatar.Fallback>
+                <Avatar.Fallback classNames={{ text: "text-black" }}>
+                  {(lastName?.[0] ?? '') + (firstName?.[0] ?? '')}
+                </Avatar.Fallback>
               </Avatar>
             </Pressable>
           </View>
@@ -106,7 +108,7 @@ export default function HomeScreen() {
 
         <View className="flex-row justify-around mt-10 px-4">
           <View className="items-center">
-            <HugeiconsIcon onPress={toggleSupervisor} icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
+            <HugeiconsIcon icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
             <AppText className="text-xl mt-2">09:12</AppText>
           </View>
           <View className="items-center">

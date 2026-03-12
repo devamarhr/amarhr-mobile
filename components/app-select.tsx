@@ -3,8 +3,10 @@ import { ArrowDown01Icon, MultiplicationSignIcon, Tick02Icon } from '@hugeicons-
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
-import React, { useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 
 export type SelectOption = {
   value: string;
@@ -137,7 +139,7 @@ interface AppSelectProps {
 export function AppSelect({
   label,
   isRequired = false,
-  placeholder = 'Select an option',
+  placeholder = 'Сонгох',
   title,
   options,
   value,
@@ -161,7 +163,16 @@ export function AppSelect({
   trigger,
 }: AppSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const scrollRef = useRef<BottomSheetScrollViewMethods>(null);
+  const insets = useSafeAreaInsets();
   const displayTitle = title || label || 'Select';
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
+    if (open && scrollRef.current) {
+      scrollRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, []);
 
   // Handle type conversion for heroui-native Select
   const handleValueChange = (option: any) => {
@@ -186,7 +197,7 @@ export function AppSelect({
       <Select
         presentation="bottom-sheet"
         isOpen={isOpen}
-        onOpenChange={setIsOpen}
+        onOpenChange={handleOpenChange}
         value={value as any}
         onValueChange={handleValueChange}
         isDisabled={isDisabled}
@@ -227,6 +238,7 @@ export function AppSelect({
           <Select.Content
             presentation="bottom-sheet"
             snapPoints={snapPoints}
+            topInset={insets.top}
             enableOverDrag={false}
             handleComponent={null}
             contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
@@ -244,18 +256,19 @@ export function AppSelect({
               </View>
               <PressableFeedback
                 className=""
-                onPress={() => setIsOpen(false)}
+                onPress={() => handleOpenChange(false)}
               >
                 <HugeiconsIcon icon={MultiplicationSignIcon} color="#6A6A6A" size={24} />
               </PressableFeedback>
             </View>
 
             <BottomSheetScrollView
+              ref={scrollRef}
               contentContainerClassName="pt-2 px-4 pb-4"
               showsVerticalScrollIndicator={false}
             >
               {options.map((option, index) => (
-                <React.Fragment key={option.value}>
+                <View key={option.value}>
                   <Select.Item
                     className={cn('py-3', itemClassName)}
                     value={option.value}
@@ -294,7 +307,7 @@ export function AppSelect({
                   {showSeparators && index < options.length - 1 && (
                     <Separator className={cn('bg-darkgray/15', separatorClassName)} />
                   )}
-                </React.Fragment>
+                </View>
               ))}
             </BottomSheetScrollView>
           </Select.Content>

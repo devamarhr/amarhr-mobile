@@ -2,6 +2,21 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export type SelectOption = {
+  value: string;
+  label: string;
+  [key: string]: any;
+};
+
+export type AddressOption = SelectOption & { children: SelectOption[] };
+
+export interface SelectOptionsData {
+  bank: SelectOption[];
+  nationality: SelectOption[];
+  emergencyRelation: SelectOption[];
+  address: AddressOption[];
+}
+
 export type Child = {
   gender: 'female' | 'male';
   birthDate: string;
@@ -16,7 +31,7 @@ export interface ProfileFormData {
   registerNumber: string;
   email: string;
   emergencyContact: string;
-  emergencyRelationship: string;
+  emergencyRelation: string;
   aimag: string;
   soum: string;
   street: string;
@@ -31,6 +46,7 @@ export interface ProfileData {
   isSupervisor: boolean;
   companyName: string | null;
   attendanceType: 'wifi' | 'location';
+  jobPosition: string | null;
 
   lastName: string | null;
   firstName: string | null;
@@ -40,7 +56,7 @@ export interface ProfileData {
   registerNumber: string | null;
   email: string | null;
   emergencyContact: string | null;
-  emergencyRelationship: string | null;
+  emergencyRelation: string | null;
   aimag: string | null;
   soum: string | null;
   street: string | null;
@@ -58,6 +74,7 @@ interface AuthState {
   isSupervisor: boolean;
   companyName: string | null;
   attendanceType: 'wifi' | 'location';
+  jobPosition: string | null;
 
   // Onboarding data
   lastName: string | null;
@@ -68,7 +85,7 @@ interface AuthState {
   registerNumber: string | null;
   email: string | null;
   emergencyContact: string | null;
-  emergencyRelationship: string | null;
+  emergencyRelation: string | null;
   aimag: string | null;
   soum: string | null;
   street: string | null;
@@ -77,14 +94,14 @@ interface AuthState {
   bank: string | null;
   profileImage: string | null;
 
+  // Select options
+  selectOptions: SelectOptionsData | null;
+
   // Actions
   setToken: (token: string, phone: string) => void;
   setInitialData: (data: ProfileData) => void;
-  setAttendanceType: (type: 'wifi' | 'location') => void;
-  completeOnboarding: (data: ProfileFormData) => void;
+  setSelectOptions: (data: SelectOptionsData) => void;
   logout: () => void;
-  clearAuth: () => void;
-  toggleSupervisor: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -97,6 +114,7 @@ export const useAuthStore = create<AuthState>()(
       isSupervisor: false,
       companyName: null,
       attendanceType: 'location',
+      jobPosition: null,
       lastName: null,
       firstName: null,
       gender: null,
@@ -105,7 +123,7 @@ export const useAuthStore = create<AuthState>()(
       registerNumber: null,
       email: null,
       emergencyContact: null,
-      emergencyRelationship: null,
+      emergencyRelation: null,
       aimag: null,
       soum: null,
       street: null,
@@ -113,6 +131,7 @@ export const useAuthStore = create<AuthState>()(
       bankAccount: null,
       bank: null,
       profileImage: null,
+      selectOptions: null,
 
       setToken: (token: string, phone: string) => {
         set({ token, phone, isAuthenticated: true });
@@ -124,6 +143,7 @@ export const useAuthStore = create<AuthState>()(
           isSupervisor: data.isSupervisor,
           companyName: data.companyName,
           attendanceType: data.attendanceType,
+          jobPosition: data.jobPosition,
           lastName: data.lastName,
           firstName: data.firstName,
           gender: data.gender,
@@ -132,7 +152,7 @@ export const useAuthStore = create<AuthState>()(
           registerNumber: data.registerNumber,
           email: data.email,
           emergencyContact: data.emergencyContact,
-          emergencyRelationship: data.emergencyRelationship,
+          emergencyRelation: data.emergencyRelation,
           aimag: data.aimag,
           soum: data.soum,
           street: data.street,
@@ -143,30 +163,8 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setAttendanceType: (type: 'wifi' | 'location') => {
-        set({ attendanceType: type });
-      },
-
-      completeOnboarding: (data) => {
-        set({
-          lastName: data.lastName,
-          firstName: data.firstName,
-          gender: data.gender,
-          nationality: data.nationality,
-          familyName: data.familyName,
-          registerNumber: data.registerNumber,
-          email: data.email,
-          emergencyContact: data.emergencyContact,
-          emergencyRelationship: data.emergencyRelationship,
-          aimag: data.aimag,
-          soum: data.soum,
-          street: data.street,
-          children: data.children,
-          bankAccount: data.bankAccount,
-          bank: data.bank,
-          profileImage: data.profileImage ?? null,
-          hasCompletedOnboarding: true,
-        });
+      setSelectOptions: (data: SelectOptionsData) => {
+        set({ selectOptions: data });
       },
 
       logout: () => {
@@ -178,6 +176,7 @@ export const useAuthStore = create<AuthState>()(
           isSupervisor: false,
           companyName: null,
           attendanceType: 'location',
+          jobPosition: null,
           lastName: null,
           firstName: null,
           gender: null,
@@ -186,7 +185,7 @@ export const useAuthStore = create<AuthState>()(
           registerNumber: null,
           email: null,
           emergencyContact: null,
-          emergencyRelationship: null,
+          emergencyRelation: null,
           aimag: null,
           soum: null,
           street: null,
@@ -194,39 +193,10 @@ export const useAuthStore = create<AuthState>()(
           bankAccount: null,
           bank: null,
           profileImage: null,
+          selectOptions: null,
         });
       },
 
-      clearAuth: () => {
-        set({
-          token: null,
-          phone: null,
-          isAuthenticated: false,
-          hasCompletedOnboarding: false,
-          isSupervisor: false,
-          companyName: null,
-          attendanceType: 'location',
-          lastName: null,
-          firstName: null,
-          gender: null,
-          nationality: null,
-          familyName: null,
-          registerNumber: null,
-          email: null,
-          emergencyContact: null,
-          emergencyRelationship: null,
-          aimag: null,
-          soum: null,
-          street: null,
-          children: [],
-          bankAccount: null,
-          bank: null,
-          profileImage: null,
-        });
-      },
-      toggleSupervisor: () => {
-        set((state) => ({ isSupervisor: !state.isSupervisor }));
-      },
     }),
     {
       name: 'auth-storage',
