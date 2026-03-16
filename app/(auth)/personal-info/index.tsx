@@ -48,7 +48,7 @@ export default function PersonalInfoScreen() {
       <View className="flex-1 px-4">
         <AppHeader
           backTitle="Хувийн мэдээлэл"
-          backHref="/profile"
+          showBack
           rightContent={
             <Pressable onPress={() => router.navigate('/personal-info/edit')}>
               <HugeiconsIcon icon={PencilEdit02Icon} color="#005FEE" size={24} />

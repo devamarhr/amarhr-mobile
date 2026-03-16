@@ -70,7 +70,7 @@ export default function ProfileScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
-        <AppHeader backTitle="Профайл" backHref="/(auth)/(tabs)" />
+        <AppHeader backTitle="Профайл" showBack />
         <View className="items-center mt-4 mb-6">
           <Avatar alt="Profile" className="w-32.5 h-32.5">
             <Avatar.Image source={{
