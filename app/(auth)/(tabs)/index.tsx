@@ -17,6 +17,9 @@ import dayjs from 'dayjs';
 import NetInfo from '@react-native-community/netinfo';
 import * as Location from 'expo-location';
 import { useAuthStore } from "@/store/auth-store";
+import * as Notifications from "expo-notifications";
+import { registerForPushNotificationsAsync } from "@/utils/register-for-push-notifications";
+import { api } from "@/config/api";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -26,6 +29,15 @@ const announcements = [
   { date: '09/12', text: 'Бурхан багшийн Их дүйчин өдөр' },
   { date: '09/15', text: 'Компанийн тэмдэглэлт өдөр' },
 ];
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -39,7 +51,33 @@ export default function HomeScreen() {
     const timer = setInterval(() => {
       setCurrentTime(dayjs());
     }, 1000);
-    return () => clearInterval(timer);
+
+    registerForPushNotificationsAsync()
+      .then(token => {
+        console.log(token)
+        if (token) {
+          api({
+            path: '/expo-push-token',
+            method: 'PUT',
+            data: { expo_push_token: token },
+          }).catch(console.error);
+        }
+      })
+      .catch((error: any) => console.log(error));
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log(JSON.stringify(notification));
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      clearInterval(timer);
+      notificationListener.remove();
+      responseListener.remove();
+    };
   }, []);
 
   const formattedTime = currentTime.format('HH:mm');
