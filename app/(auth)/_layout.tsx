@@ -27,9 +27,9 @@ export default function AuthLayout() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="personal-info/index" />
         <Stack.Screen name="personal-info/edit" />
-        <Stack.Screen name="work-info" />
-        <Stack.Screen name="work-contract" />
-        <Stack.Screen name="contracts-rules" />
+        <Stack.Screen name="workplace-info" />
+        <Stack.Screen name="contract-info" />
+        <Stack.Screen name="contract-files" />
         <Stack.Screen name="contact" />
         <Stack.Screen name="pdf-view" />
         <Stack.Screen name="request/create" />

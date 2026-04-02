@@ -94,19 +94,19 @@ export default function ProfileScreen() {
             <MenuItem
               icon={Building06StrokeStandard}
               label="Ажлын байрны мэдээлэл"
-              onPress={() => router.navigate('/work-info')}
+              onPress={() => router.navigate('/workplace-info')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={Agreement03Icon}
               label="Хөдөлмөрийн гэрээний мэдээлэл"
-              onPress={() => router.navigate('/work-contract')}
+              onPress={() => router.navigate('/contract-info')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={LicenseIcon}
               label="Гэрээ & дүрэм журам"
-              onPress={() => router.navigate('/contracts-rules')}
+              onPress={() => router.navigate('/contract-files')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
