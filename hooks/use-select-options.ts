@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/config/api';
-import { useAuthStore, type SelectOptionsData, type SelectOption, type AddressOption } from '@/store/auth-store';
+import { useAuthStore, type SelectOptionsData, type SelectOption, type AddressOption, type SoumOption } from '@/store/auth-store';
 
 export function useSelectOptions() {
   const selectOptions = useAuthStore((state) => state.selectOptions);

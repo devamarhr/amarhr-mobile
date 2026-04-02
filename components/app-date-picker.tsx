@@ -150,10 +150,10 @@ export function AppDatePicker({
       )}
 
       <PressableFeedback
-        onPress={() => !isDisabled && setIsOpen(true)}
+        disabled={isDisabled}
+        onPress={() => setIsOpen(true)}
         className={cn(
-          'flex-row rounded-lg border border-gray/30 items-center h-11 px-3 gap-2',
-          isDisabled && 'opacity-50',
+          'flex-row rounded-lg border border-gray/30 items-center h-11 px-3 gap-2 disabled:opacity-50',
           isInvalid && 'border-red',
           triggerClassName
         )}

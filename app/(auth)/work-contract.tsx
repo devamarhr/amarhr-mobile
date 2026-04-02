@@ -3,8 +3,65 @@ import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "heroui-native";
+import { api } from "@/config/api";
+
+interface SalarySetting {
+  type: string;
+  main_salary: number;
+  advance_type: string;
+  advance_value: number;
+  performance_type: string;
+  performance_value: number;
+}
+
+interface AdjustmentDetail {
+  amount: number;
+  amount_type: 'percent' | 'fixed';
+  is_attendance: boolean;
+  calculate_type: string;
+  start_year?: number;
+  end_year?: number;
+}
+
+interface Adjustment {
+  id: number;
+  name: string;
+  type: string;
+  category: string;
+  detail: AdjustmentDetail[];
+}
+
+interface ContractInfo {
+  isPermanent: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  type: string | null;
+  contractNumber: string | null;
+  insuranceType: string | null;
+  totalWorkMonths: number | null;
+  currentCompanyMonths: number | null;
+  salarySetting: SalarySetting | null;
+  adjustments: Adjustment[];
+}
+
+const salaryTypeLabels: Record<string, string> = {
+  fixed: 'Тогтмол',
+  fixed_performance: 'Тогтмол + Гүйцэтгэл',
+  hourly: 'Цагаар',
+  piece: 'Гараагаар',
+};
+
+const advanceTypeLabels: Record<string, string> = {
+  attendance_percent: 'Ирцэд ноогдох цалингийн хувиар',
+  main_percent: 'Үндсэн цалингийн хувиар',
+  fixed: 'Тогтмол',
+};
+
+function formatCurrency(value: number) {
+  return `${value.toLocaleString()} ₮`;
+}
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -26,46 +83,79 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function ContractInfoScreen() {
+  const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null);
+
+  useEffect(() => {
+    api<ContractInfo>({
+      path: '/profile/contract-info',
+      method: 'GET',
+    }).then((res) => {
+      if (res.status === 200) {
+        setContractInfo(res.data);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const salary = contractInfo?.salarySetting;
+  const adjustments = contractInfo?.adjustments ?? [];
+
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
         <AppHeader backTitle="Хөд/гэрээний мэдээлэл" showBack className="px-4" />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4">
-            <InfoField label="Хөдөлмөрийн гэрээ" value="Хугацаатай" />
-            <InfoField label="Гэрээ эхэлсэн/дуусах огноо" value="2025/09/09 - 2025/09/09" />
-            <InfoField
-              label="Гэрээний төрөл"
-              value="Санхүүжилт хийгдэх ажлын цар хүрээтэй холбоотой цаг хугацаагаар хязгаарлагдсан ажил үүрэг гүйцэтгүүлэх"
-            />
-            <InfoField label="Гэрээний дугаар" value="5242" />
-            <InfoField
-              label="НДШ тайлагнах төрөл"
-              value="Хөдөлмөрийн гэрээний дагуу ажиллаж байгаа үндсэн ажилтан"
-            />
-            <InfoField label="НДШ төлсөн сар / Нийт ажилласан жилийн" value="120 сар" />
-            <InfoField label="НДШ төлсөн сар / Одоогийн байгууллага дээр" value="120 сар" className="mb-0" />
+            <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} />
+            <InfoField label="Гэрээ эхэлсэн/дуусах огноо" value={contractInfo?.startDate && contractInfo?.endDate ? `${contractInfo.startDate} - ${contractInfo.endDate}` : null} />
+            <InfoField label="Гэрээний төрөл" value={contractInfo?.type} />
+            <InfoField label="Гэрээний дугаар" value={contractInfo?.contractNumber} />
+            <InfoField label="НДШ тайлагнах төрөл" value={contractInfo?.insuranceType} />
+            <InfoField label="НДШ төлсөн сар / Нийт ажилласан жилийн" value={contractInfo?.totalWorkMonths ? `${contractInfo.totalWorkMonths} сар` : null} />
+            <InfoField label="НДШ төлсөн сар / Одоогийн байгууллага дээр" value={contractInfo?.currentCompanyMonths ? `${contractInfo.currentCompanyMonths} сар` : null} className="mb-0" />
           </View>
 
           <SectionHeader title="Цалин олговрын мэдээлэл" />
 
           <View className="px-4">
-            <InfoField label="Үндсэн цалин тооцоолох аргачлал" value="Тогтмол + Гүйцэтгэл" />
-            <InfoField label="Үндсэн цалин" value="1,000,000 ₮" />
-            <InfoField label="Гүйцэтгэлийн цалин" value="500,000 ₮" />
-            <InfoField label="Урьдчилгаа цалин тооцох суурь" value="Ирцэд ноогдох цалингийн хувиар" className="mb-0" />
+            <InfoField label="Үндсэн цалингийн төрөл" value={salary?.type ? (salaryTypeLabels[salary.type] || salary.type) : null} />
+            <InfoField
+              label={salary?.type === 'hourly' ? 'Цагийн цалин' : salary?.type === 'piece' ? 'Гарааны цалин' : 'Үндсэн цалин'}
+              value={salary?.main_salary ? formatCurrency(salary.main_salary) : null}
+            />
+            {salary?.type === 'fixed_performance' && (
+              <InfoField
+                label="Гүйцэтгэл"
+                value={salary?.performance_value != null
+                  ? `${salary.performance_value.toLocaleString()}${salary.performance_type === 'fixed' ? '₮' : '%'}`
+                  : null}
+              />
+            )}
+            <InfoField label="Урьдчилгаа цалин тооцох суурь" value={salary?.advance_type ? (advanceTypeLabels[salary.advance_type] || salary.advance_type) : null} />
+            <InfoField
+              label="Урьдчилгаа цалин"
+              value={salary?.advance_value != null
+                ? `${salary.advance_value.toLocaleString()}${salary.advance_type === 'fixed' ? '₮' : '%'}`
+                : null}
+              className="mb-0"
+            />
           </View>
 
           <SectionHeader title="Нэмэгдэл олговрын мэдээлэл" />
 
-          <View className="px-4 pb-8">
-            <InfoField label="Илүү цагийн нэмэгдэл хөлс" value="1.5 %" />
-            <InfoField label="Ажилласан жилийн нэмэгдэл" value="1.5 %" />
-            <InfoField
-              label="Хоолны хөнгөлөлт"
-              value={"1.5 % / Эмийн сан / Салбар 1\n1.5 % / Эмийн сан / Салбар 1"}
-            />
-            <InfoField label="Шинээр нэмсэн нэмэгдэл цалингийн нэр" value="500,000 ₮" />
+          <View className="px-4">
+            {adjustments.map((adj) => (
+              <View key={adj.id} className="mb-4">
+                <AppText className="text-sm text-darkgray">{adj.name}</AppText>
+                {adj.detail.map((d, di) => (
+                  <AppText key={di} className="text-sm mt-1">
+                    {d.amount_type === 'fixed' ? `${d.amount.toLocaleString()} ₮` : `${d.amount} %`}
+                    {adj.category === 'yearly' && d.start_year != null && d.end_year != null
+                      ? ` / ${d.start_year}-${d.end_year} жилийн хооронд`
+                      : ''}
+                  </AppText>
+                ))}
+              </View>
+            ))}
           </View>
         </ScrollView>
       </View>

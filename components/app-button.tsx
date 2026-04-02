@@ -79,8 +79,7 @@ export function AppButton({
     if (label) {
       return (
         <Button.Label className={cn(
-          'text-black text-sm font-medium',
-          isDisabled && 'text-white',
+          'text-black text-sm font-medium disabled:text-white',
           labelClassName
         )}>
           {label}
@@ -126,8 +125,7 @@ export function AppButton({
       isDisabled={isDisabled || isLoading}
       isIconOnly={isIconOnly}
       className={cn(
-        'h-[44px] border border-darkgray/30 bg-white',
-        isDisabled && 'border-transparent bg-darkgray/30 opacity-100',
+        'h-[44px] border border-darkgray/30 bg-white disabled:border-transparent disabled:bg-darkgray/30 disabled:opacity-100',
         className
       )}
       feedbackVariant="scale"

@@ -94,7 +94,7 @@ export default function OnboardingScreen() {
               <View className="flex-row gap-3">
                 <AppButton
                   label="Эмэгтэй"
-                  className="flex-1 bg-white border-darkgray/30"
+                  className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
                   labelClassName={cn(
                     "text-darkgray/50",
                     value === 'female' && 'text-black'
@@ -104,7 +104,7 @@ export default function OnboardingScreen() {
                 />
                 <AppButton
                   label="Эрэгтэй"
-                  className="flex-1 bg-white border-darkgray/30"
+                  className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
                   labelClassName={cn(
                     "text-darkgray/50",
                     value === 'male' && 'text-black'
@@ -159,12 +159,21 @@ export default function OnboardingScreen() {
         <Controller
           control={control}
           name="registerNumber"
-          rules={{ required: 'Регистрийн дугаар оруулна уу' }}
+          rules={{
+            required: 'Регистрийн дугаар оруулна уу',
+            pattern: {
+              value: /^[А-ЯЁӨҮ]{2}\d{8}$/,
+              message: 'Зөв формат: 2 кирилл үсэг + 8 тоо (жишээ: АБ12345678)',
+            },
+          }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
               label="Регистрийн дугаар"
               value={value}
-              onChangeText={onChange}
+              onChangeText={(text) => {
+                const upper = text.slice(0, 2).toUpperCase() + text.slice(2);
+                onChange(upper);
+              }}
               onBlur={onBlur}
               maxLength={10}
               isRequired
@@ -172,6 +181,29 @@ export default function OnboardingScreen() {
               isInvalid={!!errors.registerNumber}
             />
           )}
+        />
+        <Controller
+          control={control}
+          name={'birthDate'}
+          rules={{ required: 'Төрсөн огноо оруулна уу' }}
+          render={({ field: { onChange, value } }) => {
+            const dateValue = value ? new Date(value) : undefined;
+            const fieldError = errors.birthDate;
+
+            return (
+              <AppDatePicker
+                label="Төрсөн огноо"
+                mode="date"
+                value={dateValue}
+                onValueChange={(date) => {
+                  onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
+                }}
+                placeholder="0000/00/00"
+                isRequired
+                isInvalid={!!fieldError}
+              />
+            );
+          }}
         />
         <AppTextField
           label="Утасны дугаар"
@@ -244,14 +276,16 @@ export default function OnboardingScreen() {
     );
 
     const Page3 = () => {
-      const selectedAimag = watch('aimag');
+      const selectedAimag = watch('address.path.aimag');
       const soumOptions = addressOptions.find(c => c.value === selectedAimag)?.children ?? [];
+      const selectedSoum = watch('address.path.soum');
+      const khorooOptions = soumOptions.find(c => c.value === selectedSoum)?.children ?? [];
 
       return (
         <View className="gap-6">
           <Controller
             control={control}
-            name="aimag"
+            name="address.path.aimag"
             rules={{ required: 'Хот/аймаг сонгоно уу' }}
             render={({ field: { onChange, value } }) => {
               const selectedOption = addressOptions.find(opt => opt.value === value);
@@ -261,20 +295,21 @@ export default function OnboardingScreen() {
                   value={selectedOption}
                   onValueChange={(option) => {
                     onChange(option?.value);
-                    setValue('soum', '');
+                    setValue('address.path.soum', '');
+                    setValue('address.path.khoroo', '');
                   }}
                   options={addressOptions}
                   placeholder="Сонгох"
                   isRequired
-                  errorMessage={errors.aimag?.message}
-                  isInvalid={!!errors.aimag}
+                  errorMessage={errors.address?.path?.aimag?.message}
+                  isInvalid={!!errors.address?.path?.aimag}
                 />
               );
             }}
           />
           <Controller
             control={control}
-            name="soum"
+            name="address.path.soum"
             rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
             render={({ field: { onChange, value } }) => {
               const selectedOption = soumOptions.find(opt => opt.value === value);
@@ -282,23 +317,46 @@ export default function OnboardingScreen() {
                 <AppSelect
                   label="Дүүрэг/сум"
                   value={selectedOption}
-                  onValueChange={(option) => onChange(option?.value)}
+                  onValueChange={(option) => {
+                    onChange(option?.value);
+                    setValue('address.path.khoroo', '');
+                  }}
                   options={soumOptions}
                   placeholder="Сонгох"
                   isRequired
-                  errorMessage={errors.soum?.message}
-                  isInvalid={!!errors.soum}
+                  errorMessage={errors.address?.path?.soum?.message}
+                  isInvalid={!!errors.address?.path?.soum}
+                />
+              );
+            }}
+          />
+          <Controller
+            control={control}
+            name="address.path.khoroo"
+            rules={{ required: 'Хороо/баг сонгоно уу' }}
+            render={({ field: { onChange, value } }) => {
+              const selectedOption = khorooOptions.find(opt => opt.value === value);
+              return (
+                <AppSelect
+                  label="Хороо/баг"
+                  value={selectedOption}
+                  onValueChange={(option) => onChange(option?.value)}
+                  options={khorooOptions}
+                  placeholder="Сонгох"
+                  isRequired
+                  errorMessage={errors.address?.path?.khoroo?.message}
+                  isInvalid={!!errors.address?.path?.khoroo}
                 />
               );
             }}
           />
         <Controller
           control={control}
-          name="street"
+          name="address.street"
           rules={{ required: 'Хаяг оруулна уу' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextField
-              label="Хороо, гудамж, байр, тоот"
+              label="Гудамж, байр, тоот"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -307,8 +365,8 @@ export default function OnboardingScreen() {
               multiline
               numberOfLines={4}
               isRequired
-              errorMessage={errors.street?.message}
-              isInvalid={!!errors.street}
+              errorMessage={errors.address?.street?.message}
+              isInvalid={!!errors.address?.street}
             />
           )}
         />
@@ -337,7 +395,7 @@ export default function OnboardingScreen() {
             </Label>
             <View className="flex-row items-center justify-center gap-8">
               <AppButton
-                className="w-11 h-11 rounded-full bg-white border-darkgray/30"
+                className="w-11 h-11 rounded-full bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray/30"
                 isIconOnly
                 leftIcon={<HugeiconsIcon icon={MinusSignIcon} color="#222222" size={20} />}
                 onPress={removeChild}
@@ -375,7 +433,7 @@ export default function OnboardingScreen() {
                       <View className="flex-row gap-3">
                         <AppButton
                           label="Охин"
-                          className="flex-1 bg-white border-darkgray/30 rounded-full"
+                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
                           labelClassName={cn(
                             "text-darkgray/50",
                             value === 'female' && 'text-black'
@@ -385,7 +443,7 @@ export default function OnboardingScreen() {
                         />
                         <AppButton
                           label="Хүү"
-                          className="flex-1 bg-white border-darkgray/30 rounded-full"
+                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
                           labelClassName={cn(
                             "text-darkgray/50",
                             value === 'male' && 'text-black'
@@ -601,12 +659,18 @@ export default function OnboardingScreen() {
       nationality: authState.nationality ?? 'mongolian',
       familyName: authState.familyName ?? '',
       registerNumber: authState.registerNumber ?? '',
+      birthDate: authState.birthDate ?? '',
       email: authState.email ?? '',
       emergencyContact: authState.emergencyContact ?? '',
       emergencyRelation: authState.emergencyRelation ?? '',
-      aimag: authState.aimag ?? '',
-      soum: authState.soum ?? '',
-      street: authState.street ?? '',
+      address: {
+        path: {
+          aimag: authState.address?.path?.aimag ?? '',
+          soum: authState.address?.path?.soum ?? '',
+          khoroo: authState.address?.path?.khoroo ?? '',
+        },
+        street: authState.address?.street ?? '',
+      },
       children: authState.children ?? [],
       bankAccount: authState.bankAccount ?? '',
       bank: authState.bank ?? '',
@@ -662,10 +726,10 @@ export default function OnboardingScreen() {
 
   const handleNext = async () => {
     // Define which fields to validate for each page
-    const pageFields: Record<number, (keyof ProfileFormData)[]> = {
+    const pageFields: Record<number, string[]> = {
       0: ['lastName', 'firstName', 'gender', 'nationality', 'familyName'],
       1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelation'],
-      2: ['aimag', 'soum', 'street'],
+      2: ['address.path.aimag', 'address.path.soum', 'address.path.khoroo', 'address.street'],
       3: ['children'],
       4: ['bankAccount', 'bank'],
       5: ['profileImage'],
@@ -674,7 +738,7 @@ export default function OnboardingScreen() {
     // Validate current page fields
     const fieldsToValidate = pageFields[currentPage];
     if (fieldsToValidate && fieldsToValidate.length > 0) {
-      const isValid = await trigger(fieldsToValidate);
+      const isValid = await trigger(fieldsToValidate as any);
       if (!isValid) {
         return; // Don't proceed if validation fails
       }

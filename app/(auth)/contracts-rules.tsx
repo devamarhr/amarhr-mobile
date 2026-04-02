@@ -5,9 +5,19 @@ import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
+import { api } from "@/config/api";
+
+interface ContractFile {
+  name: string;
+  path: string;
+}
+
+interface ContractFilesResponse {
+  files: ContractFile[];
+}
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -36,28 +46,37 @@ function DocumentItem({ label, disabled, onPress }: DocumentItemProps) {
 
 export default function ContractsRulesScreen() {
   const router = useRouter();
+  const [files, setFiles] = useState<ContractFile[]>([]);
+
+  useEffect(() => {
+    api<ContractFilesResponse>({
+      path: '/profile/contract-files',
+      method: 'GET',
+    }).then((res) => {
+      if (res.status === 200) {
+        setFiles(res.data.files);
+      }
+    }).catch(console.error);
+  }, []);
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-4">
         <AppHeader backTitle="Гэрээ & дүрэм журам" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <DocumentItem label="Байгууллагын дотоод дүрэм журам" onPress={() => router.navigate({
-            pathname: '/pdf-view', params: { title: 'Дотоод дүрэм журам', url: 'https://assets.withfra.me/pdf/sample.pdf' }
-          })} />
-          <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Ажлын байрны тодорхойлолт" onPress={() => router.navigate({
-            pathname: '/pdf-view', params: { title: 'Ажлын байрны тодорхойлолт', url: 'https://assets.withfra.me/pdf/sample.pdf' }
-          })} />
-          <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Нууцын гэрээ" disabled />
-          <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Эд хөрөнгийн бүрэн хариуцлагын гэрээ" disabled />
-          <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Бусад гэрээ" />
-          <Separator className="bg-darkgray/12" />
-          <DocumentItem label="Бусад гэрээ" />
-          <Separator className="bg-darkgray/12" />
+          {files.map((file, index) => (
+            <React.Fragment key={index}>
+              <DocumentItem
+                label={file.name}
+                disabled={!file.path}
+                onPress={file.path ? () => router.navigate({
+                  pathname: '/pdf-view',
+                  params: { title: file.name, url: file.path },
+                }) : undefined}
+              />
+              {index < files.length - 1 && <Separator className="bg-darkgray/12" />}
+            </React.Fragment>
+          ))}
         </ScrollView>
       </View>
     </StyledSafeAreaView>

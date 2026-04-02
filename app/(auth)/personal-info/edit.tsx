@@ -24,7 +24,7 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 export default function PersonalInfoEditScreen() {
   const router = useRouter();
-  const { lastName, firstName, gender, nationality, familyName, phone, registerNumber, email, emergencyContact, emergencyRelation, aimag, soum, street, children, bankAccount, bank } = useAuthStore();
+  const { lastName, firstName, gender, nationality, familyName, phone, registerNumber, birthDate, email, emergencyContact, emergencyRelation, address, children, bankAccount, bank } = useAuthStore();
   const setInitialData = useAuthStore((state) => state.setInitialData);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -44,15 +44,21 @@ export default function PersonalInfoEditScreen() {
       nationality: nationality ?? 'mongolia',
       familyName: familyName ?? '',
       registerNumber: registerNumber ?? '',
+      birthDate: birthDate ?? '',
       email: email ?? '',
       emergencyContact: emergencyContact ?? '',
-      emergencyRelation: emergencyRelation ?? 'parent',
-      aimag: aimag ?? 'ulaanbaatar',
-      soum: soum ?? '',
-      street: street ?? '',
+      emergencyRelation: emergencyRelation ?? '',
+      address: {
+        path: {
+          aimag: address?.path?.aimag ?? '',
+          soum: address?.path?.soum ?? '',
+          khoroo: address?.path?.khoroo ?? '',
+        },
+        street: address?.street ?? '',
+      },
       children: children ?? [],
       bankAccount: bankAccount ?? '',
-      bank: bank ?? 'khan',
+      bank: bank ?? '',
     },
   });
 
@@ -155,7 +161,7 @@ export default function PersonalInfoEditScreen() {
                   <View className="flex-row gap-3">
                     <AppButton
                       label="Эмэгтэй"
-                      className="flex-1 bg-white border-darkgray/30"
+                      className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
                       labelClassName={cn(
                         "text-darkgray/50",
                         value === 'female' && 'text-black'
@@ -165,7 +171,7 @@ export default function PersonalInfoEditScreen() {
                     />
                     <AppButton
                       label="Эрэгтэй"
-                      className="flex-1 bg-white border-darkgray/30"
+                      className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
                       labelClassName={cn(
                         "text-darkgray/50",
                         value === 'male' && 'text-black'
@@ -180,12 +186,21 @@ export default function PersonalInfoEditScreen() {
             <Controller
               control={control}
               name="registerNumber"
-              rules={{ required: 'Регистрийн дугаар оруулна уу' }}
+              rules={{
+                required: 'Регистрийн дугаар оруулна уу',
+                pattern: {
+                  value: /^[А-ЯЁӨҮ]{2}\d{8}$/,
+                  message: 'Зөв формат: 2 кирилл үсэг + 8 тоо (жишээ: АБ12345678)',
+                },
+              }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
                   label="Регистрийн дугаар"
                   value={value}
-                  onChangeText={onChange}
+                  onChangeText={(text) => {
+                    const upper = text.slice(0, 2).toUpperCase() + text.slice(2);
+                    onChange(upper);
+                  }}
                   onBlur={onBlur}
                   maxLength={10}
                   isRequired
@@ -193,6 +208,27 @@ export default function PersonalInfoEditScreen() {
                   isInvalid={!!errors.registerNumber}
                 />
               )}
+            />
+            <Controller
+              control={control}
+              name="birthDate"
+              rules={{ required: 'Төрсөн огноо оруулна уу' }}
+              render={({ field: { onChange, value } }) => {
+                const dateValue = value ? new Date(value) : undefined;
+                return (
+                  <AppDatePicker
+                    label="Төрсөн огноо"
+                    mode="date"
+                    value={dateValue}
+                    onValueChange={(date) => {
+                      onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
+                    }}
+                    placeholder="0000/00/00"
+                    isRequired
+                    isInvalid={!!errors.birthDate}
+                  />
+                );
+              }}
             />
             <Controller
               control={control}
@@ -297,7 +333,7 @@ export default function PersonalInfoEditScreen() {
             />
             <Controller
               control={control}
-              name="aimag"
+              name="address.path.aimag"
               rules={{ required: 'Хот/аймаг сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
                 const selectedOption = addressOptions.find(opt => opt.value === value);
@@ -307,46 +343,74 @@ export default function PersonalInfoEditScreen() {
                     value={selectedOption}
                     onValueChange={(option) => {
                       onChange(option?.value);
-                      setValue('soum', '');
+                      setValue('address.path.soum', '');
+                      setValue('address.path.khoroo', '');
                     }}
                     options={addressOptions}
                     placeholder="Сонгох"
                     isRequired
-                    errorMessage={errors.aimag?.message}
-                    isInvalid={!!errors.aimag}
+                    errorMessage={errors.address?.path?.aimag?.message}
+                    isInvalid={!!errors.address?.path?.aimag}
                   />
                 );
               }}
             />
             <Controller
               control={control}
-              name="soum"
+              name="address.path.soum"
               rules={{ required: 'Дүүрэг/сум сонгоно уу' }}
               render={({ field: { onChange, value } }) => {
-                const selectedAimag = watch('aimag');
+                const selectedAimag = watch('address.path.aimag');
                 const soumOptions = addressOptions.find(c => c.value === selectedAimag)?.children ?? [];
                 const selectedOption = soumOptions.find(opt => opt.value === value);
                 return (
                   <AppSelect
                     label="Дүүрэг/сум"
                     value={selectedOption}
-                    onValueChange={(option) => onChange(option?.value)}
+                    onValueChange={(option) => {
+                      onChange(option?.value);
+                      setValue('address.path.khoroo', '');
+                    }}
                     options={soumOptions}
                     placeholder="Сонгох"
                     isRequired
-                    errorMessage={errors.soum?.message}
-                    isInvalid={!!errors.soum}
+                    errorMessage={errors.address?.path?.soum?.message}
+                    isInvalid={!!errors.address?.path?.soum}
                   />
                 );
               }}
             />
             <Controller
               control={control}
-              name="street"
+              name="address.path.khoroo"
+              rules={{ required: 'Хороо/баг сонгоно уу' }}
+              render={({ field: { onChange, value } }) => {
+                const selectedAimag = watch('address.path.aimag');
+                const selectedSoum = watch('address.path.soum');
+                const soumOptions = addressOptions.find(c => c.value === selectedAimag)?.children ?? [];
+                const khorooOptions = soumOptions.find(c => c.value === selectedSoum)?.children ?? [];
+                const selectedOption = khorooOptions.find(opt => opt.value === value);
+                return (
+                  <AppSelect
+                    label="Хороо/баг"
+                    value={selectedOption}
+                    onValueChange={(option) => onChange(option?.value)}
+                    options={khorooOptions}
+                    placeholder="Сонгох"
+                    isRequired
+                    errorMessage={errors.address?.path?.khoroo?.message}
+                    isInvalid={!!errors.address?.path?.khoroo}
+                  />
+                );
+              }}
+            />
+            <Controller
+              control={control}
+              name="address.street"
               rules={{ required: 'Хаяг оруулна уу' }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
-                  label="Хороо, гудамж, байр, тоот"
+                  label="Гудамж, байр, тоот"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -355,8 +419,8 @@ export default function PersonalInfoEditScreen() {
                   multiline
                   numberOfLines={4}
                   isRequired
-                  errorMessage={errors.street?.message}
-                  isInvalid={!!errors.street}
+                  errorMessage={errors.address?.street?.message}
+                  isInvalid={!!errors.address?.street}
                 />
               )}
             />
@@ -370,7 +434,7 @@ export default function PersonalInfoEditScreen() {
               </Label>
               <View className="flex-row items-center justify-center gap-8">
                 <AppButton
-                  className="w-11 h-11 rounded-full bg-white border-darkgray/30"
+                  className="w-11 h-11 rounded-full bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray/30"
                   isIconOnly
                   leftIcon={<HugeiconsIcon icon={MinusSignIcon} color="#222222" size={20} />}
                   onPress={() => fields.length > 0 && remove(fields.length - 1)}
@@ -407,7 +471,7 @@ export default function PersonalInfoEditScreen() {
                         <View className="flex-row gap-3">
                           <AppButton
                             label="Охин"
-                            className="flex-1 bg-white border-darkgray/30 rounded-full"
+                            className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
                             labelClassName={cn(
                               "text-darkgray/50",
                               value === 'female' && 'text-black'
@@ -417,7 +481,7 @@ export default function PersonalInfoEditScreen() {
                           />
                           <AppButton
                             label="Хүү"
-                            className="flex-1 bg-white border-darkgray/30 rounded-full"
+                            className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
                             labelClassName={cn(
                               "text-darkgray/50",
                               value === 'male' && 'text-black'

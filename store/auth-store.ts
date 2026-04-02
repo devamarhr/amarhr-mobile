@@ -8,7 +8,8 @@ export type SelectOption = {
   [key: string]: any;
 };
 
-export type AddressOption = SelectOption & { children: SelectOption[] };
+export type SoumOption = SelectOption & { children: SelectOption[] };
+export type AddressOption = SelectOption & { children: SoumOption[] };
 
 export interface SelectOptionsData {
   bank: SelectOption[];
@@ -22,6 +23,15 @@ export type Child = {
   birthDate: string;
 };
 
+export type Address = {
+  path: {
+    aimag: string;
+    soum: string;
+    khoroo: string;
+  };
+  street: string;
+};
+
 export interface ProfileFormData {
   lastName: string;
   firstName: string;
@@ -29,23 +39,22 @@ export interface ProfileFormData {
   nationality: string;
   familyName: string;
   registerNumber: string;
+  birthDate: string;
   email: string;
   emergencyContact: string;
   emergencyRelation: string;
-  aimag: string;
-  soum: string;
-  street: string;
+  address: Address;
   children: Child[];
   bankAccount: string;
   bank: string;
   profileImage?: string;
 }
 
+// Profile data from API
 export interface ProfileData {
   hasCompletedOnboarding: boolean;
   isSupervisor: boolean;
   companyName: string | null;
-  attendanceType: 'wifi' | 'location';
   jobPosition: string | null;
 
   lastName: string | null;
@@ -54,12 +63,11 @@ export interface ProfileData {
   nationality: string | null;
   familyName: string | null;
   registerNumber: string | null;
+  birthDate: string | null;
   email: string | null;
   emergencyContact: string | null;
   emergencyRelation: string | null;
-  aimag: string | null;
-  soum: string | null;
-  street: string | null;
+  address: Address | null;
   children: Child[];
   bankAccount: string | null;
   bank: string | null;
@@ -83,12 +91,11 @@ interface AuthState {
   nationality: string | null;
   familyName: string | null;
   registerNumber: string | null;
+  birthDate: string | null;
   email: string | null;
   emergencyContact: string | null;
   emergencyRelation: string | null;
-  aimag: string | null;
-  soum: string | null;
-  street: string | null;
+  address: Address | null;
   children: Child[];
   bankAccount: string | null;
   bank: string | null;
@@ -121,12 +128,11 @@ export const useAuthStore = create<AuthState>()(
       nationality: null,
       familyName: null,
       registerNumber: null,
+      birthDate: null,
       email: null,
       emergencyContact: null,
       emergencyRelation: null,
-      aimag: null,
-      soum: null,
-      street: null,
+      address: null,
       children: [],
       bankAccount: null,
       bank: null,
@@ -142,7 +148,6 @@ export const useAuthStore = create<AuthState>()(
           hasCompletedOnboarding: data.hasCompletedOnboarding,
           isSupervisor: data.isSupervisor,
           companyName: data.companyName,
-          attendanceType: data.attendanceType,
           jobPosition: data.jobPosition,
           lastName: data.lastName,
           firstName: data.firstName,
@@ -150,12 +155,11 @@ export const useAuthStore = create<AuthState>()(
           nationality: data.nationality,
           familyName: data.familyName,
           registerNumber: data.registerNumber,
+          birthDate: data.birthDate,
           email: data.email,
           emergencyContact: data.emergencyContact,
           emergencyRelation: data.emergencyRelation,
-          aimag: data.aimag,
-          soum: data.soum,
-          street: data.street,
+          address: data.address,
           children: data.children,
           bankAccount: data.bankAccount,
           bank: data.bank,
@@ -183,12 +187,11 @@ export const useAuthStore = create<AuthState>()(
           nationality: null,
           familyName: null,
           registerNumber: null,
+          birthDate: null,
           email: null,
           emergencyContact: null,
           emergencyRelation: null,
-          aimag: null,
-          soum: null,
-          street: null,
+          address: null,
           children: [],
           bankAccount: null,
           bank: null,

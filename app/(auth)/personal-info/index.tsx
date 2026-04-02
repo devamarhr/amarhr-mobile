@@ -35,10 +35,12 @@ export default function PersonalInfoScreen() {
   const genderDisplay = store.gender === 'male' ? 'Эрэгтэй' : store.gender === 'female' ? 'Эмэгтэй' : null;
   const emergencyRelationLabel = findLabel(relationshipOptions, store.emergencyRelation);
   const emergencyDisplay = store.emergencyContact ? `${store.emergencyContact} /${emergencyRelationLabel}/` : null;
-  const aimagLabel = findLabel(addressOptions, store.aimag);
-  const soumOptions = addressOptions.find(c => c.value === store.aimag)?.children ?? [];
-  const soumLabel = findLabel(soumOptions, store.soum);
-  const addressDisplay = [aimagLabel, soumLabel, store.street].filter(Boolean).join(', ');
+  const aimagLabel = findLabel(addressOptions, store.address?.path?.aimag ?? null);
+  const soumOptions = addressOptions.find(c => c.value === store.address?.path?.aimag)?.children ?? [];
+  const soumLabel = findLabel(soumOptions, store.address?.path?.soum ?? null);
+  const khorooOptions = soumOptions.find(c => c.value === store.address?.path?.soum)?.children ?? [];
+  const khorooLabel = findLabel(khorooOptions, store.address?.path?.khoroo ?? null);
+  const addressDisplay = [aimagLabel, soumLabel, khorooLabel, store.address?.street].filter(Boolean).join(', ');
   const childrenCount = store.children?.length ?? 0;
   const bankLabel = findLabel(bankOptions, store.bank);
   const salaryDisplay = store.bankAccount ? `${store.bankAccount} /${bankLabel}/` : null;
@@ -59,6 +61,7 @@ export default function PersonalInfoScreen() {
           <InfoField label="Овог Нэр" value={fullName} />
           <InfoField label="Хүйс" value={genderDisplay} />
           <InfoField label="Регистрийн дугаар" value={store.registerNumber} />
+          <InfoField label="Төрсөн огноо" value={store.birthDate} />
           <InfoField label="Иргэншил" value={findLabel(nationalityOptions, store.nationality)} />
           <InfoField label="Ургийн овог" value={store.familyName} />
           <InfoField label="Утасны дугаар" value={store.phone} />
