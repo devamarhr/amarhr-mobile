@@ -1,12 +1,13 @@
-import { View, Pressable, ScrollView } from 'react-native';
-import { Separator } from 'heroui-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { withUniwind } from 'uniwind';
-import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
 import { AppHeader } from '@/components/app-header';
+import { AppText } from '@/components/app-text';
+import { api } from '@/config/api';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Separator } from 'heroui-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -22,14 +23,160 @@ interface RequestItem {
   label: string;
   type: FormType;
   headerInfo?: HeaderInfoItem[];
-  textAreaLabel?: string;
-  textAreaPlaceholder?: string;
-  dateLabel?: string;
+  maxDays?: number;
+  maxHours?: number;
 }
 
 interface RequestCategory {
   name: string;
   items: RequestItem[];
+}
+
+interface ApiRequestSetting {
+  id: number;
+  type: string;
+  request_type: string;
+  name: string;
+  detail: {
+    key?: string;
+    name: string;
+    show: boolean;
+    fields: { time_unit?: string; has_salary?: boolean; time_value?: number; salary_percent?: number; salary_calculate?: string | null } | [];
+    annual_leave_available?: number;
+    compensatory_hours?: number;
+    compensatory_max_hour?: number;
+    compensatory_max_day?: number;
+  };
+  adjustment_setting: {
+    id: number;
+    detail: { amount: number; amount_type: 'fixed' | 'percent' }[];
+  } | null;
+}
+
+type ApiResponse = Record<string, ApiRequestSetting[]>;
+
+const categoryLabels: Record<string, string> = {
+  time_correction: 'Цаг засах',
+  leave: 'Амралт, чөлөө',
+  remote: 'Зайнаас ажиллах',
+  other: 'Бусад',
+  employee_status: 'Урт хугацааны, төлөв өөрчлөх',
+  benefit: 'Тэтгэмж',
+};
+
+const categoryOrder = ['leave', 'remote', 'other', 'employee_status', 'benefit'];
+
+function getFormType(setting: ApiRequestSetting): FormType {
+  if (setting.request_type === 'time_correction') return 'timeCorrection';
+
+  if (setting.type === 'system') {
+    const key = setting.detail.key;
+    if (key === 'overtime') return 'timeRange';
+    if (key === 'feedback' || key === 'anonymous_feedback') return 'textOnly';
+    if (key === 'compensatory') return 'compensatory';
+    if (key === 'annual_leave') return 'dateRange';
+    return 'textOnly';
+  }
+
+  if (setting.type === 'attendance' || setting.type === 'remote') {
+    const fields = setting.detail.fields;
+    if (!Array.isArray(fields) && fields.time_unit === 'hour') return 'timeRange';
+    return 'dateRange';
+  }
+
+  if (setting.type === 'employee_status' || setting.type === 'benefit') return 'textOnly';
+
+  return 'textOnly';
+}
+
+function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined {
+  const detail = setting.detail;
+
+  if (detail.key === 'compensatory' && detail.compensatory_hours != null) {
+    return [{ label: 'Хуримтлагдсан цаг', value: `${detail.compensatory_hours} цаг` }];
+  }
+
+  if (detail.key === 'annual_leave' && detail.annual_leave_available != null) {
+    return [{ label: 'Боломжит хоног', value: `${detail.annual_leave_available} хоног` }];
+  }
+
+  if (setting.type === 'benefit' && setting.adjustment_setting?.detail?.length) {
+    return setting.adjustment_setting.detail.map((item) => {
+      if (item.amount_type === 'fixed') {
+        return { label: 'Нэг удаагийн', value: `₮${item.amount.toLocaleString()}` };
+      }
+      return { label: 'Үндсэн цалингийн', value: `%${item.amount}` };
+    });
+  }
+
+  const fields = detail.fields;
+  if (Array.isArray(fields)) return undefined;
+
+  if (setting.type === 'attendance') {
+    const timeLabel = fields.time_unit === 'hour' ? 'Боломжит дээд цаг' : 'Боломжит дээд хоног';
+    const timeValue = fields.time_unit === 'hour' ? `${fields.time_value} цаг` : `${fields.time_value} хоног`;
+    return [
+      { label: 'Амралт чөлөөний төрөл', value: fields.has_salary ? 'Цалинтай' : 'Цалингүй' },
+      { label: timeLabel, value: timeValue },
+    ];
+  }
+
+  if (setting.type === 'remote') {
+    const timeLabel = fields.time_unit === 'hour' ? 'Боломжит дээд цаг' : 'Боломжит дээд хоног';
+    const timeValue = fields.time_unit === 'hour' ? `${fields.time_value} цаг` : `${fields.time_value} хоног`;
+    return [
+      { label: 'Цалин бодолтын хувь', value: `% ${fields.salary_percent}` },
+      { label: timeLabel, value: timeValue },
+    ];
+  }
+
+  return undefined;
+}
+
+function mapApiToCategories(data: ApiResponse): RequestCategory[] {
+  const categories: RequestCategory[] = [];
+
+  for (const key of categoryOrder) {
+    const settings = data[key];
+    if (!settings?.length) continue;
+
+    categories.push({
+      name: categoryLabels[key] || key,
+      items: settings.map((s) => {
+        const fields = s.detail.fields;
+        const detail = s.detail;
+        let maxDays: number | undefined;
+        let maxHours: number | undefined;
+
+        if (!Array.isArray(fields) && fields.time_value) {
+          if (fields.time_unit === 'hour') {
+            maxHours = fields.time_value;
+          } else {
+            maxDays = fields.time_value;
+          }
+        }
+
+        if (detail.key === 'annual_leave' && detail.annual_leave_available) {
+          maxDays = detail.annual_leave_available;
+        }
+        if (detail.key === 'compensatory') {
+          if (detail.compensatory_max_day) maxDays = detail.compensatory_max_day;
+          if (detail.compensatory_max_hour) maxHours = detail.compensatory_max_hour;
+        }
+
+        return {
+          id: String(s.id),
+          label: s.name,
+          type: getFormType(s),
+          headerInfo: getHeaderInfo(s),
+          maxDays,
+          maxHours,
+        };
+      }),
+    });
+  }
+
+  return categories;
 }
 
 interface Decision {
@@ -55,190 +202,34 @@ const DECISIONS: Decision[] = [
   },
 ];
 
-const CATEGORIES: RequestCategory[] = [
-  {
-    name: 'Амралт, чөлөө',
-    items: [
-      {
-        id: '1',
-        label: 'Хагас өдрийн чөлөө',
-        type: 'timeRange',
-        dateLabel: 'Чөлөө авах өдөр',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалингүй' },
-          { label: 'Боломжит дээд цаг', value: '6 цаг' },
-        ],
-      },
-      {
-        id: '2',
-        label: 'Цалингүй чөлөө /3 хүртэлх хоног/',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалингүй' },
-          { label: 'Боломжит дээд хоног', value: '3 хоног' },
-        ],
-      },
-      {
-        id: '3',
-        label: 'Цалингүй чөлөө /3-с дээш хоног/',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалингүй' },
-          { label: 'Боломжит дээд хоног', value: '20 хоног' },
-        ],
-      },
-      {
-        id: '4',
-        label: 'Өвчний чөлөө /5 хүртэлх хоног, цалинтай/',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалинтай' },
-          { label: 'Боломжит дээд хоног', value: '5 хоног' },
-        ],
-      },
-      {
-        id: '5',
-        label: 'Нөхөж амрах',
-        type: 'compensatory',
-        headerInfo: [{ label: 'Хуримтлагдсан цаг', value: '12:00' }],
-      },
-      {
-        id: '6',
-        label: 'Ээлжийн амралт',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалинтай' },
-          { label: 'Боломжит хоног', value: '15 хоног' },
-          { label: 'Олговор авах хоног', value: '15 хоног' },
-        ],
-      },
-      {
-        id: '7',
-        label: 'Шинэ аавын амралт',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалинтай' },
-          { label: 'Боломжит дээд хоног', value: '10 хоног' },
-        ],
-      },
-      {
-        id: '8',
-        label: 'Шинээр нэмсэн ирцэд нөлөөлөх',
-        type: 'dateRange',
-        headerInfo: [
-          { label: 'Амралт чөлөөний төрөл', value: 'Цалинтай' },
-          { label: 'Боломжит дээд хоног', value: '10 хоног' },
-        ],
-      },
-    ],
-  },
-  {
-    name: 'Зайнаас ажиллах',
-    items: [
-      {
-        id: '9',
-        label: 'Гадуур ажиллах',
-        type: 'timeRange',
-        dateLabel: 'Зайнаас ажиллах өдөр',
-        headerInfo: [
-          { label: 'Цалин бодолтын хувь', value: '% 100' },
-          { label: 'Боломжит дээд цаг', value: '6 цаг' },
-        ],
-      },
-      {
-        id: '10',
-        label: 'Зайнаас ажиллах',
-        type: 'timeRange',
-        dateLabel: 'Зайнаас ажиллах өдөр',
-        headerInfo: [
-          { label: 'Цалин бодолтын хувь', value: '% 100' },
-          { label: 'Боломжит дээд цаг', value: '8 цаг' },
-        ],
-      },
-      {
-        id: '11',
-        label: 'Сургалт',
-        type: 'timeRange',
-        dateLabel: 'Сургалтын өдөр',
-        headerInfo: [
-          { label: 'Цалин бодолтын хувь', value: '% 100' },
-          { label: 'Боломжит дээд цаг', value: '8 цаг' },
-        ],
-      },
-      {
-        id: '12',
-        label: 'Шинээр нэмсэн зайнаас ажиллах',
-        type: 'timeRange',
-        dateLabel: 'Зайнаас ажиллах өдөр',
-        headerInfo: [
-          { label: 'Цалин бодолтын хувь', value: '% 100' },
-          { label: 'Боломжит дээд цаг', value: '8 цаг' },
-        ],
-      },
-    ],
-  },
-  {
-    name: 'Бусад',
-    items: [
-      {
-        id: '13',
-        label: 'Илүү цагаар ажиллах',
-        type: 'timeRange',
-        dateLabel: 'Ажиллах өдөр',
-      },
-      {
-        id: '14',
-        label: 'Санал, хүсэлт',
-        type: 'textOnly',
-        textAreaLabel: 'Санал, хүсэлт',
-        textAreaPlaceholder: 'Санал, хүсэлтээ энд бичнэ үү',
-      },
-      {
-        id: '15',
-        label: 'Нэрээ нууцалсан санал, гомдол',
-        type: 'textOnly',
-        textAreaLabel: 'Санал, гомдол',
-        textAreaPlaceholder: 'Санал, гомдлоо энд бичнэ үү',
-      },
-    ],
-  },
-  {
-    name: 'Урт хугацааны, төлөв өөрчлөх',
-    items: [
-      { id: '16', label: 'Урт хугацааны өвчний чөлөө', type: 'textOnly' },
-      { id: '17', label: 'Жирэмсний болон амаржсаны амралт', type: 'textOnly' },
-      { id: '18', label: 'Хүүхэд асрах чөлөө /3 хүртэлх насны/', type: 'textOnly' },
-      { id: '19', label: 'Шинээр нэмсэн төлөв, гэрээнд нөлөөлөх нөлөөлөх нөлөөлөх нөлөөлөх', type: 'textOnly' },
-    ],
-  },
-  {
-    name: 'Тэтгэмж',
-    items: [
-      {
-        id: '20',
-        label: 'Гэрлэлтээ батлуулсны тэтгэмж',
-        type: 'textOnly',
-        headerInfo: [{ label: 'Үндсэн цалингийн', value: '% 100' }],
-      },
-      { id: '21', label: 'Шинээр нэмсэн тэтгэмж', type: 'textOnly' },
-    ],
-  },
-];
-
 export default function RequestScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
+  const [categories, setCategories] = useState<RequestCategory[]>([]);
+
+  useEffect(() => {
+    api<ApiResponse>({
+      path: '/employee-request/settings',
+      method: 'GET',
+    }).then((res) => {
+      if (res.status === 200) {
+        const a = mapApiToCategories(res.data)
+        console.log(JSON.stringify(a))
+        setCategories(mapApiToCategories(res.data));
+      }
+    }).catch(console.error);
+  }, []);
 
   const handleItemPress = (item: RequestItem) => {
     router.navigate({
       pathname: '/request/create',
       params: {
+        id: item.id,
         title: item.label,
         type: item.type,
         ...(item.headerInfo && { headerInfo: JSON.stringify(item.headerInfo) }),
-        ...(item.textAreaLabel && { textAreaLabel: item.textAreaLabel }),
-        ...(item.textAreaPlaceholder && { textAreaPlaceholder: item.textAreaPlaceholder }),
-        ...(item.dateLabel && { dateLabel: item.dateLabel }),
+        ...(item.maxDays && { maxDays: String(item.maxDays) }),
+        ...(item.maxHours && { maxHours: String(item.maxHours) }),
       },
     });
   };
@@ -270,7 +261,7 @@ export default function RequestScreen() {
 
         <ScrollView className="flex-1" contentContainerClassName="pb-5" showsVerticalScrollIndicator={false}>
           {activeTab === 0 ? (
-            CATEGORIES.map((category) => (
+            categories.map((category) => (
               <View key={category.name}>
                 <View className="bg-lightblue px-4 py-2">
                   <AppText className="text-sm text-darkblue text-right">

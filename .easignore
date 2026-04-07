@@ -52,7 +52,6 @@ example
 .agent
 .agents
 .claude
-google-services.json
 upload.keystore
 AGENTS.md
 CLAUDE.md

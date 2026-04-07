@@ -1,11 +1,12 @@
 import { View, ScrollView, Pressable } from 'react-native';
-import { cn, Label } from 'heroui-native';
+import { cn, Label, Spinner } from 'heroui-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppButton } from '@/components/app-button';
+import { AppSelect } from '@/components/app-select';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -19,6 +20,7 @@ import {
   MultiplicationSignIcon, LoginCircle02Icon, LogoutCircle02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
 import * as DocumentPicker from 'expo-document-picker';
+import { uploadFile } from '@/config/api';
 import React, { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -34,12 +36,11 @@ interface HeaderInfoItem {
 
 interface FormData {
   startDate?: Date;
-  endDate?: Date;
-  singleDate?: Date;
+  days?: string;
+  hours?: string;
   startTime?: Date;
-  endTime?: Date;
   arrivalTime?: Date;
-  departureTime?: Date;
+  leaveTime?: Date;
   overtimeStartTime?: Date;
   overtimeEndTime?: Date;
   description: string;
@@ -59,12 +60,12 @@ export default function RequestCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
+    id: string;
     title: string;
     type: string;
     headerInfo?: string;
-    textAreaLabel?: string;
-    textAreaPlaceholder?: string;
-    dateLabel?: string;
+    maxDays?: string;
+    maxHours?: string;
     arrived?: string;
     left?: string;
     overtimeStart?: string;
@@ -80,22 +81,37 @@ export default function RequestCreateScreen() {
       return [];
     }
   }, [params.headerInfo]);
-  const textAreaLabel = params.textAreaLabel;
-  const textAreaPlaceholder = params.textAreaPlaceholder;
-  const dateLabel = params.dateLabel;
 
+  const maxDays = params.maxDays ? parseInt(params.maxDays, 10) : 0;
+  const maxHours = params.maxHours ? parseInt(params.maxHours, 10) : 0;
+  const dayOptions = useMemo(() =>
+    Array.from({ length: maxDays }, (_, i) => ({ value: String(i + 1), label: `${i + 1} хоног` })),
+    [maxDays]
+  );
+  const hourOptions = useMemo(() =>
+    Array.from({ length: maxHours }, (_, i) => ({ value: String(i + 1), label: `${i + 1} цаг` })),
+    [maxHours]
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [attachments, setAttachments] = useState<{ name: string; tmpPath: string }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
 
   const handlePickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ multiple: true });
     if (result.canceled) return;
 
+    setIsUploading(true);
     for (const asset of result.assets) {
-      // TODO: replace with real API upload
-      const tmpPath = `/tmp/uploads/${Date.now()}_${asset.name}`;
-      setAttachments((prev) => [...prev, { name: asset.name, tmpPath }]);
+      try {
+        const res = await uploadFile<{ path: string }>('/file-upload', asset.uri);
+        if (res.status === 200) {
+          setAttachments((prev) => [...prev, { name: asset.name, path: res.data.path }]);
+        }
+      } catch (e) {
+        console.error('Upload failed:', e);
+      }
     }
+    setIsUploading(false);
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -112,21 +128,13 @@ export default function RequestCreateScreen() {
       description: '',
       compensatoryMode: 'day',
       arrivalTime: parseTimeToDate(params.arrived),
-      departureTime: parseTimeToDate(params.left),
+      leaveTime: parseTimeToDate(params.left),
       overtimeStartTime: parseTimeToDate(params.overtimeStart),
       overtimeEndTime: parseTimeToDate(params.overtimeEnd),
     },
   });
 
   const compensatoryMode = watch('compensatoryMode');
-  const startDate = watch('startDate');
-  const endDate = watch('endDate');
-
-  const totalDays = useMemo(() => {
-    if (!startDate || !endDate) return null;
-    const diff = dayjs(endDate).diff(dayjs(startDate), 'day') + 1;
-    return diff > 0 ? diff : null;
-  }, [startDate, endDate]);
 
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
@@ -182,33 +190,21 @@ export default function RequestCreateScreen() {
         <View className="flex-1">
           <Controller
             control={control}
-            name="endDate"
-            rules={{ required: 'Дуусах өдөр сонгоно уу' }}
+            name="days"
+            rules={{ required: 'Хоног сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Дуусах өдөр"
-                mode="date"
-                value={value}
-                onValueChange={onChange}
-                placeholder="00/00"
-                format="MM/DD"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.endDate}
-                errorMessage={errors.endDate?.message}
+              <AppSelect
+                label="Хоног"
+                options={dayOptions}
+                value={dayOptions.find(o => o.value === value)}
+                onValueChange={(opt) => onChange(opt?.value ?? '')}
+                placeholder="Сонгох"
+                isInvalid={!!errors.days}
+                errorMessage={errors.days?.message}
               />
             )}
           />
         </View>
-      </View>
-
-      <View className="flex-row gap-3">
-        <View className="flex-1 gap-2">
-            <AppText className="text-sm text-darkgray">Нийт ажлын хоног</AppText>
-            <View className="bg-gray/10 rounded-lg h-11 px-3 justify-center">
-              <AppText className="text-sm">{totalDays ?? '-'} хоног</AppText>
-            </View>
-        </View>
-        <View className="flex-1"></View>
       </View>
     </>
   );
@@ -219,40 +215,17 @@ export default function RequestCreateScreen() {
         <View className="flex-1">
           <Controller
             control={control}
-            name="singleDate"
-            rules={{ required: 'Өдөр сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label={dateLabel ?? 'Өдөр'}
-                mode="date"
-                value={value}
-                onValueChange={onChange}
-                placeholder="00/00"
-                format="MM/DD"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.singleDate}
-                errorMessage={errors.singleDate?.message}
-              />
-            )}
-          />
-        </View>
-        <View className="flex-1"></View>
-      </View>
-
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
             name="startTime"
             rules={{ required: 'Эхлэх цаг сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppDatePicker
                 label="Эхлэх цаг"
-                mode="time"
+                mode="datetime"
                 value={value}
                 onValueChange={onChange}
-                placeholder="00:00"
-                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                placeholder="00/00 00:00"
+                format="MM/DD HH:mm"
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.startTime}
                 errorMessage={errors.startTime?.message}
               />
@@ -262,18 +235,17 @@ export default function RequestCreateScreen() {
         <View className="flex-1">
           <Controller
             control={control}
-            name="endTime"
-            rules={{ required: 'Дуусах цаг сонгоно уу' }}
+            name="hours"
+            rules={{ required: 'Цаг сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Дуусах цаг"
-                mode="time"
-                value={value}
-                onValueChange={onChange}
-                placeholder="00:00"
-                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.endTime}
-                errorMessage={errors.endTime?.message}
+              <AppSelect
+                label="Хугацаа"
+                options={hourOptions}
+                value={hourOptions.find(o => o.value === value)}
+                onValueChange={(opt) => onChange(opt?.value ?? '')}
+                placeholder="Сонгох"
+                isInvalid={!!errors.hours}
+                errorMessage={errors.hours?.message}
               />
             )}
           />
@@ -306,7 +278,7 @@ export default function RequestCreateScreen() {
         <View className="flex-1">
           <Controller
             control={control}
-            name="departureTime"
+            name="leaveTime"
             render={({ field: { onChange, value } }) => (
               <AppDatePicker
                 label="Тарсан цаг"
@@ -315,8 +287,8 @@ export default function RequestCreateScreen() {
                 onValueChange={onChange}
                 placeholder="--:--"
                 icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.departureTime}
-                errorMessage={errors.departureTime?.message}
+                isInvalid={!!errors.leaveTime}
+                errorMessage={errors.leaveTime?.message}
               />
             )}
           />
@@ -420,7 +392,7 @@ export default function RequestCreateScreen() {
                   mode="date"
                   value={value}
                   onValueChange={onChange}
-                  placeholder="MM/DD"
+                  placeholder="00/00"
                   format="MM/DD"
                   icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                   isInvalid={!!errors.startDate}
@@ -432,19 +404,17 @@ export default function RequestCreateScreen() {
           <View className="flex-1">
             <Controller
               control={control}
-              name="endDate"
-              rules={{ required: 'Дуусах өдөр сонгоно уу' }}
+              name="days"
+              rules={{ required: 'Хоног сонгоно уу' }}
               render={({ field: { onChange, value } }) => (
-                <AppDatePicker
-                  label="Дуусах өдөр"
-                  mode="date"
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="MM/DD"
-                  format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                  isInvalid={!!errors.endDate}
-                  errorMessage={errors.endDate?.message}
+                <AppSelect
+                  label="Хоног"
+                  options={dayOptions}
+                  value={dayOptions.find(o => o.value === value)}
+                  onValueChange={(opt) => onChange(opt?.value ?? '')}
+                  placeholder="Сонгох"
+                  isInvalid={!!errors.days}
+                  errorMessage={errors.days?.message}
                 />
               )}
             />
@@ -452,24 +422,6 @@ export default function RequestCreateScreen() {
         </View>
       ) : (
         <>
-          <Controller
-            control={control}
-            name="singleDate"
-            rules={{ required: 'Нөхөж амрах өдөр сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Нөхөж амрах өдөр"
-                mode="date"
-                value={value}
-                onValueChange={onChange}
-                placeholder="MM/DD"
-                format="MM/DD"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.singleDate}
-                errorMessage={errors.singleDate?.message}
-              />
-            )}
-          />
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Controller
@@ -479,11 +431,12 @@ export default function RequestCreateScreen() {
                 render={({ field: { onChange, value } }) => (
                   <AppDatePicker
                     label="Эхлэх цаг"
-                    mode="time"
+                    mode="datetime"
                     value={value}
                     onValueChange={onChange}
-                    placeholder="00:00"
-                    icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                    placeholder="00/00 00:00"
+                    format="MM/DD HH:mm"
+                    icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                     isInvalid={!!errors.startTime}
                     errorMessage={errors.startTime?.message}
                   />
@@ -493,18 +446,17 @@ export default function RequestCreateScreen() {
             <View className="flex-1">
               <Controller
                 control={control}
-                name="endTime"
-                rules={{ required: 'Дуусах цаг сонгоно уу' }}
+                name="hours"
+                rules={{ required: 'Цаг сонгоно уу' }}
                 render={({ field: { onChange, value } }) => (
-                  <AppDatePicker
-                    label="Дуусах цаг"
-                    mode="time"
-                    value={value}
-                    onValueChange={onChange}
-                    placeholder="00:00"
-                    icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-                    isInvalid={!!errors.endTime}
-                    errorMessage={errors.endTime?.message}
+                  <AppSelect
+                    label="Хугацаа"
+                    options={hourOptions}
+                    value={hourOptions.find(o => o.value === value)}
+                    onValueChange={(opt) => onChange(opt?.value ?? '')}
+                    placeholder="Сонгох"
+                    isInvalid={!!errors.hours}
+                    errorMessage={errors.hours?.message}
                   />
                 )}
               />
@@ -559,20 +511,24 @@ export default function RequestCreateScreen() {
               name="description"
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
-                  label={textAreaLabel ?? 'Тайлбар'}
+                  label="Тайлбар"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   isTextArea
                   className={type === 'textOnly' ? 'h-40' : 'h-22'}
-                  placeholder={textAreaPlaceholder ?? 'Тайлбараа энд бичнэ үү'}
+                  placeholder="Тайлбараа энд бичнэ үү"
                 />
               )}
             />
 
-            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickFile}>
-              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-              <AppText className="text-sm text-darkgray">Файл хавсаргах</AppText>
+            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickFile} disabled={isUploading}>
+              {isUploading ? (
+                <Spinner color="#005FEE" size="sm" />
+              ) : (
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+              )}
+              <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
 
             {attachments.map((file, index) => (
@@ -596,6 +552,7 @@ export default function RequestCreateScreen() {
           <AppButton
             label="Илгээх"
             onPress={handleSubmit(handleSend)}
+            isDisabled={isUploading}
             isLoading={isLoading}
             className="bg-lightblue border-darkblue/15"
             labelClassName="text-darkerblue text-base font-medium"

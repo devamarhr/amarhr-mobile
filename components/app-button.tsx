@@ -125,7 +125,7 @@ export function AppButton({
       isDisabled={isDisabled || isLoading}
       isIconOnly={isIconOnly}
       className={cn(
-        'h-[44px] border border-darkgray/30 bg-white disabled:border-transparent disabled:bg-darkgray/30 disabled:opacity-100',
+        'h-[44px] border border-darkgray/30 bg-white disabled:opacity-50',
         className
       )}
       feedbackVariant="scale"
