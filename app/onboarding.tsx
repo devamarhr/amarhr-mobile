@@ -1,31 +1,31 @@
-import { AppText } from '@/components/app-text';
 import { AppButton } from '@/components/app-button';
-import { AppTextField } from '@/components/app-text-field';
+import { AppDatePicker } from "@/components/app-date-picker";
+import { AppHeader } from "@/components/app-header";
 import { AppSelect } from '@/components/app-select';
-import { useAuthStore, type ProfileFormData, ProfileData } from '@/store/auth-store';
-import { useSelectOptions } from '@/hooks/use-select-options';
+import { AppText } from '@/components/app-text';
+import { AppTextField } from '@/components/app-text-field';
+import { AppToast } from "@/components/app-toast";
 import { api, uploadFile } from '@/config/api';
-import dayjs from 'dayjs';
-import React, { useState, useRef } from 'react';
-import { View, ScrollView, Image } from 'react-native';
-import Animated, { SlideInRight, SlideInLeft } from 'react-native-reanimated';
-import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, useRouter } from 'expo-router';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { useSelectOptions } from '@/hooks/use-select-options';
+import { ProfileData, useAuthStore, type ProfileFormData } from '@/store/auth-store';
 import {
   Alert01Icon,
   ArrowLeft01Icon,
   MinusSignIcon,
   PlusSignIcon
 } from "@hugeicons-pro/core-stroke-standard";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import dayjs from 'dayjs';
+import * as ImagePicker from 'expo-image-picker';
+import { Redirect, useRouter } from 'expo-router';
 import { cn, Label, useToast } from 'heroui-native';
+import React, { useRef, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Image, View } from 'react-native';
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from "uniwind";
-import { AppDatePicker } from "@/components/app-date-picker";
-import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { AppHeader } from "@/components/app-header";
-import { AppToast } from "@/components/app-toast";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -94,7 +94,7 @@ export default function OnboardingScreen() {
               <View className="flex-row gap-3">
                 <AppButton
                   label="Эмэгтэй"
-                  className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
+                  className="flex-1 bg-white border-darkgray/30 disabled:border-darkgray disabled:opacity-100"
                   labelClassName={cn(
                     "text-darkgray/50",
                     value === 'female' && 'text-black'
@@ -104,7 +104,7 @@ export default function OnboardingScreen() {
                 />
                 <AppButton
                   label="Эрэгтэй"
-                  className="flex-1 bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray"
+                  className="flex-1 bg-white border-darkgray/30 disabled:border-darkgray disabled:opacity-100"
                   labelClassName={cn(
                     "text-darkgray/50",
                     value === 'male' && 'text-black'
@@ -395,7 +395,7 @@ export default function OnboardingScreen() {
             </Label>
             <View className="flex-row items-center justify-center gap-8">
               <AppButton
-                className="w-11 h-11 rounded-full bg-white border-darkgray/30 disabled:bg-white disabled:border-darkgray/30"
+                className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                 isIconOnly
                 leftIcon={<HugeiconsIcon icon={MinusSignIcon} color="#222222" size={20} />}
                 onPress={removeChild}
@@ -433,7 +433,7 @@ export default function OnboardingScreen() {
                       <View className="flex-row gap-3">
                         <AppButton
                           label="Охин"
-                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
+                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:border-darkgray disabled:opacity-100"
                           labelClassName={cn(
                             "text-darkgray/50",
                             value === 'female' && 'text-black'
@@ -443,7 +443,7 @@ export default function OnboardingScreen() {
                         />
                         <AppButton
                           label="Хүү"
-                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:bg-white disabled:border-darkgray"
+                          className="flex-1 bg-white border-darkgray/30 rounded-full disabled:border-darkgray disabled:opacity-100"
                           labelClassName={cn(
                             "text-darkgray/50",
                             value === 'male' && 'text-black'
@@ -553,9 +553,9 @@ export default function OnboardingScreen() {
           setProfileImage(result.assets[0].uri);
           const uri = result.assets[0].uri;
           try {
-            const res = await uploadFile<{ name: string; path: string }>('/file-upload', uri);
+            const res = await uploadFile<{ path: string; url: string }>('/file-upload', uri);
             if (res.status === 200) {
-              setValue('profileImage', res.data.name, { shouldValidate: true });
+              setValue('profileImage', res.data.path, { shouldValidate: true });
             }
           } catch (error) {
             console.error('Image upload error:', error);

@@ -53,7 +53,7 @@ export interface ProfileFormData {
 // Profile data from API
 export interface ProfileData {
   hasCompletedOnboarding: boolean;
-  isSupervisor: boolean;
+  isSenior: boolean;
   companyName: string | null;
   jobPosition: string | null;
 
@@ -79,7 +79,7 @@ interface AuthState {
   phone: string | null;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
-  isSupervisor: boolean;
+  isSenior: boolean;
   companyName: string | null;
   attendanceType: 'wifi' | 'location';
   jobPosition: string | null;
@@ -118,7 +118,7 @@ export const useAuthStore = create<AuthState>()(
       phone: null,
       isAuthenticated: false,
       hasCompletedOnboarding: false,
-      isSupervisor: false,
+      isSenior: false,
       companyName: null,
       attendanceType: 'location',
       jobPosition: null,
@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthState>()(
       setInitialData: (data: ProfileData) => {
         set({
           hasCompletedOnboarding: data.hasCompletedOnboarding,
-          isSupervisor: data.isSupervisor,
+          isSenior: data.isSenior,
           companyName: data.companyName,
           jobPosition: data.jobPosition,
           lastName: data.lastName,
@@ -177,7 +177,7 @@ export const useAuthStore = create<AuthState>()(
           phone: null,
           isAuthenticated: false,
           hasCompletedOnboarding: false,
-          isSupervisor: false,
+          isSenior: false,
           companyName: null,
           attendanceType: 'location',
           jobPosition: null,

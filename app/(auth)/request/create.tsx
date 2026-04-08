@@ -1,29 +1,32 @@
-import { View, ScrollView, Pressable } from 'react-native';
-import { cn, Label, Spinner } from 'heroui-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { withUniwind } from 'uniwind';
+import { AppButton } from '@/components/app-button';
+import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
+import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
-import { AppButton } from '@/components/app-button';
-import { AppSelect } from '@/components/app-select';
-import { AppDatePicker } from '@/components/app-date-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppToast } from '@/components/app-toast';
+import { api, uploadFile } from '@/config/api';
 import {
-  Calendar03Icon,
-  Clock01Icon,
+  Alert01Icon,
   ArrowLeft02Icon,
-  ArrowRight02Icon,
+  Calendar03Icon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
   FileAttachmentIcon,
-  MultiplicationSignIcon, LoginCircle02Icon, LogoutCircle02Icon,
+  LoginCircle02Icon, LogoutCircle02Icon,
+  MultiplicationSignIcon
 } from '@hugeicons-pro/core-stroke-standard';
-import * as DocumentPicker from 'expo-document-picker';
-import { uploadFile } from '@/config/api';
-import React, { useState, useMemo } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
+import * as DocumentPicker from 'expo-document-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { cn, Spinner, useToast } from 'heroui-native';
+import React, { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -35,25 +38,23 @@ interface HeaderInfoItem {
 }
 
 interface FormData {
-  startDate?: Date;
+  startDate?: string;
   days?: string;
   hours?: string;
-  startTime?: Date;
-  arrivalTime?: Date;
-  leaveTime?: Date;
-  overtimeStartTime?: Date;
-  overtimeEndTime?: Date;
+  startTime?: string;
+  arrivalTime?: string;
+  leaveTime?: string;
+  overtimeStartTime?: string;
+  overtimeEndTime?: string;
   description: string;
   compensatoryMode: 'day' | 'hour';
 }
 
-function parseTimeToDate(timeStr?: string): Date | undefined {
+function parseTimeToString(timeStr?: string): string | undefined {
   if (!timeStr) return undefined;
   const [hours, minutes] = timeStr.split(':').map(Number);
   if (isNaN(hours) || isNaN(minutes)) return undefined;
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
 export default function RequestCreateScreen() {
@@ -71,6 +72,7 @@ export default function RequestCreateScreen() {
     overtimeStart?: string;
     overtimeEnd?: string;
   }>();
+  const { toast } = useToast();
 
   const title = params.title ?? '';
   const type = (params.type as FormType) ?? 'textOnly';
@@ -127,10 +129,10 @@ export default function RequestCreateScreen() {
     defaultValues: {
       description: '',
       compensatoryMode: 'day',
-      arrivalTime: parseTimeToDate(params.arrived),
-      leaveTime: parseTimeToDate(params.left),
-      overtimeStartTime: parseTimeToDate(params.overtimeStart),
-      overtimeEndTime: parseTimeToDate(params.overtimeEnd),
+      arrivalTime: parseTimeToString(params.arrived),
+      leaveTime: parseTimeToString(params.left),
+      overtimeStartTime: parseTimeToString(params.overtimeStart),
+      overtimeEndTime: parseTimeToString(params.overtimeEnd),
     },
   });
 
@@ -139,10 +141,47 @@ export default function RequestCreateScreen() {
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
     try {
-      // TODO: send to API
-      console.log(JSON.stringify({ type, title, ...data, attachments }));
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      router.back();
+      const { compensatoryMode, arrivalTime, leaveTime, overtimeStartTime, overtimeEndTime, ...rest } = data;
+      const body = {
+        detail: {
+          ...rest,
+          ...(type === 'compensatory' && { compensatoryMode }),
+          ...(type === 'timeCorrection' && { arrivalTime, leaveTime, overtimeStartTime, overtimeEndTime }),
+        },
+        employee_request_setting_id: params.id,
+        attachments,
+      };
+      console.log(body);
+      const res = await api({
+        path: '/employee-request',
+        method: 'POST',
+        data: body,
+      });
+      if(res.status === 200){
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="success"
+              description={res.message}
+              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            />
+          ),
+        });
+        router.back();
+      }else{
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              // title="Алдаа"
+              description={res.message}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
     } catch (error) {
       console.error('Send error:', error);
     } finally {
@@ -176,8 +215,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Эхлэх өдөр"
                 mode="date"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                 placeholder="00/00"
                 format="MM/DD"
                 icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
@@ -221,8 +260,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Эхлэх цаг"
                 mode="datetime"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
                 placeholder="00/00 00:00"
                 format="MM/DD HH:mm"
                 icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
@@ -265,8 +304,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Ирсэн цаг"
                 mode="time"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
                 placeholder="--:--"
                 icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.arrivalTime}
@@ -283,8 +322,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Тарсан цаг"
                 mode="time"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
                 placeholder="--:--"
                 icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.leaveTime}
@@ -304,8 +343,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Ирсэн цаг / Илүү цаг"
                 mode="time"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
                 placeholder="--:--"
                 icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.overtimeStartTime}
@@ -322,8 +361,8 @@ export default function RequestCreateScreen() {
               <AppDatePicker
                 label="Тарсан цаг / Илүү цаг"
                 mode="time"
-                value={value}
-                onValueChange={onChange}
+                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
                 placeholder="--:--"
                 icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.overtimeEndTime}
@@ -390,8 +429,8 @@ export default function RequestCreateScreen() {
                 <AppDatePicker
                   label="Эхлэх өдөр"
                   mode="date"
-                  value={value}
-                  onValueChange={onChange}
+                  value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
                   icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
@@ -432,8 +471,8 @@ export default function RequestCreateScreen() {
                   <AppDatePicker
                     label="Эхлэх цаг"
                     mode="datetime"
-                    value={value}
-                    onValueChange={onChange}
+                    value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                    onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
                     placeholder="00/00 00:00"
                     format="MM/DD HH:mm"
                     icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}

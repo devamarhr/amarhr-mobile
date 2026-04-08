@@ -15,7 +15,7 @@ import { TugrugIcon } from '@/components/app-icon';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function TabLayout() {
-  const isSupervisor = useAuthStore((state) => state.isSupervisor);
+  const isSenior = useAuthStore((state) => state.isSenior);
 
   return (
     <Tabs
@@ -69,9 +69,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="supervisor"
+        name="senior"
         options={{
-          href: isSupervisor ? '/(auth)/(tabs)/supervisor' : null,
+          href: isSenior ? '/(auth)/(tabs)/senior' : null,
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={28} color={color} />,
         }}
       />

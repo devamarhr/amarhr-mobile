@@ -2,6 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { api } from '@/config/api';
+import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Separator } from 'heroui-native';
 import React, { useEffect, useState } from 'react';
@@ -179,33 +180,34 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
   return categories;
 }
 
-interface Decision {
-  id: string;
-  title: string;
-  status: string;
-  statusColor: string;
-  date: string;
-  approver: string;
-  description: string;
+interface EmployeeRequest {
+  id: number;
+  employee_request_setting_id: number;
+  status: 'pending' | 'approved' | 'rejected' | 'read';
+  detail: Record<string, any>;
+  attachments: { name: string; path: string }[];
+  senior_comment: string | null;
+  admin_comment: string | null;
+  admin_id: number | null;
+  created_at: string | null;
+  setting: {
+    id: number;
+    name: string;
+  };
 }
 
-const DECISIONS: Decision[] = [
-  {
-    id: '1',
-    title: 'Цаг засах',
-    status: 'Зөвшөөрсөн',
-    statusColor: 'text-green',
-    date: '09/09  12:56',
-    approver: 'Ахлах',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur temcon adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-  },
-];
+const statusMap: Record<string, { label: string; color: string }> = {
+  pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
+  approved: { label: 'Зөвшөөрсөн', color: 'text-green' },
+  rejected: { label: 'Татгалзсан', color: 'text-red' },
+  read: { label: 'Уншиж танилцсан', color: 'text-darkcyan' },
+};
 
 export default function RequestScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [categories, setCategories] = useState<RequestCategory[]>([]);
+  const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequest[]>([]);
 
   useEffect(() => {
     api<ApiResponse>({
@@ -213,9 +215,16 @@ export default function RequestScreen() {
       method: 'GET',
     }).then((res) => {
       if (res.status === 200) {
-        const a = mapApiToCategories(res.data)
-        console.log(JSON.stringify(a))
         setCategories(mapApiToCategories(res.data));
+      }
+    }).catch(console.error);
+
+    api<EmployeeRequest[]>({
+      path: '/employee-request',
+      method: 'GET',
+    }).then((res) => {
+      if (res.status === 200) {
+        setEmployeeRequests(res.data);
       }
     }).catch(console.error);
   }, []);
@@ -284,24 +293,47 @@ export default function RequestScreen() {
             ))
           ) : (
             <View className="px-4">
-              {DECISIONS.map((decision, index) => (
-                <View key={decision.id}>
-                  <View className="py-3">
-                    <AppText className="text-base font-medium">{decision.title}</AppText>
-                    <View className="flex-row items-center justify-between mt-1">
-                      <AppText className={`text-sm font-medium ${decision.statusColor}`}>
-                        {decision.status}
-                      </AppText>
-                      <AppText className="text-sm text-darkgray">{decision.date}</AppText>
-                    </View>
-                    <AppText className="text-sm text-darkgray mt-1">{decision.approver}</AppText>
-                    <AppText className="text-sm mt-2">{decision.description}</AppText>
-                  </View>
-                  {index < DECISIONS.length - 1 && (
-                    <Separator className="bg-darkgray/12" />
-                  )}
+              {employeeRequests.length === 0 ? (
+                <View className="items-center justify-center py-20">
+                  <AppText className="text-sm text-darkgray">Та одоогоор өргөдөл хүсэлт илгээгээгүй байна</AppText>
                 </View>
-              ))}
+              ) : (
+                employeeRequests.map((employeeRequest, index) => {
+                  const status = statusMap[employeeRequest.status] ?? { label: employeeRequest.status, color: 'text-darkgray' };
+                  return (
+                    <View key={employeeRequest.id}>
+                      <View className="py-3">
+                        <AppText className="text-base font-medium">{employeeRequest.setting.name}</AppText>
+                        <View className="flex-row items-center justify-between mt-1">
+                          <AppText className={`text-sm font-medium ${status.color}`}>
+                            {status.label}
+                          </AppText>
+                          {employeeRequest.created_at && (
+                            <AppText className="text-sm text-darkgray">
+                              {dayjs(employeeRequest.created_at).format('MM/DD  HH:mm')}
+                            </AppText>
+                          )}
+                        </View>
+                        {employeeRequest.admin_comment && (
+                          <>
+                            <AppText className="text-sm text-darkgray mt-1">Админ</AppText>
+                            <AppText className="text-sm mt-0.5 mb-2">{employeeRequest.admin_comment}</AppText>
+                          </>
+                        )}
+                        {employeeRequest.senior_comment && (
+                          <>
+                            <AppText className="text-sm text-darkgray mt-1">Ахлах</AppText>
+                            <AppText className="text-sm mt-0.5">{employeeRequest.senior_comment}</AppText>
+                          </>
+                        )}
+                      </View>
+                      {index < employeeRequests.length - 1 && (
+                        <Separator className="bg-darkgray/20" />
+                      )}
+                    </View>
+                  );
+                })
+              )}
             </View>
           )}
         </ScrollView>
