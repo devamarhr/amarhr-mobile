@@ -1,5 +1,5 @@
-import { Config } from './config';
 import { useAuthStore } from '@/store/auth-store';
+import { Config } from './config';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -38,19 +38,27 @@ export async function api<T = unknown>({
     }
   }
 
-  const response = await fetch(url, {
-    method,
-    headers: requestHeaders,
-    body: data ? JSON.stringify(data) : undefined,
-  });
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: requestHeaders,
+      body: data ? JSON.stringify(data) : undefined,
+    });
 
-  const responseData = await response.json();
+    const responseData = await response.json();
 
-  return {
-    data: responseData as T,
-    status: response.status,
-    message: responseData['message'],
-  };
+    return {
+      data: responseData as T,
+      status: response.status,
+      message: responseData['message'],
+    };
+  } catch {
+    return {
+      data: {} as T,
+      status: 0,
+      message: 'Connection error',
+    };
+  }
 }
 
 export async function uploadFile<T = unknown>(
@@ -77,17 +85,25 @@ export async function uploadFile<T = unknown>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
 
-  const responseData = await response.json();
+    const responseData = await response.json();
 
-  return {
-    data: responseData as T,
-    status: response.status,
-    message: responseData['message'],
-  };
+    return {
+      data: responseData as T,
+      status: response.status,
+      message: responseData['message'],
+    };
+  } catch {
+    return {
+      data: {} as T,
+      status: 0,
+      message: 'Сүлжээний алдаа гарлаа',
+    };
+  }
 }
