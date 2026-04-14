@@ -1,22 +1,26 @@
-import { View, Pressable, ScrollView } from 'react-native';
-import { useRouter } from "expo-router";
-import { Avatar, Button, cn, Dialog, Separator, Switch } from "heroui-native";
-import { useAuthStore } from '@/store/auth-store';
-import { withUniwind } from "uniwind";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { AppText } from "@/components/app-text";
+import { AppButton } from "@/components/app-button";
 import { AppHeader } from "@/components/app-header";
-import React, { useState } from "react";
-import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
+import { AppSelect, SelectOption } from "@/components/app-select";
+import { AppSwitch } from "@/components/app-switch";
+import { AppText } from "@/components/app-text";
+import { api } from "@/config/api";
+import { useAuthStore, UserSettings } from '@/store/auth-store';
 import {
-  UserIcon,
+  Agreement03Icon, Building06StrokeStandard,
   Clock01Icon,
   InformationCircleIcon,
-  Agreement03Icon, Building06StrokeStandard,
-  LicenseIcon, SmartPhone01Icon, Logout05Icon,
+  LicenseIcon,
+  Logout05Icon,
+  SmartPhone01Icon,
+  UserIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppSwitch } from "@/components/app-switch";
-import { AppButton } from "@/components/app-button";
+import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
+import { useRouter } from "expo-router";
+import { Avatar, cn, Dialog, Separator } from "heroui-native";
+import React, { useState } from "react";
+import { Pressable, View } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
@@ -55,9 +59,28 @@ function MenuItem({ icon, label, labelClassName, subtitle, onPress, trailing }: 
 export default function ProfileScreen() {
   const router = useRouter();
   const { profileImage, lastName, firstName, jobPosition, logout } = useAuthStore();
-  const [timeRegistration, setTimeRegistration] = useState(true);
-  const [showContact, setShowContact] = useState(false);
+  const attendanceMethod = useAuthStore((state) => state.attendanceMethod);
+  const allowedAttendanceMethod = useAuthStore((state) => state.allowedAttendanceMethod);
+  const attendanceReminder = useAuthStore((state) => state.attendanceReminder);
+  const hidePhone = useAuthStore((state) => state.hidePhone);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
+  const saveSetting = (settings: Partial<UserSettings>) => {
+    useAuthStore.getState().setSettings(settings);
+    api({ path: '/settings', method: 'PUT', data: settings }).catch(console.error);
+  };
+
+  const allMethodOptions: SelectOption[] = [
+    { value: 'geo', label: 'Байршил' },
+    { value: 'wifi', label: 'WiFi' },
+  ];
+  const attendanceMethodOptions: SelectOption[] = [
+    ...allMethodOptions.filter(o => allowedAttendanceMethod.includes(o.value as 'geo' | 'wifi')),
+    { value: 'ask', label: 'Бүртгүүлэх болгонд асуух' },
+  ];
+  const selectedAttendanceMethod = attendanceMethodOptions.find(
+    o => o.value === (attendanceMethod ?? 'ask')
+  );
 
   const handleLogout = () => {
     setLogoutDialogOpen(false);
@@ -114,8 +137,30 @@ export default function ProfileScreen() {
               label="Цаг бүртгэлийн мэдэгдэл"
               trailing={
                 <AppSwitch
-                  isSelected={timeRegistration}
-                  onSelectedChange={setTimeRegistration}
+                  isSelected={attendanceReminder}
+                  onSelectedChange={(v) => saveSetting({ attendance_reminder: v })}
+                />
+              }
+            />
+            <Separator className="bg-darkgray/12" />
+            <MenuItem
+              icon={SmartPhone01Icon}
+              label="Цаг бүртгэлийн арга"
+              trailing={
+                <AppSelect
+                  title="Цаг бүртгэлийн арга"
+                  snapPoints={['50%']}
+                  options={attendanceMethodOptions}
+                  value={selectedAttendanceMethod}
+                  onValueChange={(option) => {
+                    const method = option?.value === 'ask' ? null : (option?.value as 'geo' | 'wifi') ?? null;
+                    saveSetting({ attendance_method: method });
+                  }}
+                  trigger={
+                    <AppText className="text-xs text-darkgray mt-0.5 leading-3">
+                      {selectedAttendanceMethod?.label ?? 'Сонгох'}
+                    </AppText>
+                  }
                 />
               }
             />
@@ -126,8 +171,8 @@ export default function ProfileScreen() {
               subtitle="Бусад алба хэлтсийн ажилтнуудаас нуух"
               trailing={
                 <AppSwitch
-                  isSelected={showContact}
-                  onSelectedChange={setShowContact}
+                  isSelected={hidePhone}
+                  onSelectedChange={(v) => saveSetting({ hide_phone: v })}
                 />
               }
             />

@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
   const setToken = useAuthStore((state) => state.setToken);
-  const setInitialData = useAuthStore((state) => state.setInitialData);
+  const setProfileData = useAuthStore((state) => state.setProfileData);
 
   const { toast } = useToast();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -134,7 +134,7 @@ export default function LoginScreen() {
             ),
           });
         }else{
-          setInitialData(res.data);
+          setProfileData(res.data);
           setToken(token, phone);
         }
       }else{

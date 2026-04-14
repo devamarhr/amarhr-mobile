@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   const phone = useAuthStore((state) => state.phone);
   const companyName = useAuthStore((state) => state.companyName);
   const authState = useAuthStore.getState();
-  const setInitialData = useAuthStore((state) => state.setInitialData);
+  const setProfileData = useAuthStore((state) => state.setProfileData);
   const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -703,7 +703,7 @@ export default function OnboardingScreen() {
     try {
       const res = await api<ProfileData>({path: '/profile/update', method: "PUT", data});
       if(res.status === 200){
-        setInitialData(res.data)
+        setProfileData(res.data)
       }else{
         toast.show({
           component: (props) => (

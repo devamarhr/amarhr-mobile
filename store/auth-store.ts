@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export type SelectOption = {
   value: string;
@@ -71,7 +71,18 @@ export interface ProfileData {
   children: Child[];
   bankAccount: string | null;
   bank: string | null;
+  taxNumber: string | null;
   profileImage: string | null;
+  hidePhone: boolean;
+  attendanceReminder: boolean;
+  attendanceMethod: 'geo' | 'wifi' | null;
+  allowedAttendanceMethod: ('geo' | 'wifi')[];
+}
+
+export interface UserSettings {
+  attendance_method: 'geo' | 'wifi' | null;
+  hide_phone: boolean;
+  attendance_reminder: boolean;
 }
 
 interface AuthState {
@@ -81,8 +92,12 @@ interface AuthState {
   hasCompletedOnboarding: boolean;
   isSenior: boolean;
   companyName: string | null;
-  attendanceType: 'wifi' | 'location';
+  attendanceMethod: 'geo' | 'wifi' | null;
+  allowedAttendanceMethod: ('geo' | 'wifi')[];
+  hidePhone: boolean;
+  attendanceReminder: boolean;
   jobPosition: string | null;
+  taxNumber: string | null;
 
   // Onboarding data
   lastName: string | null;
@@ -106,7 +121,8 @@ interface AuthState {
 
   // Actions
   setToken: (token: string, phone: string) => void;
-  setInitialData: (data: ProfileData) => void;
+  setProfileData: (data: ProfileData) => void;
+  setSettings: (settings: Partial<UserSettings>) => void;
   setSelectOptions: (data: SelectOptionsData) => void;
   logout: () => void;
 }
@@ -120,7 +136,9 @@ export const useAuthStore = create<AuthState>()(
       hasCompletedOnboarding: false,
       isSenior: false,
       companyName: null,
-      attendanceType: 'location',
+      attendanceMethod: null,
+      hidePhone: false,
+      attendanceReminder: true,
       jobPosition: null,
       lastName: null,
       firstName: null,
@@ -136,14 +154,16 @@ export const useAuthStore = create<AuthState>()(
       children: [],
       bankAccount: null,
       bank: null,
+      taxNumber: null,
       profileImage: null,
+      allowedAttendanceMethod: [],
       selectOptions: null,
 
       setToken: (token: string, phone: string) => {
         set({ token, phone, isAuthenticated: true });
       },
 
-      setInitialData: (data: ProfileData) => {
+      setProfileData: (data: ProfileData) => {
         set({
           hasCompletedOnboarding: data.hasCompletedOnboarding,
           isSenior: data.isSenior,
@@ -163,8 +183,21 @@ export const useAuthStore = create<AuthState>()(
           children: data.children,
           bankAccount: data.bankAccount,
           bank: data.bank,
+          taxNumber: data.taxNumber,
           profileImage: data.profileImage ?? null,
+          hidePhone: data.hidePhone,
+          attendanceReminder: data.attendanceReminder,
+          attendanceMethod: data.attendanceMethod,
+          allowedAttendanceMethod: data.allowedAttendanceMethod,
         });
+      },
+
+      setSettings: (settings: Partial<UserSettings>) => {
+        const mapped: Partial<AuthState> = {};
+        if (settings.attendance_method !== undefined) mapped.attendanceMethod = settings.attendance_method;
+        if (settings.hide_phone !== undefined) mapped.hidePhone = settings.hide_phone;
+        if (settings.attendance_reminder !== undefined) mapped.attendanceReminder = settings.attendance_reminder;
+        set(mapped);
       },
 
       setSelectOptions: (data: SelectOptionsData) => {
@@ -179,7 +212,9 @@ export const useAuthStore = create<AuthState>()(
           hasCompletedOnboarding: false,
           isSenior: false,
           companyName: null,
-          attendanceType: 'location',
+          attendanceMethod: null,
+          hidePhone: false,
+          attendanceReminder: true,
           jobPosition: null,
           lastName: null,
           firstName: null,
@@ -195,7 +230,9 @@ export const useAuthStore = create<AuthState>()(
           children: [],
           bankAccount: null,
           bank: null,
+          taxNumber: null,
           profileImage: null,
+          allowedAttendanceMethod: [],
           selectOptions: null,
         });
       },

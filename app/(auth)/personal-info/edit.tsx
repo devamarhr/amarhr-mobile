@@ -25,7 +25,7 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 export default function PersonalInfoEditScreen() {
   const router = useRouter();
   const { lastName, firstName, gender, nationality, familyName, phone, registerNumber, birthDate, email, emergencyContact, emergencyRelation, address, children, bankAccount, bank } = useAuthStore();
-  const setInitialData = useAuthStore((state) => state.setInitialData);
+  const setProfileData = useAuthStore((state) => state.setProfileData);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
@@ -73,7 +73,7 @@ export default function PersonalInfoEditScreen() {
       console.log(JSON.stringify(data));
       const res = await api<ProfileData>({path: '/profile/update', method: "PUT", data});
       if(res.status === 200){
-        setInitialData(res.data);
+        setProfileData(res.data);
         toast.show({
           component: (props: any) => (
             <AppToast
