@@ -70,7 +70,13 @@ interface PaginatedResponse {
   total: number;
 }
 
+const PERSONAL_SOURCES: AnnouncementSource[] = ['employee_note', 'salary_warning', 'time_sheet_plan', 'deduction'];
+
 function getTargetLabel(item: Announcement): string {
+  if (PERSONAL_SOURCES.includes(item.source)) {
+    return item.creator.name;
+  }
+
   if (item.targets.all_employee) {
     return 'Нийт ажилчид';
   }
