@@ -1,83 +1,82 @@
-import { View, Pressable, ScrollView, TextInput, Linking } from 'react-native';
-import { Avatar, cn, Separator } from "heroui-native";
-import { withUniwind } from "uniwind";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
-import React, { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppText } from "@/components/app-text";
+import { AppTextField } from "@/components/app-text-field";
+import { api } from "@/config/api";
 import {
+  AtIcon,
   Search01Icon,
   SmartPhone01Icon,
-  AtIcon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppTextField } from "@/components/app-text-field";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Avatar, cn, Separator } from "heroui-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
+
+interface ContactApi {
+  id: number;
+  firstName: string;
+  lastName: string;
+  profileImage: string | null;
+  email: string | null;
+  phone: string | null;
+  department: string;
+  departmentOrder: number;
+  jobPosition: string;
+  jobPositionOrder: number;
+  branch: string;
+  branchOrder: number;
+}
 
 interface Contact {
   id: string;
   name: string;
   position: string;
-  avatar: string;
-  phone: string;
-  email: string;
-  hidden?: boolean;
+  avatar: string | null;
+  phone: string | null;
+  email: string | null;
 }
 
-interface Department {
+interface EmployeeGroup {
   name: string;
   contacts: Contact[];
 }
 
-const DEPARTMENTS: Department[] = [
-  {
-    name: 'Санхүүгийн алба',
-    contacts: [
-      { id: '1', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '2', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '3', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '4', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '5', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '********', email: 'anar@amarhr.mn', hidden: true },
-      { id: '11', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '********', email: 'anar@amarhr.mn', hidden: true },
-      { id: '12', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '********', email: 'anar@amarhr.mn', hidden: true },
-      { id: '13', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '********', email: 'anar@amarhr.mn', hidden: true },
-      { id: '14', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '********', email: 'anar@amarhr.mn', hidden: true },
-    ],
-  },
-  {
-    name: 'Хүний нөөцийн хэлтэс',
-    contacts: [
-      { id: '6', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '7', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '8', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '9', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '10', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '18', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '15', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '16', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-      { id: '17', name: 'Жаргал.Т', position: 'Бизнес төлөвлөлтийн туслах', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=2', phone: '99107744', email: 'anar@amarhr.mn' },
-    ],
-  },
-];
+function mapContact(c: ContactApi): Contact {
+  return {
+    id: String(c.id),
+    name: `${c.firstName}${c.lastName ? '.' + c.lastName[0] : ''}`,
+    position: c.jobPosition,
+    avatar: c.profileImage,
+    phone: c.phone,
+    email: c.email
+  };
+}
 
-const BRANCHES: Department[] = [
-  {
-    name: 'Оффис / Хан-Уул',
-    contacts: [
-      { id: 'b1', name: 'Батбаяр.Б', position: 'Санхүүгийн менежер', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=3', phone: '99112233', email: 'batbayar@amarhr.mn' },
-      { id: 'b2', name: 'Сарнай.Д', position: 'Нягтлан бодогч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=4', phone: '99223344', email: 'sarnai@amarhr.mn' },
-      { id: 'b3', name: 'Төмөр.О', position: 'Хүний нөөцийн мэргэжилтэн', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=5', phone: '99334455', email: 'tumur@amarhr.mn' },
-    ],
-  },
-  {
-    name: 'Эмийн сан / Салбар 1',
-    contacts: [
-      { id: 'b4', name: 'Оюунаа.Г', position: 'Эм зүйч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=6', phone: '99445566', email: 'oyunaa@amarhr.mn' },
-      { id: 'b5', name: 'Энхжин.С', position: 'Эм найруулагч', avatar: 'https://img.heroui.chat/image/avatar?w=400&h=400&u=7', phone: '99556677', email: 'enkhjin@amarhr.mn' },
-    ],
-  },
-];
+function groupByDepartment(contacts: ContactApi[]): EmployeeGroup[] {
+  const sorted = [...contacts].sort((a, b) => a.departmentOrder - b.departmentOrder || a.jobPositionOrder - b.jobPositionOrder);
+  const map = new Map<string, Contact[]>();
+  for (const c of sorted) {
+    const key = c.department;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(mapContact(c));
+  }
+  return Array.from(map.entries()).map(([name, contacts]) => ({ name, contacts }));
+}
+
+function groupByBranch(contacts: ContactApi[]): EmployeeGroup[] {
+  const sorted = [...contacts].sort((a, b) => a.branchOrder - b.branchOrder || a.jobPositionOrder - b.jobPositionOrder);
+  const map = new Map<string, Contact[]>();
+  for (const c of sorted) {
+    const key = c.branch;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(mapContact(c));
+  }
+  return Array.from(map.entries()).map(([name, contacts]) => ({ name, contacts }));
+}
 
 const TABS = ['Алба, хэлтэс', 'Салбар, байршил'] as const;
 
@@ -93,7 +92,9 @@ function ContactCard({ contact, isExpanded, onToggle }: {
     )}>
       <Pressable onPress={onToggle} className="flex-row items-center gap-1 h-12.5">
         <Avatar alt={contact.name} className="w-10 h-10">
-          <Avatar.Image source={{ uri: contact.avatar }} />
+          {contact.avatar ? (
+            <Avatar.Image source={{ uri: contact.avatar }} />
+          ) : null}
           <Avatar.Fallback classNames={{ text: "text-black" }}>
             {contact.name.slice(0, 2)}
           </Avatar.Fallback>
@@ -107,20 +108,20 @@ function ContactCard({ contact, isExpanded, onToggle }: {
         <View className="pt-3 pb-2">
           <Pressable
             className="flex-row items-center mb-2 gap-1"
-            onPress={() => !contact.hidden && Linking.openURL(`tel:${contact.phone}`)}
+            onPress={() => contact.phone && Linking.openURL(`tel:${contact.phone}`)}
           >
             <View className="w-10 items-center justify-center">
               <HugeiconsIcon icon={SmartPhone01Icon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className={`text-sm ${contact.hidden ? '' : 'text-blue'}`}>
-              {contact.phone}
+            <AppText className={`text-sm ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
+              {contact.phone ?? '********'}
             </AppText>
           </Pressable>
           <View className="flex-row items-center">
             <View className="w-10 items-center justify-center">
               <HugeiconsIcon icon={AtIcon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className="text-sm">{contact.email}</AppText>
+            <AppText className="text-sm">{contact.email ?? '-'}</AppText>
           </View>
         </View>
       )}
@@ -132,13 +133,25 @@ export default function ContactScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<ContactApi[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sourceData = activeTab === 0 ? DEPARTMENTS : BRANCHES;
-  const filteredDepartments = sourceData.map((dept) => ({
+  useEffect(() => {
+    api<ContactApi[]>({ path: '/contacts', method: 'GET' })
+      .then((res) => {
+        if (res.status === 200) {
+          setContacts(res.data);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const grouped = activeTab === 0 ? groupByDepartment(contacts) : groupByBranch(contacts);
+  const filteredEmployees = grouped.map((dept) => ({
     ...dept,
     contacts: dept.contacts.filter((c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.position.toLowerCase().includes(searchQuery.toLowerCase())
+      c.name.toLowerCase().startsWith(searchQuery.toLowerCase())
     ),
   })).filter((dept) => dept.contacts.length > 0);
 
@@ -173,28 +186,34 @@ export default function ContactScreen() {
           ))}
         </View>
 
-        <ScrollView className="flex-1 mt-2" showsVerticalScrollIndicator={false}>
-          {filteredDepartments.map((dept) => (
-            <View key={dept.name} className="mb-5">
-              <View className="bg-lightblue px-4 py-2">
-                <AppText className="text-sm text-darkblue text-right">{dept.name}</AppText>
-              </View>
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator />
+          </View>
+        ) : (
+          <ScrollView className="flex-1 mt-2" showsVerticalScrollIndicator={false}>
+            {filteredEmployees.map((dept) => (
+              <View key={dept.name} className="mb-5">
+                <View className="bg-lightblue px-4 py-2">
+                  <AppText className="text-sm text-darkblue text-right">{dept.name}</AppText>
+                </View>
 
-              <View className="px-4">
-                {dept.contacts.map((contact, index) => (
-                  <View key={contact.id}>
-                    <ContactCard
-                      contact={contact}
-                      isExpanded={expandedId === contact.id}
-                      onToggle={() => setExpandedId(expandedId === contact.id ? null : contact.id)}
-                    />
-                    {index < dept.contacts.length - 1 && <Separator className="bg-darkgray/12" />}
-                  </View>
-                ))}
+                <View className="px-4">
+                  {dept.contacts.map((contact, index) => (
+                    <View key={contact.id}>
+                      <ContactCard
+                        contact={contact}
+                        isExpanded={expandedId === contact.id}
+                        onToggle={() => setExpandedId(expandedId === contact.id ? null : contact.id)}
+                      />
+                      {index < dept.contacts.length - 1 && <Separator className="bg-darkgray/12" />}
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        )}
       </View>
     </StyledSafeAreaView>
   );
