@@ -5,8 +5,8 @@ import { api } from '@/config/api';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Separator } from 'heroui-native';
-import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -180,15 +180,22 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
   return categories;
 }
 
+type ReviewerType = string | null;
+
+interface ReviewDetail {
+  comment: string | null;
+  review_at?: string | null;
+  decision_at?: string | null;
+}
+
 interface EmployeeRequest {
   id: number;
   employee_request_setting_id: number;
-  status: 'pending' | 'approved' | 'rejected' | 'read';
-  detail: Record<string, any>;
-  attachments: { name: string; path: string }[];
-  senior_comment: string | null;
-  admin_comment: string | null;
-  admin_id: number | null;
+  status: 'pending' | 'senior_pending' | 'approved' | 'rejected' | 'read';
+  review_by_type: ReviewerType;
+  review_detail: ReviewDetail | null;
+  decision_by_type: ReviewerType;
+  decision_detail: ReviewDetail | null;
   created_at: string | null;
   setting: {
     id: number;
@@ -196,18 +203,69 @@ interface EmployeeRequest {
   };
 }
 
+interface PaginatedRequestResponse {
+  current_page: number;
+  data: EmployeeRequest[];
+  last_page: number;
+  total: number;
+}
+
 const statusMap: Record<string, { label: string; color: string }> = {
   pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
+  senior_pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
   approved: { label: 'Зөвшөөрсөн', color: 'text-green' },
   rejected: { label: 'Татгалзсан', color: 'text-red' },
   read: { label: 'Уншиж танилцсан', color: 'text-darkcyan' },
 };
+
+function getDecisionLabel(type: ReviewerType): string | null {
+  if (type?.includes('Employee')) return 'Ахлах';
+  if (type?.includes('User')) return 'Админ';
+  return null;
+}
+
+function getReviewLabel(type: ReviewerType): string | null {
+  if (type?.includes('Employee')) return 'Ахлахийн санал';
+  if (type?.includes('User')) return 'Админы санал';
+  return null;
+}
 
 export default function RequestScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [categories, setCategories] = useState<RequestCategory[]>([]);
   const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequest[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const currentPage = useRef(1);
+  const lastPage = useRef(1);
+  const isFetching = useRef(false);
+
+  const fetchRequests = useCallback((page: number, isRefresh = false) => {
+    if (isFetching.current) return;
+    isFetching.current = true;
+    currentPage.current = page;
+
+    const isFirstPage = page === 1;
+    if (isRefresh) setRefreshing(true);
+    else if (!isFirstPage) setLoadingMore(true);
+
+    api<PaginatedRequestResponse>({
+      path: `/employee-request?current_page=${page}`,
+      method: 'GET',
+    }).then((res) => {
+      console.log(`page ${page}`)
+      if (res.status === 200) {
+        setEmployeeRequests((prev) => isFirstPage ? res.data.data : [...prev, ...res.data.data]);
+        lastPage.current = res.data.last_page;
+      }
+    }).catch(console.error)
+      .finally(() => {
+        isFetching.current = false;
+        if (isRefresh) setRefreshing(false);
+        else setLoadingMore(false);
+      });
+  }, []);
 
   useEffect(() => {
     api<ApiResponse>({
@@ -216,18 +274,23 @@ export default function RequestScreen() {
     }).then((res) => {
       if (res.status === 200) {
         setCategories(mapApiToCategories(res.data));
+      }else{
+        console.log(res.message)
       }
     }).catch(console.error);
 
-    api<EmployeeRequest[]>({
-      path: '/employee-request',
-      method: 'GET',
-    }).then((res) => {
-      if (res.status === 200) {
-        setEmployeeRequests(res.data);
-      }
-    }).catch(console.error);
-  }, []);
+    fetchRequests(1);
+  }, [fetchRequests]);
+
+  const handleEndReached = useCallback(() => {
+    if (currentPage.current < lastPage.current) {
+      fetchRequests(currentPage.current + 1);
+    }
+  }, [fetchRequests]);
+
+  const handleRefresh = useCallback(() => {
+    fetchRequests(1, true);
+  }, [fetchRequests]);
 
   const handleItemPress = (item: RequestItem) => {
     router.navigate({
@@ -268,9 +331,9 @@ export default function RequestScreen() {
           />
         </View>
 
-        <ScrollView className="flex-1" contentContainerClassName="pb-5" showsVerticalScrollIndicator={false}>
-          {activeTab === 0 ? (
-            categories.map((category) => (
+        {activeTab === 0 ? (
+          <ScrollView className="flex-1" contentContainerClassName="pb-5" showsVerticalScrollIndicator={false}>
+            {categories.map((category) => (
               <View key={category.name}>
                 <View className="bg-lightblue px-4 py-2">
                   <AppText className="text-sm text-darkblue text-right">
@@ -290,53 +353,72 @@ export default function RequestScreen() {
                   ))}
                 </View>
               </View>
-            ))
-          ) : (
-            <View className="px-4">
-              {employeeRequests.length === 0 ? (
-                <View className="items-center justify-center py-20">
-                  <AppText className="text-sm text-darkgray">Та одоогоор өргөдөл хүсэлт илгээгээгүй байна</AppText>
-                </View>
-              ) : (
-                employeeRequests.map((employeeRequest, index) => {
-                  const status = statusMap[employeeRequest.status] ?? { label: employeeRequest.status, color: 'text-darkgray' };
-                  return (
-                    <View key={employeeRequest.id}>
-                      <View className="py-3">
-                        <AppText className="text-base font-medium">{employeeRequest.setting.name}</AppText>
-                        <View className="flex-row items-center justify-between mt-1">
-                          <AppText className={`text-sm font-medium ${status.color}`}>
-                            {status.label}
-                          </AppText>
-                          {employeeRequest.created_at && (
-                            <AppText className="text-sm text-darkgray">
-                              {dayjs(employeeRequest.created_at).format('MM/DD  HH:mm')}
-                            </AppText>
-                          )}
-                        </View>
-                        {employeeRequest.admin_comment && (
-                          <>
-                            <AppText className="text-sm text-darkgray mt-1">Админ</AppText>
-                            <AppText className="text-sm mt-0.5 mb-2">{employeeRequest.admin_comment}</AppText>
-                          </>
-                        )}
-                        {employeeRequest.senior_comment && (
-                          <>
-                            <AppText className="text-sm text-darkgray mt-1">Ахлах</AppText>
-                            <AppText className="text-sm mt-0.5">{employeeRequest.senior_comment}</AppText>
-                          </>
-                        )}
-                      </View>
-                      {index < employeeRequests.length - 1 && (
-                        <Separator className="bg-darkgray/20" />
-                      )}
-                    </View>
-                  );
-                })
-              )}
-            </View>
-          )}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        ) : (
+          <FlatList
+            className="flex-1 px-4"
+            contentContainerClassName="pb-5"
+            data={employeeRequests}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
+            showsVerticalScrollIndicator={false}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.3}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            ItemSeparatorComponent={() => <Separator className="bg-darkgray/20" />}
+            ListEmptyComponent={
+              <View className="items-center justify-center py-20">
+                <AppText className="text-sm text-darkgray">Та одоогоор өргөдөл хүсэлт илгээгээгүй байна</AppText>
+              </View>
+            }
+            ListFooterComponent={loadingMore ? (
+              <View className="py-4 items-center">
+                <ActivityIndicator />
+              </View>
+            ) : null}
+            renderItem={({ item: employeeRequest }) => {
+              const status = statusMap[employeeRequest.status] ?? { label: employeeRequest.status, color: 'text-darkgray' };
+              return (
+                <Pressable
+                  className="py-3"
+                  onPress={() => router.navigate({
+                    pathname: '/request/[id]',
+                    params: { id: String(employeeRequest.id) },
+                  })}
+                >
+                  <AppText className="text-base font-medium">{employeeRequest.setting.name}</AppText>
+                  <View className="flex-row items-center justify-between mt-1">
+                    <AppText className={`text-sm font-medium ${status.color}`}>
+                      {status.label}
+                    </AppText>
+                    {employeeRequest.created_at && (
+                      <AppText className="text-sm text-darkgray">
+                        {dayjs(employeeRequest.created_at).format('MM/DD  HH:mm')}
+                      </AppText>
+                    )}
+                  </View>
+                  {employeeRequest.decision_detail?.comment && (
+                    <>
+                      <AppText className="text-sm text-darkgray mt-1">
+                        {getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр'}
+                      </AppText>
+                      <AppText className="text-sm mt-0.5 mb-2">{employeeRequest.decision_detail.comment}</AppText>
+                    </>
+                  )}
+                  {employeeRequest.review_detail?.comment && (
+                    <>
+                      <AppText className="text-sm text-darkgray mt-1">
+                        {getReviewLabel(employeeRequest.review_by_type) ?? 'Санал'}
+                      </AppText>
+                      <AppText className="text-sm mt-0.5">{employeeRequest.review_detail.comment}</AppText>
+                    </>
+                  )}
+                </Pressable>
+              );
+            }}
+          />
+        )}
       </View>
     </StyledSafeAreaView>
   );
