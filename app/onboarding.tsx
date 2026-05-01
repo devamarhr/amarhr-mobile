@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useRouter } from 'expo-router';
 import { cn, Label, useToast } from 'heroui-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Image, View } from 'react-native';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -684,6 +684,16 @@ export default function OnboardingScreen() {
     control,
     name: 'children',
   });
+
+  useEffect(() => {
+    api<ProfileData>({ path: '/profile', method: 'GET' })
+      .then((res) => {
+        if (res.status === 200) {
+          setProfileData(res.data);
+        }
+      })
+      .catch(console.error);
+  }, [setProfileData]);
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {

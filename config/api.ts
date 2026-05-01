@@ -47,6 +47,10 @@ export async function api<T = unknown>({
 
     const responseData = await response.json();
 
+    if (response.status === 401 && auth) {
+      useAuthStore.getState().logout();
+    }
+
     return {
       data: responseData as T,
       status: response.status,
