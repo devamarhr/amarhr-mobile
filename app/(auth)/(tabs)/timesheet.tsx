@@ -1,11 +1,8 @@
-import { View, ScrollView, Pressable } from 'react-native';
-import { cn, Separator } from 'heroui-native';
-import { withUniwind } from 'uniwind';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppText } from '@/components/app-text';
-import { TimesheetCalendar, MiniCalendar } from '@/components/timesheet-calendar';
 import type { DayData } from '@/components/timesheet-calendar';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { MiniCalendar, TimesheetCalendar } from '@/components/timesheet-calendar';
+import { api } from "@/config/api";
 import {
   ArrowDown01Icon,
   Clock01Icon,
@@ -14,120 +11,117 @@ import {
   Sun03StrokeStandard,
   TimeQuarterPassIcon,
 } from '@hugeicons-pro/core-stroke-standard';
-import React, { useState, useMemo } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { AppSelect, SelectOption } from "@/components/app-select";
 import { router } from "expo-router";
+import { cn, Separator } from 'heroui-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type ViewMode = 'month' | 'year';
 
-// --- Month day data ---
+// --- Timesheet day data (matches /timesheet API response shape) ---
 
-interface MonthDayData {
-  day: number;
-  isNonWorkingDay: boolean;
-  isHoliday?: boolean;
-  arrived?: string;
-  isLate?: boolean;
-  left?: string;
-  workHour?: string;
-  overtime?: string;
-  overtimeStart?: string;
-  overtimeEnd?: string;
-  leave?: string;
-  clockIn?: string;
-  clockOut?: string;
-  annualLeave?: boolean;
+interface Shift {
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  lateness_minutes: number;
+  worked_duration_minutes: number | null;
+  overtime_minutes: number;
 }
 
-// Mock data
-const MOCK_MONTH_DATA: MonthDayData[] = [
-  { day: 1, isNonWorkingDay: false, arrived: "09:31", isLate: true, left: "18:21", workHour: "07:50", overtime: "02:30", overtimeStart: "19:00", overtimeEnd: "21:30" },
-  { day: 2, isNonWorkingDay: true },
-  { day: 3, isNonWorkingDay: true },
-  { day: 4, isNonWorkingDay: false, isHoliday: true },
-  { day: 5, isNonWorkingDay: false, leave: "Өвчний чөлөө /5 хүртэлх хоног, цалинтай/" },
-  { day: 6, isNonWorkingDay: false, leave: "Өвчний чөлөө /5 хүртэлх хоног, цалинтай/" },
-  { day: 7, isNonWorkingDay: false, arrived: "08:51", isLate: false, left: "18:21", workHour: "07:50", overtime: "02:30", overtimeStart: "19:00", overtimeEnd: "21:30" },
-  { day: 8, isNonWorkingDay: false, arrived: "09:51", isLate: true, left: "18:21", workHour: "07:50" },
-  { day: 9, isNonWorkingDay: true },
-  { day: 10, isNonWorkingDay: true },
-  { day: 11, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 12, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 13, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 14, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 15, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 16, isNonWorkingDay: true },
-  { day: 17, isNonWorkingDay: true },
-  { day: 18, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 19, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 20, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 21, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 22, isNonWorkingDay: false },
-  { day: 23, isNonWorkingDay: true },
-  { day: 24, isNonWorkingDay: true },
-  { day: 25, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 26, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 27, isNonWorkingDay: false, clockIn: "09:00", clockOut: "18:00" },
-  { day: 28, isNonWorkingDay: false, annualLeave: true, clockIn: "09:00", clockOut: "18:00" },
-  { day: 29, isNonWorkingDay: false, annualLeave: true, clockIn: "09:00", clockOut: "18:00" },
-  { day: 30, isNonWorkingDay: true },
-  { day: 31, isNonWorkingDay: true },
-];
+interface TimesheetDay {
+  cdate: string;
+  shifts: Shift[];
+  is_work_day: boolean;
+  is_public_holiday: boolean;
+  leave: string | null;
+  annual: boolean;
+  total_lateness_minutes: number;
+  total_overtime_minutes: number;
+}
 
-function deriveDayData(monthData: MonthDayData[], year: number, month: number): DayData[] {
-  return monthData.map(d => {
-    const date = `${year}-${String(month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
-    const data: DayData = { date };
-    if (d.isNonWorkingDay) data.isNonWorkingDay = true;
-    if (d.isHoliday) data.isHoliday = true;
-    if (d.overtime) data.hasOvertime = true;
-    if (d.isLate) data.isLate = true;
+function extractTime(dt: string | null | undefined): string | undefined {
+  if (!dt) return undefined;
+  return dt.split(' ')[1]?.slice(0, 5);
+}
+
+function formatMinutes(minutes: number | null | undefined): string | undefined {
+  if (!minutes) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatMinutesHHMM(minutes: number): string {
+  const total = Math.max(0, minutes);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatHolidayDates(dates: string[]): string {
+  if (dates.length === 0) return '';
+  const formatted = dates.map((d) => d.slice(5).replace('-', '/'));
+  if (dates.length === 1) return formatted[0];
+  return `${formatted[0]} - ${formatted[formatted.length - 1]}`;
+}
+
+function deriveDayData(monthData: TimesheetDay[]): DayData[] {
+  return monthData.map((d) => {
+    const data: DayData = { date: d.cdate };
+    if (!d.is_work_day && !d.is_public_holiday) data.isNonWorkingDay = true;
+    if (d.is_public_holiday) data.isHoliday = true;
+    if (d.total_overtime_minutes > 0) data.hasOvertime = true;
+    if (d.total_lateness_minutes > 0) data.isLate = true;
     if (d.leave) data.isLeave = true;
-    if (d.annualLeave) data.isAnnualLeave = true;
+    if (d.annual) data.isAnnualLeave = true;
     return data;
   });
 }
 
-// Mock year view data
-const YEAR_STATS = [
-  { label: 'Тайлант жил', value: '320 хоног, 2016:00 цаг' },
-  { label: 'Ажилласан энгийн', value: '2016:00 цаг' },
-  { label: 'Илүү цаг', value: '2016:00 цаг' },
-  { label: 'Э/амралтын цаг', value: '2016:00 цаг' },
-  { label: 'Нөхөн амарсан цаг', value: '2016:00 цаг' },
-  { label: 'Цалинтай чөлөө', value: '16:00 цаг' },
-  { label: 'Хоцорсон, тасалсан', value: '16:00 цаг' },
-  { label: 'Цалингүй чөлөө', value: '16:00 цаг' },
-  { label: 'Сул зогсолт', value: '16:00 цаг' },
-];
+interface YearSummaryStats {
+  total_planned_minutes: number;
+  total_worked_minutes: number;
+  total_regular_overtime_minutes: number;
+  total_night_overtime_minutes: number;
+  total_holiday_overtime_minutes: number;
+  total_rest_day_overtime_minutes: number;
+  total_compensatory_rest_minutes: number;
+  total_lateness_minutes: number;
+  total_paid_leave_minutes: number;
+  total_unpaid_leave_minutes: number;
+  total_work_days: number;
+  total_public_holidays: number;
+}
 
-const YEAR_EXTRA = [
-  { label: 'Э/амралтын боломжит хоног', value: '12 хоног' },
-  { label: 'Э/амралт төлөвлөсөн хуваарь', value: '07/26 - 08/15', className: "text-green" },
-  { label: 'Эрүүл мэндийн үзлэг', value: '11/15', className: "text-darkcyan" },
-];
+interface YearSummaryHoliday {
+  key: string;
+  name: string;
+  dates: string[];
+}
 
-const HOLIDAYS = [
-  { date: '01/01', name: 'Шинэ жил / 2024 - 2025' },
-  { date: '02/10 - 02/12', name: 'Цагаан сар' },
-  { date: '03/08', name: 'Олон улсын эмэгтэйчүүдийн өдөр' },
-  { date: '05/23', name: 'Бурхан багшийн Их дүйчин өдөр' },
-  { date: '06/01', name: 'Хүүхдийн баяр' },
-  { date: '06/28', name: 'УИХ сонгууль' },
-  { date: '07/11 - 07/15', name: 'Үндэсний их баяр наадам' },
-  { date: '11/02', name: 'Эзэн Чингис хааны өдөр' },
-  { date: '11/26', name: 'Бүгд Найрамдах Улс тунхагласан өдөр' },
-  { date: '12/29', name: 'Үндэсний эрх чөлөө, тусгаар тогтнолоо сэргээсний баярын өдөр' },
-];
+interface YearSummaryExtra {
+  has_annual_leave: boolean;
+  annual_leave_available_days: number;
+  splits: { start_date: string; end_date: string; days: number }[];
+  medical_examinations: string[];
+}
 
-const YEAR_HIGHLIGHT_RANGES = [
-  { start: '2026-07-11', end: '2026-07-15', color: 'blue' as const },
-  { start: '2026-08-01', end: '2026-08-15', color: 'green' as const },
-  { start: '2026-11-15', end: '2026-11-15', color: 'cyan' as const },
-];
+interface YearSummary {
+  year: number;
+  available_years: number[];
+  year_stats: YearSummaryStats;
+  year_extra: YearSummaryExtra;
+  holidays: YearSummaryHoliday[];
+  non_working_days: string[];
+}
 
 // --- Sub-components ---
 
@@ -166,32 +160,118 @@ function ViewModeToggle({
 
 // --- Timesheet List ---
 
+function ShiftRow({
+  shift,
+  isFirst,
+  dayStr,
+  dayColor,
+  isToday,
+  isFuture,
+  isNonWorkingDay,
+  hasLeave,
+}: {
+  shift: Shift | null;
+  isFirst: boolean;
+  dayStr: string;
+  dayColor: string;
+  isToday: boolean;
+  isFuture: boolean;
+  isNonWorkingDay: boolean;
+  hasLeave: boolean;
+}) {
+  const arrived = extractTime(shift?.actual_start);
+  const left = extractTime(shift?.actual_end);
+  const plannedStart = extractTime(shift?.planned_start);
+  const plannedEnd = extractTime(shift?.planned_end);
+  const workHour = formatMinutes(shift?.worked_duration_minutes);
+  const overtime = formatMinutes(shift?.overtime_minutes);
+  const isLate = (shift?.lateness_minutes ?? 0) > 0;
+
+  let arrivedDisplay = '00:00';
+  let arrivedColor = 'text-darkgray/15';
+  let leftDisplay = '00:00';
+  let leftColor = 'text-darkgray/15';
+  let workHourDisplay = '00:00';
+  let workHourColor = 'text-darkgray/15';
+  let overtimeDisplay = '00:00';
+  let overtimeColor = 'text-darkgray/15';
+
+  if (arrived) {
+    arrivedDisplay = arrived;
+    arrivedColor = isLate ? 'text-red' : 'text-darkgray';
+  } else if (isFuture && !isNonWorkingDay && !hasLeave && plannedStart) {
+    arrivedDisplay = plannedStart;
+    arrivedColor = 'text-darkgray/40';
+  }
+
+  if (left) {
+    leftDisplay = left;
+    leftColor = 'text-darkgray';
+  } else if (isFuture && !isNonWorkingDay && !hasLeave && plannedEnd) {
+    leftDisplay = plannedEnd;
+    leftColor = 'text-darkgray/40';
+  }
+
+  if (workHour) {
+    workHourDisplay = workHour;
+    workHourColor = 'font-medium';
+  }
+
+  if (overtime) {
+    overtimeDisplay = overtime;
+    overtimeColor = 'text-green';
+  }
+
+  return (
+    <View className={cn('flex-row', !isFirst && 'border-t border-darkgray/5')}>
+      <View className={cn('w-14 items-center justify-center py-4', isToday && isFirst && 'bg-lightblue')}>
+        <AppText className={cn('text-lg', dayColor, !isFirst && 'opacity-0')}>{dayStr}</AppText>
+      </View>
+      <View className="flex-1 items-center justify-center">
+        <AppText className={cn('text-sm', arrivedColor)}>{arrivedDisplay}</AppText>
+      </View>
+      <View className="flex-1 items-center justify-center">
+        <AppText className={cn('text-sm', leftColor)}>{leftDisplay}</AppText>
+      </View>
+      <View className="flex-1 items-center justify-center">
+        <AppText className={cn('text-sm', workHourColor)}>{workHourDisplay}</AppText>
+      </View>
+      <View className="flex-1 items-center justify-center">
+        <AppText className={cn('text-sm', overtimeColor)}>{overtimeDisplay}</AppText>
+      </View>
+    </View>
+  );
+}
+
 function TimesheetListRow({
   day,
-  year,
   month,
   today,
+  timeCorrectionId,
 }: {
-  day: MonthDayData;
-  year: number;
+  day: TimesheetDay;
   month: number;
   today: string;
+  timeCorrectionId: string | null;
 }) {
-  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day.day).padStart(2, '0')}`;
+  const dayNum = parseInt(day.cdate.split('-')[2], 10);
+  const dateStr = day.cdate;
+  const dayStr = String(dayNum).padStart(2, '0');
   const isFuture = dateStr > today;
-  const dayStr = String(day.day).padStart(2, '0');
+  const isToday = dateStr === today;
+  const isNonWorkingDay = !day.is_work_day && !day.is_public_holiday;
 
   // Day number color
-  const dayColor = day.isHoliday
+  const dayColor = day.is_public_holiday
     ? 'text-blue'
-    : (day.isNonWorkingDay || day.annualLeave || day.leave)
+    : (isNonWorkingDay || day.annual || day.leave)
       ? 'text-darkgray'
       : '';
 
-  // Annual leave: special row
-  if (day.annualLeave) {
+  // Annual leave: special row, no shift breakdown
+  if (day.annual) {
     return (
-      <Pressable className="border-b border-darkgray/10 bg-yellow/10">
+      <View className="border-b border-darkgray/10 bg-yellow/10">
         <View className="flex-row">
           <View className="w-14 items-center justify-center py-4">
             <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
@@ -203,84 +283,53 @@ function TimesheetListRow({
           <View className="flex-1 items-center justify-center" />
           <View className="flex-1 items-center justify-center" />
         </View>
-      </Pressable>
+      </View>
     );
   }
 
-  // Determine column values and colors
-  let arrivedDisplay = '00:00';
-  let arrivedColor = 'text-darkgray/15';
-  let leftDisplay = '00:00';
-  let leftColor = 'text-darkgray/15';
-  let workHourDisplay = '00:00';
-  let workHourColor = 'text-darkgray/15';
-  let overtimeDisplay = '00:00';
-  let overtimeColor = 'text-darkgray/15';
+  const shifts: (Shift | null)[] = day.shifts.length > 0 ? day.shifts : [null];
+  const hasActualShift = day.shifts.some((s) => s.actual_start);
+  const isCurrentMonth = dateStr.slice(0, 7) === today.slice(0, 7);
 
-  if (day.arrived) {
-    arrivedDisplay = day.arrived;
-    arrivedColor = day.isLate ? 'text-red' : 'text-darkgray';
-  } else if (isFuture && !day.isNonWorkingDay && !day.leave && day.clockIn) {
-    arrivedDisplay = day.clockIn;
-    arrivedColor = 'text-darkgray/40';
-  }
-
-  if (day.left) {
-    leftDisplay = day.left;
-    leftColor = 'text-darkgray';
-  } else if (isFuture && !day.isNonWorkingDay && !day.leave && day.clockOut) {
-    leftDisplay = day.clockOut;
-    leftColor = 'text-darkgray/40';
-  }
-
-  if (day.workHour) {
-    workHourDisplay = day.workHour;
-    workHourColor = 'font-medium';
-  }
-
-  if (day.overtime) {
-    overtimeDisplay = day.overtime;
-    overtimeColor = 'text-green';
-  }
-
-  const isToday = dateStr === today;
+  const handlePress = hasActualShift && timeCorrectionId && isCurrentMonth
+    ? () => {
+        const shiftsPayload = day.shifts.map((s) => ({
+          arrived: extractTime(s.actual_start) ?? '',
+          left: extractTime(s.actual_end) ?? '',
+        }));
+        const headerInfoPayload = day.shifts.map((s) => {
+          const arrived = extractTime(s.actual_start) ?? '';
+          const left = extractTime(s.actual_end) ?? '';
+          return { label: 'Ирсэн, тарсан цаг', value: `${arrived} - ${left}` };
+        });
+        router.navigate({
+          pathname: '/request/create',
+          params: {
+            id: timeCorrectionId,
+            title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,
+            type: 'timeCorrection',
+            headerInfo: JSON.stringify(headerInfoPayload),
+            shifts: JSON.stringify(shiftsPayload),
+          },
+        });
+      }
+    : undefined;
 
   return (
-    <Pressable
-      className="border-b border-darkgray/10"
-      onPress={day.arrived ? () => router.navigate({
-        pathname: '/request/create',
-        params: {
-          title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,
-          type: 'timeCorrection',
-          headerInfo: JSON.stringify([
-            { label: 'Ирсэн, тарсан цаг', value: `${day.arrived} - ${day.left ?? ''}` },
-            ...(day.overtimeStart ? [{ label: 'Илүү цаг', value: `${day.overtimeStart} - ${day.overtimeEnd ?? ''}` }] : []),
-          ]),
-          arrived: day.arrived,
-          left: day.left ?? '',
-          overtimeStart: day.overtimeStart ?? '',
-          overtimeEnd: day.overtimeEnd ?? '',
-        },
-      }) : undefined}
-    >
-      <View className="flex-row">
-        <View className={cn('w-14 items-center justify-center py-4', isToday && 'bg-lightblue')}>
-          <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
-        </View>
-        <View className="flex-1 items-center justify-center">
-          <AppText className={cn('text-sm', arrivedColor)}>{arrivedDisplay}</AppText>
-        </View>
-        <View className="flex-1 items-center justify-center">
-          <AppText className={cn('text-sm', leftColor)}>{leftDisplay}</AppText>
-        </View>
-        <View className="flex-1 items-center justify-center">
-          <AppText className={cn('text-sm', workHourColor)}>{workHourDisplay}</AppText>
-        </View>
-        <View className="flex-1 items-center justify-center">
-          <AppText className={cn('text-sm', overtimeColor)}>{overtimeDisplay}</AppText>
-        </View>
-      </View>
+    <Pressable className="border-b border-darkgray/10" onPress={handlePress}>
+      {shifts.map((shift, idx) => (
+        <ShiftRow
+          key={idx}
+          shift={shift}
+          isFirst={idx === 0}
+          dayStr={dayStr}
+          dayColor={dayColor}
+          isToday={isToday}
+          isFuture={isFuture}
+          isNonWorkingDay={isNonWorkingDay}
+          hasLeave={!!day.leave}
+        />
+      ))}
       {day.leave && (
         <View className="bg-darkgray/7 px-3 py-1">
           <AppText className="text-gray text-xs">{day.leave}</AppText>
@@ -292,12 +341,12 @@ function TimesheetListRow({
 
 function TimesheetList({
   data,
-  year,
   month,
+  timeCorrectionId,
 }: {
-  data: MonthDayData[];
-  year: number;
+  data: TimesheetDay[];
   month: number;
+  timeCorrectionId: string | null;
 }) {
   const today = dayjs().format('YYYY-MM-DD');
 
@@ -323,11 +372,11 @@ function TimesheetList({
       {/* Rows */}
       {data.map((day) => (
         <TimesheetListRow
-          key={day.day}
+          key={day.cdate}
           day={day}
-          year={year}
           month={month}
           today={today}
+          timeCorrectionId={timeCorrectionId}
         />
       ))}
     </View>
@@ -339,14 +388,46 @@ function TimesheetList({
 function MonthView({
   year,
   month,
+  timeCorrectionId,
 }: {
   year: number;
   month: number;
+  timeCorrectionId: string | null;
 }) {
-  const calendarDayData = useMemo(
-    () => deriveDayData(MOCK_MONTH_DATA, year, month),
-    [year, month],
-  );
+  const [monthData, setMonthData] = useState<TimesheetDay[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api<TimesheetDay[]>({ path: `/timesheet?year=${year}&month=${month}` })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.status === 200 && Array.isArray(res.data)) {
+          setMonthData(res.data);
+        } else {
+          setMonthData([]);
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month]);
+
+  const calendarDayData = useMemo(() => deriveDayData(monthData), [monthData]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
@@ -359,21 +440,124 @@ function MonthView({
         />
       </View>
 
-      <TimesheetList data={MOCK_MONTH_DATA} year={year} month={month} />
+      <TimesheetList data={monthData} month={month} timeCorrectionId={timeCorrectionId} />
     </ScrollView>
   );
 }
 
 // --- Year View ---
 
-function YearView({ year }: { year: number }) {
+function YearView({
+  year,
+  onAvailableYearsChange,
+}: {
+  year: number;
+  onAvailableYearsChange?: (years: number[]) => void;
+}) {
   const [showHoliday, setShowHoliday] = useState(false);
+  const [summary, setSummary] = useState<YearSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api<YearSummary>({ path: `/timesheet/year-summary?year=${year}` })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.status === 200 && res.data && typeof res.data === 'object') {
+          setSummary(res.data);
+          if (Array.isArray(res.data.available_years)) {
+            onAvailableYearsChange?.(res.data.available_years);
+          }
+        } else {
+          setSummary(null);
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, onAvailableYearsChange]);
+
+  const stats = summary?.year_stats;
+  const extra = summary?.year_extra;
+  const holidays = summary?.holidays ?? [];
+
+  const totalOvertimeMinutes =
+    (stats?.total_regular_overtime_minutes ?? 0) +
+    (stats?.total_night_overtime_minutes ?? 0) +
+    (stats?.total_holiday_overtime_minutes ?? 0) +
+    (stats?.total_rest_day_overtime_minutes ?? 0);
+
+  const yearStatsRows = [
+    {
+      label: 'Тайлант жил',
+      value: `${stats?.total_work_days ?? 0} хоног, ${formatMinutesHHMM(stats?.total_planned_minutes ?? 0)} цаг`,
+    },
+    { label: 'Ажилласан энгийн', value: `${formatMinutesHHMM(stats?.total_worked_minutes ?? 0)} цаг` },
+    { label: 'Илүү цаг', value: `${formatMinutesHHMM(totalOvertimeMinutes)} цаг` },
+    { label: 'Нөхөн амарсан цаг', value: `${formatMinutesHHMM(stats?.total_compensatory_rest_minutes ?? 0)} цаг` },
+    { label: 'Цалинтай чөлөө', value: `${formatMinutesHHMM(stats?.total_paid_leave_minutes ?? 0)} цаг` },
+    { label: 'Хоцорсон', value: `${formatMinutesHHMM(stats?.total_lateness_minutes ?? 0)} цаг` },
+    { label: 'Цалингүй чөлөө', value: `${formatMinutesHHMM(stats?.total_unpaid_leave_minutes ?? 0)} цаг` },
+  ];
+
+  const totalHolidayDays = holidays.reduce((sum, h) => sum + h.dates.length, 0);
+
+  const validSplits = (extra?.splits ?? []).filter((s) => s?.start_date && s?.end_date);
+  const hasSplits = !!extra?.has_annual_leave && validSplits.length > 0;
+  const splitFormattedList = validSplits.map(
+    (s) => `${s.start_date.slice(5).replace('-', '/')} - ${s.end_date.slice(5).replace('-', '/')}`,
+  );
+  const hasMedical = !!extra?.medical_examinations?.[0];
+  const medicalFormatted = hasMedical
+    ? extra!.medical_examinations[0].slice(5).replace('-', '/')
+    : 'Хамрагдаагүй';
+
+  const highlightRanges = useMemo(() => {
+    const ranges: { start: string; end: string; color: 'blue' | 'green' | 'cyan' }[] = [];
+    holidays.forEach((h) => {
+      if (h.dates.length === 0) return;
+      ranges.push({ start: h.dates[0], end: h.dates[h.dates.length - 1], color: 'blue' });
+    });
+    if (extra?.has_annual_leave) {
+      extra.splits?.forEach((s) => {
+        if (s?.start_date && s?.end_date) {
+          ranges.push({ start: s.start_date, end: s.end_date, color: 'green' });
+        }
+      });
+    }
+    extra?.medical_examinations?.forEach((d) => {
+      ranges.push({ start: d, end: d, color: 'cyan' });
+    });
+    return ranges;
+  }, [holidays, extra]);
+
+  const nonWorkingDayMap = useMemo(() => {
+    const map: Record<string, { date: string; isNonWorkingDay: boolean }> = {};
+    summary?.non_working_days?.forEach((d) => {
+      map[d] = { date: d, isNonWorkingDay: true };
+    });
+    return map;
+  }, [summary]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
       {/* Stats */}
       <View className="gap-3">
-        {YEAR_STATS.map((item) => (
+        {yearStatsRows.map((item) => (
           <View key={item.label} className="flex-row justify-between">
             <AppText className="text-sm text-darkgray">{item.label}</AppText>
             <AppText className="text-sm">{item.value}</AppText>
@@ -385,24 +569,36 @@ function YearView({ year }: { year: number }) {
 
       {/* Extra stats */}
       <View className="gap-3">
-        {YEAR_EXTRA.map((item) => (
-          <View key={item.label} className="flex-row justify-between">
-            <AppText className="text-sm text-darkgray">{item.label}</AppText>
-            <AppText
-              className={cn(
-                'text-sm',
-                item.className,
-              )}
-            >
-              {item.value}
-            </AppText>
-          </View>
-        ))}
+        <View className="flex-row justify-between">
+          <AppText className="text-sm text-darkgray">Э/амралтын боломжит хоног</AppText>
+          <AppText className="text-sm">{extra?.annual_leave_available_days ?? 0} хоног</AppText>
+        </View>
+
+        <View className="flex-row justify-between">
+          <AppText className="text-sm text-darkgray">Э/амралт төлөвлөсөн хуваарь</AppText>
+          {hasSplits ? (
+            <View className="items-end gap-1">
+              {splitFormattedList.map((s, i) => (
+                <AppText key={i} className="text-sm text-green">{s}</AppText>
+              ))}
+            </View>
+          ) : (
+            <AppText className="text-sm text-red">Төлөвлөөгүй</AppText>
+          )}
+        </View>
+
+        <View className="flex-row justify-between">
+          <AppText className="text-sm text-darkgray">Эрүүл мэндийн үзлэг</AppText>
+          <AppText className={cn('text-sm', hasMedical ? 'text-darkcyan' : 'text-red')}>
+            {medicalFormatted}
+          </AppText>
+        </View>
+
         <View className="flex-row justify-between mb-7.5">
           <AppText className="text-sm text-darkgray">Нийтээр амрах баярын өдөр</AppText>
           <Pressable className="flex-row gap-1 items-center" onPress={() => setShowHoliday(!showHoliday)}>
             <HugeiconsIcon icon={ArrowDown01Icon} />
-            <AppText className="text-sm font-medium text-blue">12 хоног</AppText>
+            <AppText className="text-sm font-medium text-blue">{totalHolidayDays} хоног</AppText>
           </Pressable>
         </View>
       </View>
@@ -411,9 +607,9 @@ function YearView({ year }: { year: number }) {
       {
         showHoliday && (
           <View className="gap-3 mb-7.5">
-            {HOLIDAYS.map((h) => (
-              <View key={h.date} className="flex-row gap-3">
-                <AppText className="text-sm text-blue w-24">{h.date}</AppText>
+            {holidays.map((h) => (
+              <View key={h.key} className="flex-row gap-3">
+                <AppText className="text-sm text-blue w-24">{formatHolidayDates(h.dates)}</AppText>
                 <AppText className="text-sm flex-1">{h.name}</AppText>
               </View>
             ))}
@@ -428,13 +624,15 @@ function YearView({ year }: { year: number }) {
             <MiniCalendar
               year={year}
               month={i * 2 + 1}
-              highlightRanges={YEAR_HIGHLIGHT_RANGES}
+              dayDataMap={nonWorkingDayMap}
+              highlightRanges={highlightRanges}
               hideOtherMonthDays
             />
             <MiniCalendar
               year={year}
               month={i * 2 + 2}
-              highlightRanges={YEAR_HIGHLIGHT_RANGES}
+              dayDataMap={nonWorkingDayMap}
+              highlightRanges={highlightRanges}
               hideOtherMonthDays
             />
           </View>
@@ -451,24 +649,56 @@ export default function TimesheetScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [year, setYear] = useState(today.year());
   const [month, setMonth] = useState(today.month() + 1);
+  const [timeCorrectionId, setTimeCorrectionId] = useState<string | null>(null);
 
-  const MONTH_OPTIONS: SelectOption[] = [
-    { value: '05', label: '05 сар' },
-    { value: '04', label: '04 сар' },
-    { value: '03', label: '03 сар' },
-    { value: '02', label: '02 сар' },
-    { value: '01', label: '01 сар' },
-  ];
+  useEffect(() => {
+    api<Record<string, { id: number; request_type: string }[]>>({
+      path: '/employee-request/settings',
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          const id = res.data.time_correction?.[0]?.id;
+          if (id != null) setTimeCorrectionId(String(id));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
-  const YEAR_OPTIONS: SelectOption[] = [
-    { value: '2026', label: '2026 он' },
-    { value: '2025', label: '2025 он' },
-    { value: '2024', label: '2024 он' },
-    { value: '2023', label: '2023 он' },
-  ];
+  const currentMonth = today.month() + 1;
+  const MONTH_OPTIONS: SelectOption[] = useMemo(
+    () =>
+      Array.from({ length: currentMonth }, (_, i) => {
+        const m = currentMonth - i;
+        const value = String(m).padStart(2, '0');
+        return { value, label: `${value} сар` };
+      }),
+    [currentMonth],
+  );
+
+  const [availableYears, setAvailableYears] = useState<number[]>([today.year()]);
+
+  const YEAR_OPTIONS: SelectOption[] = useMemo(
+    () =>
+      [...availableYears]
+        .sort((a, b) => b - a)
+        .map((y) => ({ value: String(y), label: `${y} он` })),
+    [availableYears],
+  );
 
   const [selectedMonth, setSelectedMonth] = useState<SelectOption>(MONTH_OPTIONS[0]);
-  const [selectedYear, setSelectedYear] = useState<SelectOption>(YEAR_OPTIONS[0]);
+  const [selectedYear, setSelectedYear] = useState<SelectOption>({
+    value: String(today.year()),
+    label: `${today.year()} он`,
+  });
+
+  const handleAvailableYearsChange = useCallback((years: number[]) => {
+    setAvailableYears((prev) => {
+      if (prev.length === years.length && prev.every((v, i) => v === years[i])) {
+        return prev;
+      }
+      return years;
+    });
+  }, []);
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -505,9 +735,13 @@ export default function TimesheetScreen() {
         <MonthView
           year={today.year()}
           month={parseInt(selectedMonth.value)}
+          timeCorrectionId={timeCorrectionId}
         />
       ) : (
-        <YearView year={parseInt(selectedYear.value)} />
+        <YearView
+          year={parseInt(selectedYear.value)}
+          onAvailableYearsChange={handleAvailableYearsChange}
+        />
       )}
     </StyledSafeAreaView>
   );

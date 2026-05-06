@@ -12,7 +12,7 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection';
+type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave';
 
 interface HeaderInfoItem {
   label: string;
@@ -26,6 +26,8 @@ interface RequestItem {
   headerInfo?: HeaderInfoItem[];
   maxDays?: number;
   maxHours?: number;
+  availableStartDate?: string;
+  availableEndDate?: string;
 }
 
 interface RequestCategory {
@@ -43,7 +45,9 @@ interface ApiRequestSetting {
     name: string;
     show: boolean;
     fields: { time_unit?: string; has_salary?: boolean; time_value?: number; salary_percent?: number; salary_calculate?: string | null } | [];
-    annual_leave_available?: number;
+    annual_leave_available_days?: number;
+    annual_leave_available_start_date?: string;
+    annual_leave_available_end_date?: string;
     compensatory_hours?: number;
     compensatory_max_hour?: number;
     compensatory_max_day?: number;
@@ -75,7 +79,7 @@ function getFormType(setting: ApiRequestSetting): FormType {
     if (key === 'overtime') return 'timeRange';
     if (key === 'feedback' || key === 'anonymous_feedback') return 'textOnly';
     if (key === 'compensatory') return 'compensatory';
-    if (key === 'annual_leave') return 'dateRange';
+    if (key === 'annual_leave') return 'annualLeave';
     return 'textOnly';
   }
 
@@ -97,8 +101,8 @@ function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined
     return [{ label: 'Хуримтлагдсан цаг', value: `${detail.compensatory_hours} цаг` }];
   }
 
-  if (detail.key === 'annual_leave' && detail.annual_leave_available != null) {
-    return [{ label: 'Боломжит хоног', value: `${detail.annual_leave_available} хоног` }];
+  if (detail.key === 'annual_leave' && detail.annual_leave_available_days != null) {
+    return [{ label: 'Боломжит хоног', value: `${detail.annual_leave_available_days} хоног` }];
   }
 
   if (setting.type === 'benefit' && setting.adjustment_setting?.detail?.length) {
@@ -157,8 +161,8 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           }
         }
 
-        if (detail.key === 'annual_leave' && detail.annual_leave_available) {
-          maxDays = detail.annual_leave_available;
+        if (detail.key === 'annual_leave' && detail.annual_leave_available_days) {
+          maxDays = detail.annual_leave_available_days;
         }
         if (detail.key === 'compensatory') {
           if (detail.compensatory_max_day) maxDays = detail.compensatory_max_day;
@@ -172,6 +176,8 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           headerInfo: getHeaderInfo(s),
           maxDays,
           maxHours,
+          availableStartDate: detail.annual_leave_available_start_date,
+          availableEndDate: detail.annual_leave_available_end_date,
         };
       }),
     });
@@ -293,8 +299,9 @@ export default function RequestScreen() {
   }, [fetchRequests]);
 
   const handleItemPress = (item: RequestItem) => {
+    const pathname = item.type === 'annualLeave' ? '/request/annual-leave' : '/request/create';
     router.navigate({
-      pathname: '/request/create',
+      pathname,
       params: {
         id: item.id,
         title: item.label,
@@ -302,6 +309,8 @@ export default function RequestScreen() {
         ...(item.headerInfo && { headerInfo: JSON.stringify(item.headerInfo) }),
         ...(item.maxDays && { maxDays: String(item.maxDays) }),
         ...(item.maxHours && { maxHours: String(item.maxHours) }),
+        ...(item.availableStartDate && { availableStartDate: item.availableStartDate }),
+        ...(item.availableEndDate && { availableEndDate: item.availableEndDate }),
       },
     });
   };

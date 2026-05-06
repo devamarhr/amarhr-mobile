@@ -11,7 +11,6 @@ import {
   ArrowLeft02Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
-  Clock01Icon,
   FileAttachmentIcon,
   LoginCircle02Icon, LogoutCircle02Icon,
   MultiplicationSignIcon
@@ -30,11 +29,16 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection';
+type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave';
 
 interface HeaderInfoItem {
   label: string;
   value: string;
+}
+
+interface ShiftEntry {
+  arrivalTime?: string;
+  leaveTime?: string;
 }
 
 interface FormData {
@@ -42,10 +46,7 @@ interface FormData {
   days?: string;
   hours?: string;
   startTime?: string;
-  arrivalTime?: string;
-  leaveTime?: string;
-  overtimeStartTime?: string;
-  overtimeEndTime?: string;
+  shifts: ShiftEntry[];
   description: string;
   compensatoryMode: 'day' | 'hour';
 }
@@ -67,10 +68,7 @@ export default function RequestCreateScreen() {
     headerInfo?: string;
     maxDays?: string;
     maxHours?: string;
-    arrived?: string;
-    left?: string;
-    overtimeStart?: string;
-    overtimeEnd?: string;
+    shifts?: string;
   }>();
   const { toast } = useToast();
 
@@ -83,6 +81,21 @@ export default function RequestCreateScreen() {
       return [];
     }
   }, [params.headerInfo]);
+
+  const initialShifts: ShiftEntry[] = useMemo(() => {
+    try {
+      if (params.shifts) {
+        const parsed = JSON.parse(params.shifts);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s: { arrived?: string; left?: string }) => ({
+            arrivalTime: parseTimeToString(s.arrived),
+            leaveTime: parseTimeToString(s.left),
+          }));
+        }
+      }
+    } catch {}
+    return [{ arrivalTime: undefined, leaveTime: undefined }];
+  }, [params.shifts]);
 
   const maxDays = params.maxDays ? parseInt(params.maxDays, 10) : 0;
   const maxHours = params.maxHours ? parseInt(params.maxHours, 10) : 0;
@@ -129,10 +142,7 @@ export default function RequestCreateScreen() {
     defaultValues: {
       description: '',
       compensatoryMode: 'day',
-      arrivalTime: parseTimeToString(params.arrived),
-      leaveTime: parseTimeToString(params.left),
-      overtimeStartTime: parseTimeToString(params.overtimeStart),
-      overtimeEndTime: parseTimeToString(params.overtimeEnd),
+      shifts: initialShifts,
     },
   });
 
@@ -141,12 +151,12 @@ export default function RequestCreateScreen() {
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const { compensatoryMode, arrivalTime, leaveTime, overtimeStartTime, overtimeEndTime, ...rest } = data;
+      const { compensatoryMode, shifts, ...rest } = data;
       const body = {
         detail: {
           ...rest,
           ...(type === 'compensatory' && { compensatoryMode }),
-          ...(type === 'timeCorrection' && { arrivalTime, leaveTime, overtimeStartTime, overtimeEndTime }),
+          ...(type === 'timeCorrection' && { shifts }),
         },
         employee_request_setting_id: params.id,
         attachments,
@@ -275,14 +285,23 @@ export default function RequestCreateScreen() {
           <Controller
             control={control}
             name="hours"
-            rules={{ required: 'Цаг сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppSelect
+            rules={{
+              required: 'Цаг оруулна уу',
+              validate: (v) => {
+                const n = Number(v);
+                if (!Number.isInteger(n) || n <= 0) return 'Бүхэл тоо оруулна уу';
+                if (maxHours && n > maxHours) return `Дээд тал нь ${maxHours} цаг`;
+                return true;
+              },
+            }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AppTextField
                 label="Хугацаа"
-                options={hourOptions}
-                value={hourOptions.find(o => o.value === value)}
-                onValueChange={(opt) => onChange(opt?.value ?? '')}
-                placeholder="Сонгох"
+                value={value ?? ''}
+                onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
+                onBlur={onBlur}
+                keyboardType="number-pad"
+                placeholder="Цаг"
                 isInvalid={!!errors.hours}
                 errorMessage={errors.hours?.message}
               />
@@ -295,83 +314,54 @@ export default function RequestCreateScreen() {
 
   const renderTimeCorrectionFields = () => (
     <>
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="arrivalTime"
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Ирсэн цаг"
-                mode="time"
-                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                placeholder="--:--"
-                icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.arrivalTime}
-                errorMessage={errors.arrivalTime?.message}
+      {initialShifts.map((shift, idx) => {
+        const arrivalError = errors.shifts?.[idx]?.arrivalTime;
+        const leaveError = errors.shifts?.[idx]?.leaveTime;
+        const arrivalDisabled = !shift.arrivalTime;
+        const leaveDisabled = !shift.leaveTime;
+        return (
+          <View key={idx} className="flex-row gap-3">
+            <View className="flex-1">
+              <Controller
+                control={control}
+                name={`shifts.${idx}.arrivalTime` as const}
+                render={({ field: { onChange, value } }) => (
+                  <AppDatePicker
+                    label="Ирсэн цаг"
+                    mode="time"
+                    value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                    onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
+                    placeholder="--:--"
+                    icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
+                    isInvalid={!!arrivalError}
+                    errorMessage={arrivalError?.message}
+                    isDisabled={arrivalDisabled}
+                  />
+                )}
               />
-            )}
-          />
-        </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="leaveTime"
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Тарсан цаг"
-                mode="time"
-                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                placeholder="--:--"
-                icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.leaveTime}
-                errorMessage={errors.leaveTime?.message}
+            </View>
+            <View className="flex-1">
+              <Controller
+                control={control}
+                name={`shifts.${idx}.leaveTime` as const}
+                render={({ field: { onChange, value } }) => (
+                  <AppDatePicker
+                    label="Тарсан цаг"
+                    mode="time"
+                    value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                    onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
+                    placeholder="--:--"
+                    icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
+                    isInvalid={!!leaveError}
+                    errorMessage={leaveError?.message}
+                    isDisabled={leaveDisabled}
+                  />
+                )}
               />
-            )}
-          />
-        </View>
-      </View>
-
-      {(params.overtimeStart || params.overtimeEnd) && <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="overtimeStartTime"
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Ирсэн цаг / Илүү цаг"
-                mode="time"
-                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                placeholder="--:--"
-                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.overtimeStartTime}
-                errorMessage={errors.overtimeStartTime?.message}
-              />
-            )}
-          />
-        </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="overtimeEndTime"
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Тарсан цаг / Илүү цаг"
-                mode="time"
-                value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                placeholder="--:--"
-                icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.overtimeEndTime}
-                errorMessage={errors.overtimeEndTime?.message}
-              />
-            )}
-          />
-        </View>
-      </View>}
+            </View>
+          </View>
+        );
+      })}
     </>
   );
 

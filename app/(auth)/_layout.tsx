@@ -33,6 +33,7 @@ export default function AuthLayout() {
         <Stack.Screen name="contact" />
         <Stack.Screen name="pdf-view" />
         <Stack.Screen name="request/create" />
+        <Stack.Screen name="request/annual-leave" />
         <Stack.Screen name="request/[id]" />
         <Stack.Screen name="attendance-map" />
       </Stack>

@@ -7,7 +7,6 @@ import { api } from '@/config/api';
 import {
   ArrowLeft02Icon,
   Calendar03Icon,
-  Clock01Icon,
   FileAttachmentIcon,
   LoginCircle02Icon,
   LogoutCircle02Icon,
@@ -23,7 +22,7 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection';
+type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave';
 
 type ReviewerType = string | null;
 
@@ -37,7 +36,9 @@ interface SettingDetail {
   name?: string;
   key?: string;
   fields?: { time_unit?: string; time_value?: number; has_salary?: boolean; salary_percent?: number } | [];
-  annual_leave_available?: number;
+  annual_leave_available_days?: number;
+  annual_leave_available_start_date?: string | null;
+  annual_leave_available_end_date?: string | null;
   compensatory_hours?: number;
 }
 
@@ -90,10 +91,11 @@ function getFormType(setting: RequestSetting | undefined, detail: Record<string,
   if (key === 'overtime') return 'timeRange';
   if (key === 'feedback' || key === 'anonymous_feedback') return 'textOnly';
   if (key === 'compensatory') return 'compensatory';
-  if (key === 'annual_leave') return 'dateRange';
+  if (key === 'annual_leave') return 'annualLeave';
 
   if (detail) {
-    if (detail.arrivalTime || detail.leaveTime || detail.overtimeStartTime || detail.overtimeEndTime) {
+    if (Array.isArray(detail.periods)) return 'annualLeave';
+    if (detail.arrivalTime || detail.leaveTime || Array.isArray(detail.shifts)) {
       return 'timeCorrection';
     }
     if (detail.compensatoryMode) return 'compensatory';
@@ -114,8 +116,17 @@ function getHeaderInfo(setting: RequestSetting | undefined): { label: string; va
   if (!setting?.detail) return [];
   const detail = setting.detail;
 
-  if (detail.key === 'annual_leave' && detail.annual_leave_available != null) {
-    return [{ label: 'Боломжит хоног', value: `${detail.annual_leave_available} хоног` }];
+  if (detail.key === 'annual_leave' && detail.annual_leave_available_days != null) {
+    const info: { label: string; value: string }[] = [
+      { label: 'Боломжит хоног', value: `${detail.annual_leave_available_days} хоног` },
+    ];
+    if (detail.annual_leave_available_start_date && detail.annual_leave_available_end_date) {
+      info.push({
+        label: 'Сонгох боломжит',
+        value: `${dayjs(detail.annual_leave_available_start_date, 'YYYY-MM-DD').format('MM/DD')} - ${dayjs(detail.annual_leave_available_end_date, 'YYYY-MM-DD').format('MM/DD')}`,
+      });
+    }
+    return info;
   }
   if (detail.key === 'compensatory' && detail.compensatory_hours != null) {
     return [{ label: 'Хуримтлагдсан цаг', value: `${detail.compensatory_hours} цаг` }];
@@ -216,56 +227,39 @@ export default function RequestDetailScreen() {
     </View>
   );
 
-  const renderTimeCorrectionFields = () => (
-    <>
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <AppDatePicker
-            label="Ирсэн цаг"
-            mode="time"
-            value={detail.arrivalTime ? dayjs(detail.arrivalTime, 'HH:mm').toDate() : undefined}
-            placeholder="--:--"
-            icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
-            isDisabled
-          />
-        </View>
-        <View className="flex-1">
-          <AppDatePicker
-            label="Тарсан цаг"
-            mode="time"
-            value={detail.leaveTime ? dayjs(detail.leaveTime, 'HH:mm').toDate() : undefined}
-            placeholder="--:--"
-            icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
-            isDisabled
-          />
-        </View>
-      </View>
-      {(detail.overtimeStartTime || detail.overtimeEndTime) && (
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <AppDatePicker
-              label="Ирсэн цаг / Илүү цаг"
-              mode="time"
-              value={detail.overtimeStartTime ? dayjs(detail.overtimeStartTime, 'HH:mm').toDate() : undefined}
-              placeholder="--:--"
-              icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-              isDisabled
-            />
+  const renderTimeCorrectionFields = () => {
+    const shifts: { arrivalTime?: string; leaveTime?: string }[] = Array.isArray(detail.shifts)
+      ? detail.shifts
+      : [{ arrivalTime: detail.arrivalTime, leaveTime: detail.leaveTime }];
+    return (
+      <>
+        {shifts.map((s, idx) => (
+          <View key={idx} className="flex-row gap-3">
+            <View className="flex-1">
+              <AppDatePicker
+                label="Ирсэн цаг"
+                mode="time"
+                value={s.arrivalTime ? dayjs(s.arrivalTime, 'HH:mm').toDate() : undefined}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
+                isDisabled
+              />
+            </View>
+            <View className="flex-1">
+              <AppDatePicker
+                label="Тарсан цаг"
+                mode="time"
+                value={s.leaveTime ? dayjs(s.leaveTime, 'HH:mm').toDate() : undefined}
+                placeholder="--:--"
+                icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
+                isDisabled
+              />
+            </View>
           </View>
-          <View className="flex-1">
-            <AppDatePicker
-              label="Тарсан цаг / Илүү цаг"
-              mode="time"
-              value={detail.overtimeEndTime ? dayjs(detail.overtimeEndTime, 'HH:mm').toDate() : undefined}
-              placeholder="--:--"
-              icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
-              isDisabled
-            />
-          </View>
-        </View>
-      )}
-    </>
-  );
+        ))}
+      </>
+    );
+  };
 
   const renderCompensatoryFields = () => {
     const mode = (detail.compensatoryMode as 'day' | 'hour' | undefined) ?? (detail.hours != null ? 'hour' : 'day');
@@ -298,6 +292,47 @@ export default function RequestDetailScreen() {
     );
   };
 
+  const renderAnnualLeaveFields = () => {
+    const periods = Array.isArray(detail.periods) ? detail.periods : [];
+    if (periods.length === 0) return null;
+    return (
+      <View className="gap-4">
+        {periods.map((p: any, i: number) => (
+          <View key={i} className="flex-row gap-2 items-end">
+            <View className="flex-1">
+              <AppDatePicker
+                label="Эхлэх"
+                mode="date"
+                value={p.start_date ? dayjs(p.start_date, 'YYYY-MM-DD').toDate() : undefined}
+                placeholder="00/00"
+                format="MM/DD"
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                isDisabled
+              />
+            </View>
+            <View className="flex-1">
+              <AppSelect
+                label="Хоног"
+                options={p.days != null ? [{ value: String(p.days), label: `${p.days} хоног` }] : []}
+                value={p.days != null ? { value: String(p.days), label: `${p.days} хоног` } : undefined}
+                placeholder="-"
+                isDisabled
+              />
+            </View>
+            <View className="gap-2">
+              <AppText className="text-sm font-normal text-darkgray text-center">Дуусах</AppText>
+              <View className="h-11 justify-center items-center">
+                <AppText className={p.end_date ? '' : 'text-muted'}>
+                  {p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD').format('MM/DD') : '--/--'}
+                </AppText>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   const renderFormFields = () => {
     switch (formType) {
       case 'dateRange':
@@ -308,6 +343,8 @@ export default function RequestDetailScreen() {
         return renderTimeCorrectionFields();
       case 'compensatory':
         return renderCompensatoryFields();
+      case 'annualLeave':
+        return renderAnnualLeaveFields();
       case 'textOnly':
       default:
         return null;

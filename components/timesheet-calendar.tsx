@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
-import { cn } from 'heroui-native';
 import { AppText } from '@/components/app-text';
+import { Sun03Icon } from "@hugeicons-pro/core-solid-standard";
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { Sun03Icon } from "@hugeicons-pro/core-solid-standard";
+import { cn } from 'heroui-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
 
 const WEEKDAYS = ['Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя', 'Ня'];
 
@@ -225,9 +225,13 @@ function MiniDayCell({
   if (hideOtherMonthDays && !day.isCurrentMonth) {
     return <View className="flex-1" />;
   }
-  const highlight = highlightRanges?.find(
+  const data = dayDataMap?.[day.date];
+  const isNonWorking = data ? !!data.isNonWorkingDay : false;
+  const rawHighlight = highlightRanges?.find(
     (r) => day.date >= r.start && day.date <= r.end && day.isCurrentMonth,
   );
+  // Annual leave (green) skips non-working days within the range.
+  const highlight = rawHighlight && rawHighlight.color === 'green' && isNonWorking ? undefined : rawHighlight;
 
   return (
     <View className="flex-1 items-center py-0.5">
@@ -244,8 +248,8 @@ function MiniDayCell({
           className={cn(
             'text-xs',
             !day.isCurrentMonth && 'text-darkgray/30',
-            day.isCurrentMonth && day.isWeekend && 'text-darkgray/30',
-            day.isCurrentMonth && !day.isWeekend && 'text-black',
+            day.isCurrentMonth && isNonWorking && 'text-darkgray/30',
+            day.isCurrentMonth && !isNonWorking && 'text-black',
             highlight && day.isCurrentMonth && 'text-white',
           )}
         >
