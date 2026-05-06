@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const repoRoot = path.resolve(__dirname, '..');
+const buildGradle = path.join(repoRoot, 'android', 'app', 'build.gradle');
+
+function endOfBlock(text, openBraceIdx) {
+  let depth = 1;
+  let i = openBraceIdx + 1;
+  while (i < text.length && depth > 0) {
+    const ch = text[i];
+    if (ch === '{') depth++;
+    else if (ch === '}') depth--;
+    i++;
+  }
+  return depth === 0 ? i : -1;
+}
+
+function findBlock(text, headerRegex, fromIdx = 0) {
+  const re = new RegExp(headerRegex.source, headerRegex.flags.includes('g') ? headerRegex.flags : headerRegex.flags + 'g');
+  re.lastIndex = fromIdx;
+  const m = re.exec(text);
+  if (!m) return null;
+  const braceStart = m.index + m[0].length - 1;
+  const end = endOfBlock(text, braceStart);
+  if (end === -1) return null;
+  return { headerStart: m.index, braceStart, end };
+}
+
+let src = fs.readFileSync(buildGradle, 'utf8');
+const original = src;
+
+const signingConfigs = findBlock(src, /signingConfigs\s*\{/);
+if (!signingConfigs) {
+  console.error('signingConfigs block not found in build.gradle');
+  process.exit(1);
+}
+
+const signingBody = src.slice(signingConfigs.braceStart + 1, signingConfigs.end - 1);
+if (!/\brelease\s*\{/.test(signingBody)) {
+  const releaseBlock =
+    `    release {\n` +
+    `            storeFile file('../../upload.keystore')\n` +
+    `            storePassword 'Mongolia123'\n` +
+    `            keyAlias 'upload'\n` +
+    `            keyPassword 'Mongolia123'\n` +
+    `        }\n    `;
+  src = src.slice(0, signingConfigs.end - 1) + releaseBlock + src.slice(signingConfigs.end - 1);
+  console.log('Added release signingConfig');
+} else {
+  console.log('signingConfigs.release already present');
+}
+
+const buildTypes = findBlock(src, /buildTypes\s*\{/);
+if (!buildTypes) {
+  console.error('buildTypes block not found in build.gradle');
+  process.exit(1);
+}
+const releaseInBT = findBlock(src, /\brelease\s*\{/, buildTypes.braceStart);
+if (!releaseInBT || releaseInBT.end > buildTypes.end) {
+  console.error('buildTypes.release block not found');
+  process.exit(1);
+}
+
+const before = src.slice(0, releaseInBT.braceStart + 1);
+const body = src.slice(releaseInBT.braceStart + 1, releaseInBT.end - 1);
+const after = src.slice(releaseInBT.end - 1);
+
+let newBody = body;
+if (/signingConfig\s+signingConfigs\.debug/.test(body)) {
+  newBody = body.replace(/signingConfig\s+signingConfigs\.debug/, 'signingConfig signingConfigs.release');
+  console.log('Switched buildTypes.release to signingConfigs.release');
+} else if (/signingConfig\s+signingConfigs\.release/.test(body)) {
+  console.log('buildTypes.release already uses signingConfigs.release');
+} else {
+  console.warn('No signingConfig directive found in buildTypes.release');
+}
+
+src = before + newBody + after;
+
+if (src !== original) {
+  fs.writeFileSync(buildGradle, src, 'utf8');
+}
+
+const gradleCmd = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+const result = spawnSync(gradleCmd, ['bundleRelease'], {
+  cwd: path.join(repoRoot, 'android'),
+  stdio: 'inherit',
+});
+process.exit(result.status ?? 1);

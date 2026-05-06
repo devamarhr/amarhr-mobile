@@ -29,7 +29,7 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave';
+type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
 
 interface HeaderInfoItem {
   label: string;
@@ -285,6 +285,51 @@ export default function RequestCreateScreen() {
           <Controller
             control={control}
             name="hours"
+            rules={{ required: 'Цаг сонгоно уу' }}
+            render={({ field: { onChange, value } }) => (
+              <AppSelect
+                label="Хугацаа"
+                options={hourOptions}
+                value={hourOptions.find(o => o.value === value)}
+                onValueChange={(opt) => onChange(opt?.value ?? '')}
+                placeholder="Сонгох"
+                isInvalid={!!errors.hours}
+                errorMessage={errors.hours?.message}
+              />
+            )}
+          />
+        </View>
+      </View>
+    </>
+  );
+
+  const renderOvertimeFields = () => (
+    <>
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="startTime"
+            rules={{ required: 'Эхлэх цаг сонгоно уу' }}
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Эхлэх цаг"
+                mode="datetime"
+                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
+                placeholder="00/00 00:00"
+                format="MM/DD HH:mm"
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                isInvalid={!!errors.startTime}
+                errorMessage={errors.startTime?.message}
+              />
+            )}
+          />
+        </View>
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="hours"
             rules={{
               required: 'Цаг оруулна уу',
               validate: (v) => {
@@ -502,6 +547,8 @@ export default function RequestCreateScreen() {
         return renderDateRangeFields();
       case 'timeRange':
         return renderTimeRangeFields();
+      case 'overtime':
+        return renderOvertimeFields();
       case 'timeCorrection':
         return renderTimeCorrectionFields();
       case 'compensatory':

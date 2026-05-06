@@ -20,6 +20,7 @@
       }
     },
     "android": {
+      "versionCode": 16,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -72,7 +73,8 @@
           "locationAlwaysAndWhenInUsePermission": "Цаг бүртгэлд таны байршлыг ашиглана.",
           "locationWhenInUsePermission": "Цаг бүртгэлд таны байршлыг ашиглана."
         }
-      ]
+      ],
+      "./plugins/withAndroidReleaseSigning"
     ],
     "experiments": {
       "typedRoutes": true,

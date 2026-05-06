@@ -12,7 +12,7 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave';
+type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
 
 interface HeaderInfoItem {
   label: string;
@@ -76,7 +76,7 @@ function getFormType(setting: ApiRequestSetting): FormType {
 
   if (setting.type === 'system') {
     const key = setting.detail.key;
-    if (key === 'overtime') return 'timeRange';
+    if (key === 'overtime') return 'overtime';
     if (key === 'feedback' || key === 'anonymous_feedback') return 'textOnly';
     if (key === 'compensatory') return 'compensatory';
     if (key === 'annual_leave') return 'annualLeave';
