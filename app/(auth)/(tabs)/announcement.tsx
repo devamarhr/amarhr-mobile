@@ -5,16 +5,11 @@ import { api } from "@/config/api";
 import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-import isToday from "dayjs/plugin/isToday";
 import { Separator } from 'heroui-native';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Linking, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
-
-dayjs.extend(customParseFormat);
-dayjs.extend(isToday);
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 

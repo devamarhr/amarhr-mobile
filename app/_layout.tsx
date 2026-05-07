@@ -1,4 +1,5 @@
 import '../global.css';
+import '../config/dayjs';
 import { StatusBar } from 'expo-status-bar';
 import { HeroUINativeProvider } from 'heroui-native';
 import type { HeroUINativeConfig } from 'heroui-native';
