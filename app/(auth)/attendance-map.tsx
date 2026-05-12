@@ -1,42 +1,40 @@
-import { View, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { withUniwind } from 'uniwind';
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import * as Location from 'expo-location';
-import React, { useState, useEffect, useRef } from 'react';
-import { AppHeader } from '@/components/app-header';
 import { AppButton } from '@/components/app-button';
+import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
-import { useToast } from 'heroui-native';
+import { api } from '@/config/api';
+import { Alert01Icon, CheckmarkCircle02Icon } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { CheckmarkCircle02Icon } from "@hugeicons-pro/core-stroke-standard";
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
+import { useToast } from 'heroui-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { withUniwind } from 'uniwind';
+
+type PunchAction = 'punch_in' | 'punch_out' | 'retroactive_punch_out' | 'none';
+
+type TimesheetToday = {
+  shifts: unknown[];
+  action: PunchAction;
+  warning: string | null;
+};
+
+const actionLabel = (action: PunchAction): string => {
+  if (action === 'punch_out' || action === 'retroactive_punch_out') return 'Тарлаа';
+  return 'Ирлээ';
+};
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 interface Workplace {
-  name: string;
+  branch_name: string;
   latitude: number;
   longitude: number;
   radius: number; // meters
 }
-
-// TODO: Replace with actual workplace data from API
-const WORKPLACES: Workplace[] = [
-  {
-    name: 'Galaxy tower',
-    latitude: 47.904563,
-    longitude: 106.919497,
-    radius: 20,
-  },
-  {
-    name: 'Narkhan',
-    latitude: 47.904001,
-    longitude: 106.925967,
-    radius: 20,
-  },
-];
 
 function getDistanceMeters(
   lat1: number,
@@ -90,6 +88,28 @@ export default function AttendanceMapScreen() {
   const [isInsideGeofence, setIsInsideGeofence] = useState(false);
   const [nearestWorkplace, setNearestWorkplace] = useState<Workplace | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [action, setAction] = useState<PunchAction>('punch_in');
+  const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
+  const workplacesRef = useRef<Workplace[]>([]);
+  workplacesRef.current = workplaces;
+
+  useEffect(() => {
+    api<TimesheetToday>({ path: '/timesheet/today', method: 'GET' })
+      .then((res) => {
+        if (res.status >= 200 && res.status < 300 && res.data) {
+          setAction(res.data.action);
+        }
+      })
+      .catch(console.error);
+
+    api<Workplace[]>({ path: '/timesheet/locations', method: 'GET' })
+      .then((res) => {
+        if (res.status >= 200 && res.status < 300 && Array.isArray(res.data)) {
+          setWorkplaces(res.data);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
@@ -105,10 +125,13 @@ export default function AttendanceMapScreen() {
         const { latitude, longitude } = location.coords;
         setUserLocation({ latitude, longitude });
 
-        const result = findNearestWorkplace(latitude, longitude, WORKPLACES);
+        const result = findNearestWorkplace(latitude, longitude, workplacesRef.current);
         if (result) {
           setNearestWorkplace(result.workplace);
           setIsInsideGeofence(result.distance <= result.workplace.radius);
+        } else {
+          setNearestWorkplace(null);
+          setIsInsideGeofence(false);
         }
       };
 
@@ -122,7 +145,8 @@ export default function AttendanceMapScreen() {
       subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          distanceInterval: 5,
+          distanceInterval: 1,
+          timeInterval: 1000,
         },
         updateLocation
       );
@@ -133,37 +157,83 @@ export default function AttendanceMapScreen() {
     };
   }, []);
 
-  const handleClockIn = () => {
-    if (!userLocation || !nearestWorkplace) return;
-    console.log('Clock in via location:', userLocation, 'at:', nearestWorkplace.name);
-    // TODO: Send location to API
-    toast.show({
-      component: (props) => (
-        <AppToast
-          {...props}
-          variant="success"
-          description="Амжилттай цагаа бүртгүүллээ"
-          icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
-          iconContainerClassName="justify-center"
-        />
-      ),
+  useEffect(() => {
+    if (!userLocation) return;
+    const result = findNearestWorkplace(userLocation.latitude, userLocation.longitude, workplaces);
+    if (result) {
+      setNearestWorkplace(result.workplace);
+      setIsInsideGeofence(result.distance <= result.workplace.radius);
+    } else {
+      setNearestWorkplace(null);
+      setIsInsideGeofence(false);
+    }
+  }, [workplaces, userLocation]);
+
+  useEffect(() => {
+    if (!userLocation || !mapRef.current) return;
+    mapRef.current.animateCamera(
+      {
+        center: {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        },
+      },
+      { duration: 500 }
+    );
+  }, [userLocation]);
+
+  const [isPunching, setIsPunching] = useState(false);
+
+  const handleClockIn = async () => {
+    if (!userLocation || !nearestWorkplace || isPunching) return;
+    setIsPunching(true);
+    const res = await api<{ warning?: string | null }>({
+      path: '/timesheet/punch',
+      method: 'POST',
+      data: {
+        attendance_method: 'geo',
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+      },
     });
-    router.back();
+    setIsPunching(false);
+    console.log(JSON.stringify(res.data))
+
+    if (res.status == 200) {
+      toast.show({
+        component: (props) => (
+          <AppToast
+            {...props}
+            variant="success"
+            description="Амжилттай цагаа бүртгүүллээ"
+            icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            iconContainerClassName="justify-center"
+          />
+        ),
+      });
+      router.back();
+    } else {
+      toast.show({
+        component: (props) => (
+          <AppToast
+            {...props}
+            variant="danger"
+            description={res.message || 'Цаг бүртгэх үед алдаа гарлаа.'}
+            icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+          />
+        ),
+      });
+    }
   };
 
-  const initialRegion = WORKPLACES.length > 0
+  const initialRegion = userLocation
     ? {
-        latitude: WORKPLACES[0].latitude,
-        longitude: WORKPLACES[0].longitude,
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       }
-    : {
-        latitude: 47.9184676,
-        longitude: 106.9177016,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
+    : null;
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -177,38 +247,57 @@ export default function AttendanceMapScreen() {
         </View>
       ) : (
         <View className="flex-1">
-          <MapView
-            ref={mapRef}
-            provider={PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            initialRegion={initialRegion}
-            showsUserLocation
-            showsMyLocationButton
-            followsUserLocation
-          >
-            {WORKPLACES.map((wp, index) => (
-              <React.Fragment key={index}>
-                <Circle
-                  center={{ latitude: wp.latitude, longitude: wp.longitude }}
-                  radius={wp.radius}
-                  fillColor="rgba(0, 95, 238, 0.1)"
-                  strokeColor="rgba(0, 95, 238, 0.4)"
-                  strokeWidth={2}
-                />
-                <Marker
-                  coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
-                  title={wp.name}
-                />
-              </React.Fragment>
-            ))}
-          </MapView>
+          {initialRegion ? (
+            <MapView
+              ref={mapRef}
+              provider={PROVIDER_GOOGLE}
+              style={StyleSheet.absoluteFill}
+              initialRegion={initialRegion}
+              showsUserLocation
+              showsMyLocationButton
+              followsUserLocation
+            >
+              {workplaces.map((wp, index) => (
+                <React.Fragment key={index}>
+                  <Circle
+                    center={{ latitude: wp.latitude, longitude: wp.longitude }}
+                    radius={wp.radius}
+                    fillColor="rgba(0, 95, 238, 0.1)"
+                    strokeColor="rgba(0, 95, 238, 0.4)"
+                    strokeWidth={2}
+                  />
+                  <Marker
+                    coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
+                    title={wp.branch_name}
+                  />
+                </React.Fragment>
+              ))}
+            </MapView>
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator color="#005FEE" />
+            </View>
+          )}
 
-          <View className="absolute bottom-0 left-0 right-0 p-4" style={{ paddingBottom: insets.bottom + 16 }}>
+          <View
+            className="absolute bottom-0 left-0 right-0 p-4"
+            style={{ paddingBottom: insets.bottom + 16 + 56 }}
+          >
             <AppButton
-              label="Ирлээ"
+              label={actionLabel(action)}
               onPress={handleClockIn}
-              isDisabled={!isInsideGeofence || !userLocation}
-              className={!isInsideGeofence || !userLocation ? 'opacity-75' : ''}
+              isDisabled={!isInsideGeofence || !userLocation || action === 'none'}
+              isLoading={isPunching}
+              spinnerColor="#005FEE"
+              className="h-[44px] bg-lightblue border-lightblue"
+              labelClassName="text-blue text-base font-semibold"
+              style={{
+                shadowColor: '#005FEE',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 4,
+              }}
             />
           </View>
         </View>
