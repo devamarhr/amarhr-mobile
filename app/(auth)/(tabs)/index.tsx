@@ -7,6 +7,7 @@ import { ProfileData, useAuthStore } from "@/store/auth-store";
 import { registerForPushNotificationsAsync } from "@/utils/register-for-push-notifications";
 import {
   Alert01Icon,
+  CheckmarkCircle02Icon,
   Clock01Icon,
   Location01Icon,
   LoginCircle02Icon,
@@ -165,7 +166,9 @@ export default function HomeScreen() {
         return;
       }
       const state = await NetInfo.fetch();
-      const ssid = state.type === 'wifi' ? (state.details as { ssid?: string })?.ssid : null;
+      const details = state.type === 'wifi' ? (state.details as { ssid?: string | null; bssid?: string | null } | null) : null;
+      const ssid = details?.ssid ?? null;
+      const bssid = details?.bssid ?? null;
       if (!ssid) {
         toast.show({
           component: (props) => (
@@ -179,10 +182,44 @@ export default function HomeScreen() {
         });
         return;
       }
+      const res = await api<{ warning?: string | null }>({
+        path: '/timesheet/punch',
+        method: 'POST',
+        data: {
+          attendance_method: 'wifi',
+          wifi_name: ssid,
+          wifi_mac: bssid,
+        },
+      });
+      if (res.status == 200) {
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="success"
+              description="Амжилттай цагаа бүртгүүллээ"
+              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              iconContainerClassName="justify-center"
+            />
+          ),
+        });
+        fetchTimesheet();
+      } else {
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              description={res.message || 'Цаг бүртгэх үед алдаа гарлаа.'}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
     } else if (method === 'geo') {
       router.navigate('/attendance-map');
     }
-  }, [router, toast]);
+  }, [router, toast, fetchTimesheet]);
 
   useEffect(() => {
     const timer = setInterval(() => {
