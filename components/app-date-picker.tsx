@@ -81,6 +81,10 @@ interface AppDatePickerProps {
    * Maximum date that can be selected
    */
   maximumDate?: Date;
+  /**
+   * Minute interval for time/datetime mode (e.g. 5 for 5-minute steps)
+   */
+  minuteInterval?: 1 | 2 | 3 | 4 | 5 | 6 | 10 | 12 | 15 | 20 | 30;
 }
 
 export function AppDatePicker({
@@ -101,6 +105,7 @@ export function AppDatePicker({
   triggerClassName,
   minimumDate,
   maximumDate,
+  minuteInterval,
 }: AppDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -177,6 +182,7 @@ export function AppDatePicker({
         date={value || new Date()}
         minimumDate={minimumDate}
         maximumDate={maximumDate}
+        minuteInterval={minuteInterval}
         locale="mn"
         is24hourSource="locale"
         title={label ?? ''}

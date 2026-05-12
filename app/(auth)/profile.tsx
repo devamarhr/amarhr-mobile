@@ -144,7 +144,7 @@ export default function ProfileScreen() {
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
-              icon={SmartPhone01Icon}
+              icon={Clock01Icon}
               label="Цаг бүртгэл"
               trailing={
                 <AppSelect

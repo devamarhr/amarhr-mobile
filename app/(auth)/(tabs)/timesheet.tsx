@@ -27,6 +27,7 @@ type ViewMode = 'month' | 'year';
 // --- Timesheet day data (matches /timesheet API response shape) ---
 
 interface Shift {
+  id: number;
   planned_start: string | null;
   planned_end: string | null;
   actual_start: string | null;
@@ -288,54 +289,59 @@ function TimesheetListRow({
   }
 
   const shifts: (Shift | null)[] = day.shifts.length > 0 ? day.shifts : [null];
-  const hasActualShift = day.shifts.some((s) => s.actual_start);
   const isCurrentMonth = dateStr.slice(0, 7) === today.slice(0, 7);
 
-  const handlePress = hasActualShift && timeCorrectionId && isCurrentMonth
-    ? () => {
-        const shiftsPayload = day.shifts.map((s) => ({
-          arrived: extractTime(s.actual_start) ?? '',
-          left: extractTime(s.actual_end) ?? '',
-        }));
-        const headerInfoPayload = day.shifts.map((s) => {
-          const arrived = extractTime(s.actual_start) ?? '';
-          const left = extractTime(s.actual_end) ?? '';
-          return { label: 'Ирсэн, тарсан цаг', value: `${arrived} - ${left}` };
-        });
-        router.navigate({
-          pathname: '/request/create',
-          params: {
-            id: timeCorrectionId,
-            title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,
-            type: 'timeCorrection',
-            headerInfo: JSON.stringify(headerInfoPayload),
-            shifts: JSON.stringify(shiftsPayload),
-          },
-        });
-      }
-    : undefined;
+  const buildShiftPress = (shift: Shift) => {
+    if (!timeCorrectionId || !isCurrentMonth || !shift.actual_start) return undefined;
+    return () => {
+      const arrivedTime = extractTime(shift.actual_start) ?? '';
+      const leftTime = extractTime(shift.actual_end) ?? '';
+      const arrivedDt = shift.actual_start?.slice(0, 16) ?? '';
+      const leftDt = shift.actual_end?.slice(0, 16) ?? '';
+      const headerInfoPayload = [
+        { label: 'Ирсэн, тарсан цаг', value: `${arrivedTime} - ${leftTime}` },
+      ];
+      const shiftPayload = { arrived: arrivedDt, left: leftDt };
+      router.navigate({
+        pathname: '/request/create',
+        params: {
+          id: timeCorrectionId,
+          shiftId: String(shift.id),
+          cdate: day.cdate,
+          title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,
+          type: 'timeCorrection',
+          headerInfo: JSON.stringify(headerInfoPayload),
+          shift: JSON.stringify(shiftPayload),
+        },
+      });
+    };
+  };
 
   return (
-    <Pressable className="border-b border-darkgray/10" onPress={handlePress}>
-      {shifts.map((shift, idx) => (
-        <ShiftRow
-          key={idx}
-          shift={shift}
-          isFirst={idx === 0}
-          dayStr={dayStr}
-          dayColor={dayColor}
-          isToday={isToday}
-          isFuture={isFuture}
-          isNonWorkingDay={isNonWorkingDay}
-          hasLeave={!!day.leave}
-        />
-      ))}
+    <View className="border-b border-darkgray/10">
+      {shifts.map((shift, idx) => {
+        const onPress = shift ? buildShiftPress(shift) : undefined;
+        return (
+          <Pressable key={idx} onPress={onPress}>
+            <ShiftRow
+              shift={shift}
+              isFirst={idx === 0}
+              dayStr={dayStr}
+              dayColor={dayColor}
+              isToday={isToday}
+              isFuture={isFuture}
+              isNonWorkingDay={isNonWorkingDay}
+              hasLeave={!!day.leave}
+            />
+          </Pressable>
+        );
+      })}
       {day.leave && (
         <View className="bg-darkgray/7 px-3 py-1">
           <AppText className="text-gray text-xs">{day.leave}</AppText>
         </View>
       )}
-    </Pressable>
+    </View>
   );
 }
 

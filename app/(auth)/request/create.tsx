@@ -46,16 +46,15 @@ interface FormData {
   days?: string;
   hours?: string;
   startTime?: string;
-  shifts: ShiftEntry[];
+  shift: ShiftEntry;
   description: string;
   compensatoryMode: 'day' | 'hour';
 }
 
-function parseTimeToString(timeStr?: string): string | undefined {
-  if (!timeStr) return undefined;
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return undefined;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+function parseDateTimeToString(s?: string): string | undefined {
+  if (!s) return undefined;
+  const d = dayjs(s, 'YYYY-MM-DD HH:mm');
+  return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : undefined;
 }
 
 export default function RequestCreateScreen() {
@@ -68,7 +67,9 @@ export default function RequestCreateScreen() {
     headerInfo?: string;
     maxDays?: string;
     maxHours?: string;
-    shifts?: string;
+    shift?: string;
+    shiftId?: string;
+    cdate?: string;
   }>();
   const { toast } = useToast();
 
@@ -82,20 +83,18 @@ export default function RequestCreateScreen() {
     }
   }, [params.headerInfo]);
 
-  const initialShifts: ShiftEntry[] = useMemo(() => {
+  const initialShift: ShiftEntry = useMemo(() => {
     try {
-      if (params.shifts) {
-        const parsed = JSON.parse(params.shifts);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((s: { arrived?: string; left?: string }) => ({
-            arrivalTime: parseTimeToString(s.arrived),
-            leaveTime: parseTimeToString(s.left),
-          }));
-        }
+      if (params.shift) {
+        const parsed = JSON.parse(params.shift) as { arrived?: string; left?: string };
+        return {
+          arrivalTime: parseDateTimeToString(parsed.arrived),
+          leaveTime: parseDateTimeToString(parsed.left),
+        };
       }
     } catch {}
-    return [{ arrivalTime: undefined, leaveTime: undefined }];
-  }, [params.shifts]);
+    return { arrivalTime: undefined, leaveTime: undefined };
+  }, [params.shift]);
 
   const maxDays = params.maxDays ? parseInt(params.maxDays, 10) : 0;
   const maxHours = params.maxHours ? parseInt(params.maxHours, 10) : 0;
@@ -142,7 +141,7 @@ export default function RequestCreateScreen() {
     defaultValues: {
       description: '',
       compensatoryMode: 'day',
-      shifts: initialShifts,
+      shift: initialShift,
     },
   });
 
@@ -151,13 +150,22 @@ export default function RequestCreateScreen() {
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const { compensatoryMode, shifts, ...rest } = data;
+      const { compensatoryMode, shift, description, ...rest } = data;
+      let detail: Record<string, unknown> = { ...rest, description };
+      if (type === 'compensatory') {
+        detail.compensatoryMode = compensatoryMode;
+      }
+      if (type === 'timeCorrection') {
+        const withSeconds = (t?: string) => (t ? `${t}:00` : undefined);
+        detail = {
+          id: params.shiftId ? Number(params.shiftId) : undefined,
+          startTime: withSeconds(shift.arrivalTime),
+          endTime: withSeconds(shift.leaveTime),
+          description,
+        };
+      }
       const body = {
-        detail: {
-          ...rest,
-          ...(type === 'compensatory' && { compensatoryMode }),
-          ...(type === 'timeCorrection' && { shifts }),
-        },
+        detail,
         employee_request_setting_id: params.id,
         attachments,
       };
@@ -274,6 +282,7 @@ export default function RequestCreateScreen() {
                 onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
                 placeholder="00/00 00:00"
                 format="MM/DD HH:mm"
+                minuteInterval={5}
                 icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.startTime}
                 errorMessage={errors.startTime?.message}
@@ -319,6 +328,7 @@ export default function RequestCreateScreen() {
                 onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
                 placeholder="00/00 00:00"
                 format="MM/DD HH:mm"
+                minuteInterval={5}
                 icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                 isInvalid={!!errors.startTime}
                 errorMessage={errors.startTime?.message}
@@ -357,58 +367,74 @@ export default function RequestCreateScreen() {
     </>
   );
 
-  const renderTimeCorrectionFields = () => (
-    <>
-      {initialShifts.map((shift, idx) => {
-        const arrivalError = errors.shifts?.[idx]?.arrivalTime;
-        const leaveError = errors.shifts?.[idx]?.leaveTime;
-        const arrivalDisabled = !shift.arrivalTime;
-        const leaveDisabled = !shift.leaveTime;
-        return (
-          <View key={idx} className="flex-row gap-3">
-            <View className="flex-1">
-              <Controller
-                control={control}
-                name={`shifts.${idx}.arrivalTime` as const}
-                render={({ field: { onChange, value } }) => (
-                  <AppDatePicker
-                    label="Ирсэн цаг"
-                    mode="time"
-                    value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                    onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                    placeholder="--:--"
-                    icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
-                    isInvalid={!!arrivalError}
-                    errorMessage={arrivalError?.message}
-                    isDisabled={arrivalDisabled}
-                  />
-                )}
+  const renderTimeCorrectionFields = () => {
+    const arrivalError = errors.shift?.arrivalTime;
+    const leaveError = errors.shift?.leaveTime;
+    const arrivalDisabled = !initialShift.arrivalTime;
+    const leaveDisabled = !initialShift.leaveTime;
+    const watchedArrival = watch('shift.arrivalTime');
+    const minLeaveDate = watchedArrival
+      ? dayjs(watchedArrival, 'YYYY-MM-DD HH:mm').toDate()
+      : undefined;
+    return (
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="shift.arrivalTime"
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Ирсэн цаг"
+                mode="time"
+                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                onValueChange={(date) => {
+                  const time = dayjs(date).format('HH:mm');
+                  onChange(`${params.cdate} ${time}`);
+                }}
+                placeholder="--:--"
+                format="HH:mm"
+                minuteInterval={5}
+                icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
+                isInvalid={!!arrivalError}
+                errorMessage={arrivalError?.message}
+                isDisabled={arrivalDisabled}
               />
-            </View>
-            <View className="flex-1">
-              <Controller
-                control={control}
-                name={`shifts.${idx}.leaveTime` as const}
-                render={({ field: { onChange, value } }) => (
-                  <AppDatePicker
-                    label="Тарсан цаг"
-                    mode="time"
-                    value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
-                    onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
-                    placeholder="--:--"
-                    icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
-                    isInvalid={!!leaveError}
-                    errorMessage={leaveError?.message}
-                    isDisabled={leaveDisabled}
-                  />
-                )}
+            )}
+          />
+        </View>
+        <View className="flex-1">
+          <Controller
+            control={control}
+            name="shift.leaveTime"
+            rules={{
+              validate: (v) => {
+                if (!v || !watchedArrival) return true;
+                const start = dayjs(watchedArrival, 'YYYY-MM-DD HH:mm');
+                const end = dayjs(v, 'YYYY-MM-DD HH:mm');
+                return end.isAfter(start) || 'Тарсан цаг ирсэн цагаас хойно байх ёстой';
+              },
+            }}
+            render={({ field: { onChange, value } }) => (
+              <AppDatePicker
+                label="Тарсан цаг"
+                mode="datetime"
+                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
+                placeholder="00/00 00:00"
+                format="MM/DD HH:mm"
+                minuteInterval={5}
+                minimumDate={minLeaveDate}
+                icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
+                isInvalid={!!leaveError}
+                errorMessage={leaveError?.message}
+                isDisabled={leaveDisabled}
               />
-            </View>
-          </View>
-        );
-      })}
-    </>
-  );
+            )}
+          />
+        </View>
+      </View>
+    );
+  };
 
   const renderCompensatoryFields = () => (
     <>
@@ -510,6 +536,7 @@ export default function RequestCreateScreen() {
                     onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
                     placeholder="00/00 00:00"
                     format="MM/DD HH:mm"
+                    minuteInterval={5}
                     icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
                     isInvalid={!!errors.startTime}
                     errorMessage={errors.startTime?.message}

@@ -8,18 +8,20 @@ import { registerForPushNotificationsAsync } from "@/utils/register-for-push-not
 import {
   Alert01Icon,
   Clock01Icon,
+  Location01Icon,
   LoginCircle02Icon,
   LogoutCircle02Icon,
   UserMultipleIcon,
+  Wifi01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import NetInfo from '@react-native-community/netinfo';
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
 import * as Notifications from "expo-notifications";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Avatar, BottomSheet, useToast } from "heroui-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, View } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,12 +29,61 @@ import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
+type PunchAction = 'punch_in' | 'punch_out' | 'retroactive_punch_out' | 'none';
+
+type Shift = {
+  planned_start: string;
+  planned_end: string;
+  actual_start: string | null;
+  actual_end: string | null;
+  worked_duration_minutes: number | null;
+};
+
+type TimesheetToday = {
+  shifts: Shift[];
+  action: PunchAction;
+  warning: string | null;
+};
+
+const actionLabel = (action: PunchAction): string => {
+  if (action === 'punch_out' || action === 'retroactive_punch_out') return 'Тарлаа';
+  return 'Ирлээ';
+};
+
+const formatTime = (datetime: string | null): string => {
+  if (!datetime) return '—';
+  return dayjs(datetime).format('HH:mm');
+};
+
+const formatDuration = (minutes: number | null): string => {
+  if (minutes == null) return '00:00';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const WEEKDAYS_MN = ['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'];
 
-const announcements = [
-  { date: '09/12', text: 'Бурхан багшийн Их дүйчин өдөр' },
-  { date: '09/15', text: 'Компанийн тэмдэглэлт өдөр' },
-];
+type UpcomingEvent = {
+  start_date: string;
+  end_date: string;
+  name: string;
+  type: 'holiday' | 'medical_examination' | string;
+};
+
+const formatEventDate = (start: string, end: string): string => {
+  const s = dayjs(start);
+  const e = dayjs(end);
+  const sStr = `${s.month() + 1}/${s.date()}`;
+  if (start === end) return sStr;
+  const eStr = `${e.month() + 1}/${e.date()}`;
+  return `${sStr} - ${eStr}`;
+};
+
+const eventColors = (type: string): { bg: string; text: string } => {
+  if (type === 'medical_examination') return { bg: 'bg-lightcyan', text: 'text-darkcyan' };
+  return { bg: 'bg-lightblue', text: 'text-blue' };
+};
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -54,10 +105,36 @@ export default function HomeScreen() {
   const allowedAttendanceMethod = useAuthStore((state) => state.allowedAttendanceMethod);
   const [methodSheetOpen, setMethodSheetOpen] = useState(false);
   const [saveSelection, setSaveSelection] = useState(false);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [action, setAction] = useState<PunchAction>('none');
+  const [activeShiftIndex, setActiveShiftIndex] = useState(0);
+  const [events, setEvents] = useState<UpcomingEvent[]>([]);
+
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+
+  const fetchTimesheet = useCallback(async () => {
+    const res = await api<TimesheetToday>({ path: '/timesheet/today', method: 'GET' });
+    if (res.status == 200 && res.data) {
+      setShifts(res.data.shifts ?? []);
+      setAction(res.data.action);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTimesheet();
+    }, [fetchTimesheet])
+  );
 
   const methodLabels: Record<string, string> = {
     geo: 'Байршил',
     wifi: 'WiFi',
+  };
+
+  const methodIcons: Record<string, typeof Location01Icon> = {
+    geo: Location01Icon,
+    wifi: Wifi01Icon,
   };
 
   const handleSelectMethod = useCallback((method: 'geo' | 'wifi') => {
@@ -116,6 +193,14 @@ export default function HomeScreen() {
       })
       .catch(console.error);
 
+    api<UpcomingEvent[]>({ path: '/upcoming-events', method: 'GET' })
+      .then((res) => {
+        if (res.status >= 200 && res.status < 300 && res.data) {
+          setEvents(res.data);
+        }
+      })
+      .catch(console.error);
+
     registerForPushNotificationsAsync()
       .then(token => {
         console.log(token)
@@ -151,8 +236,10 @@ export default function HomeScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
-        <View className="flex-row justify-between items-center py-[7px]">
-          <AppText className="text-xl font-medium">{companyName}</AppText>
+        <View className="flex-row justify-between gap-4 items-center py-[7px]">
+          <View className="flex-1">
+            <AppText className="text-xl font-medium">{companyName}</AppText>
+          </View>
           <View className="flex-row gap-4 items-center">
             <Pressable onPress={() => router.navigate('/contact')}>
               <HugeiconsIcon icon={UserMultipleIcon} color="#222222" size={24} />
@@ -171,60 +258,103 @@ export default function HomeScreen() {
         </View>
 
         <View className="items-center mt-20">
-          <AppText className="font-light text-7xl">
-            {formattedTime}
-          </AppText>
-          <AppText className="text-sm text-black mt-2">
-            {formattedDate}  {weekday}
-          </AppText>
+          <View className="w-full items-center">
+            <AppText className="font-light text-7xl">{formattedTime}</AppText>
+          </View>
+          <View className="w-full items-center">
+            <AppText className="text-sm text-black mt-2">{formattedDate}  {weekday}</AppText>
+          </View>
         </View>
 
-        <View className="mt-5">
-          <PagerView
-            style={{ height: 50 }}
-            initialPage={0}
-            onPageSelected={(e) => setActiveAnnouncementIndex(e.nativeEvent.position)}
-          >
-            {announcements.map((item, index) => (
-              <View
-                key={index}
-                className="bg-lightblue rounded-xl flex-row items-center px-4"
-                style={{ height: 46 }}
-              >
-                <AppText className="text-blue font-medium mr-3">{item.date}</AppText>
-                <AppText className="text-black flex-1" numberOfLines={1}>{item.text}</AppText>
+        {events.length > 0 && (
+          <View className="mt-5">
+            <PagerView
+              style={{ height: 50 }}
+              initialPage={0}
+              pageMargin={12}
+              onPageSelected={(e) => setActiveAnnouncementIndex(e.nativeEvent.position)}
+            >
+              {events.map((item, index) => {
+                const colors = eventColors(item.type);
+                return (
+                  <View
+                    key={index}
+                    className={`${colors.bg} rounded-xl flex-row items-center px-4`}
+                    style={{ height: 46 }}
+                  >
+                    <AppText className={`${colors.text} font-medium mr-3`}>
+                      {formatEventDate(item.start_date, item.end_date)}
+                    </AppText>
+                    <AppText className="text-black flex-1" numberOfLines={1}>{item.name}</AppText>
+                  </View>
+                );
+              })}
+            </PagerView>
+            {events.length > 1 && (
+              <View className="flex-row justify-center gap-1.5 mt-2">
+                {events.map((_, index) => (
+                  <View
+                    key={index}
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      index === activeAnnouncementIndex ? 'bg-darkgray/50' : 'bg-darkgray/20'
+                    }`}
+                  />
+                ))}
               </View>
-            ))}
-          </PagerView>
-          <View className="flex-row justify-center gap-1.5 mt-2">
-            {announcements.map((_, index) => (
-              <View
-                key={index}
-                className={`w-1.5 h-1.5 rounded-full ${
-                  index === activeAnnouncementIndex ? 'bg-darkgray/50' : 'bg-darkgray/20'
-                }`}
-              />
-            ))}
+            )}
           </View>
-        </View>
+        )}
 
-        <View className="flex-row justify-around mt-10 px-4">
-          <View className="items-center">
-            <HugeiconsIcon icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
-            <AppText className="text-xl mt-2">09:12</AppText>
+        {shifts.length > 0 && (
+          <View className="mt-10">
+            <PagerView
+              style={{ height: 70 }}
+              initialPage={0}
+              onPageSelected={(e) => setActiveShiftIndex(e.nativeEvent.position)}
+            >
+              {shifts.map((shift, index) => (
+                <View key={index} className="flex-row justify-around px-4">
+                  <View className="items-center">
+                    <HugeiconsIcon icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
+                    <AppText
+                      className={`text-xl mt-2 ${shift.actual_start ? '' : 'text-darkgray/50'}`}
+                    >
+                      {formatTime(shift.actual_start ?? shift.planned_start)}
+                    </AppText>
+                  </View>
+                  <View className="items-center">
+                    <HugeiconsIcon icon={LogoutCircle02Icon} color="#6A6A6A80" size={22} />
+                    <AppText
+                      className={`text-xl mt-2 ${shift.actual_end ? '' : 'text-darkgray/50'}`}
+                    >
+                      {formatTime(shift.actual_end ?? shift.planned_end)}
+                    </AppText>
+                  </View>
+                  <View className="items-center">
+                    <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
+                    <AppText className="text-xl mt-2">{formatDuration(shift.worked_duration_minutes)}</AppText>
+                  </View>
+                </View>
+              ))}
+            </PagerView>
+            {shifts.length > 1 && (
+              <View className="flex-row justify-center gap-1.5 mt-2">
+                {shifts.map((_, index) => (
+                  <View
+                    key={index}
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      index === activeShiftIndex ? 'bg-darkgray/50' : 'bg-darkgray/20'
+                    }`}
+                  />
+                ))}
+              </View>
+            )}
           </View>
-          <View className="items-center">
-            <HugeiconsIcon icon={LogoutCircle02Icon} color="#6A6A6A80" size={22} />
-            <AppText className="text-xl mt-2">18:00</AppText>
-          </View>
-          <View className="items-center">
-            <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
-            <AppText className="text-xl mt-2">07:48</AppText>
-          </View>
-        </View>
+        )}
 
         <View className="flex-1 items-center justify-center">
           <Pressable
+            disabled={action === 'none'}
             onPress={() => {
               if (attendanceMethod) {
                 proceedWithAttendance(attendanceMethod);
@@ -238,6 +368,7 @@ export default function HomeScreen() {
               backgroundColor: '#FFFFFF',
               alignItems: 'center',
               justifyContent: 'center',
+              opacity: action === 'none' ? 0.5 : 1,
               shadowColor: '#A8C8F0',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.4,
@@ -246,7 +377,7 @@ export default function HomeScreen() {
             }}
           >
             <AppText className="text-2xl">
-              Ирлээ
+              {actionLabel(action)}
             </AppText>
           </Pressable>
         </View>
@@ -264,15 +395,23 @@ export default function HomeScreen() {
             <BottomSheet.Title className="text-center mb-8">
               Цаг бүртгэлийн арга сонгох
             </BottomSheet.Title>
-            <View className="gap-5 mb-5 px-4">
+            <View className="flex-row gap-5 mb-5 px-4 justify-center">
               {allowedAttendanceMethod.map((method) => (
-                <AppButton
-                  key={method}
-                  label={methodLabels[method]}
-                  onPress={() => handleSelectMethod(method)}
-                  className="rounded-full border-darkgray"
-                  labelClassName="text-base font-medium"
-                />
+                <View key={method} className="items-center gap-2">
+                  <AppButton
+                    isIconOnly
+                    leftIcon={
+                      <HugeiconsIcon
+                        icon={methodIcons[method]}
+                        color="#222222"
+                        size={28}
+                      />
+                    }
+                    onPress={() => handleSelectMethod(method)}
+                    className="w-20 h-20 rounded-2xl border-darkgray"
+                  />
+                  <AppText className="text-sm">{methodLabels[method]}</AppText>
+                </View>
               ))}
             </View>
             <Pressable
