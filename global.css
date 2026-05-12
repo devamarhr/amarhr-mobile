@@ -5,6 +5,7 @@
 @source './node_modules/heroui-native/lib';
 
 @theme {
+  --font-light: 'Inter-Light';
   --font-normal: 'Inter-Regular';
   --font-medium: 'Inter-Medium';
   --font-semibold: 'Inter-SemiBold';

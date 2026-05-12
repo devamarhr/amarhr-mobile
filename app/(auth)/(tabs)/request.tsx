@@ -231,7 +231,7 @@ function getDecisionLabel(type: ReviewerType): string | null {
 }
 
 function getReviewLabel(type: ReviewerType): string | null {
-  if (type?.includes('Employee')) return 'Ахлахийн санал';
+  if (type?.includes('Employee')) return 'Ахлахын санал';
   if (type?.includes('User')) return 'Админы санал';
   return null;
 }
