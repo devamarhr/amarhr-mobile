@@ -107,6 +107,7 @@ export default function HomeScreen() {
   const [saveSelection, setSaveSelection] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [action, setAction] = useState<PunchAction>('none');
+  const [warning, setWarning] = useState<string | null>(null);
   const [activeShiftIndex, setActiveShiftIndex] = useState(0);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
 
@@ -118,6 +119,7 @@ export default function HomeScreen() {
     if (res.status == 200 && res.data) {
       setShifts(res.data.shifts ?? []);
       setAction(res.data.action);
+      setWarning(res.data.warning ?? null);
     }
   }, []);
 
@@ -354,8 +356,22 @@ export default function HomeScreen() {
 
         <View className="flex-1 items-center justify-center">
           <Pressable
-            disabled={action === 'none'}
             onPress={() => {
+              if (action === 'none') {
+                if (warning) {
+                  toast.show({
+                    component: (props) => (
+                      <AppToast
+                        {...props}
+                        variant="danger"
+                        description={warning}
+                        icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                      />
+                    ),
+                  });
+                }
+                return;
+              }
               if (attendanceMethod) {
                 proceedWithAttendance(attendanceMethod);
               } else {
