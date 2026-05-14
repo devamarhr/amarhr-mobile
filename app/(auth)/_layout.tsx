@@ -1,6 +1,6 @@
-import { Stack, Redirect } from 'expo-router';
-import { View } from "react-native";
 import { useAuthStore } from '@/store/auth-store';
+import { Redirect, Stack } from 'expo-router';
+import { View } from "react-native";
 
 export const unstable_settings = {
   anchor: '(tabs)',

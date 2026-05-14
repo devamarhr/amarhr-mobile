@@ -16,7 +16,6 @@ import {
   Wifi01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import NetInfo from '@react-native-community/netinfo';
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
 import * as Notifications from "expo-notifications";
@@ -24,6 +23,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Avatar, BottomSheet, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, View } from 'react-native';
+import { NetworkInfo } from 'react-native-network-info';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
@@ -165,10 +165,11 @@ export default function HomeScreen() {
         });
         return;
       }
-      const state = await NetInfo.fetch();
-      const details = state.type === 'wifi' ? (state.details as { ssid?: string | null; bssid?: string | null } | null) : null;
-      const ssid = details?.ssid ?? null;
-      const bssid = details?.bssid ?? null;
+      const [ssid, bssid] = await Promise.all([
+        NetworkInfo.getSSID(),
+        NetworkInfo.getBSSID(),
+      ]);
+      console.log(JSON.stringify({ssid,bssid}))
       if (!ssid) {
         toast.show({
           component: (props) => (

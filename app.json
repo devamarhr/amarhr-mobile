@@ -17,7 +17,8 @@
       },
       "config": {
         "googleMapsApiKey": "AIzaSyBcgHS3fAT6W_p79_QQZXm9SxKLRCu4uU4"
-      }
+      },
+      "appleTeamId": "2FQYWVB4D9"
     },
     "android": {
       "versionCode": 16,

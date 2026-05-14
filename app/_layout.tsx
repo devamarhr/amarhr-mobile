@@ -36,7 +36,6 @@ function AppContent() {
     <AppThemeProvider>
       <HeroUINativeProvider
         config={{
-          textProps,
           toast: {
             contentWrapper,
           },
