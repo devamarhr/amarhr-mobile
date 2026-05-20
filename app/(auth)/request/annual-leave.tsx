@@ -16,8 +16,8 @@ import {
   PlusSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
+import { pickAttachments } from '@/utils/pick-attachment';
 import dayjs from 'dayjs';
-import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spinner, useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -173,7 +173,7 @@ function PeriodRow({
         <View className="gap-2">
           <AppText className="text-sm font-normal text-darkgray text-center">Дуусах</AppText>
           <View className="h-11 justify-center items-center">
-            <AppText className={endDate ? '' : 'text-muted'}>
+            <AppText className={`text-sm ${endDate ? '' : 'text-muted'}`}>
               {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '--/--'}
             </AppText>
           </View>
@@ -201,6 +201,7 @@ export default function AnnualLeaveRequestScreen() {
     maxDays?: string;
     availableStartDate?: string;
     availableEndDate?: string;
+    maxLeaveSplits?: string;
   }>();
   const { toast } = useToast();
   const title = params.title ?? '';
@@ -213,6 +214,8 @@ export default function AnnualLeaveRequestScreen() {
       available_days: Number(params.maxDays),
     };
   }, [params.maxDays, params.availableStartDate, params.availableEndDate]);
+
+  const maxLeaveSplits = params.maxLeaveSplits ? Number(params.maxLeaveSplits) : undefined;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -237,11 +240,11 @@ export default function AnnualLeaveRequestScreen() {
   const remainingDays = (availability?.available_days ?? 0) - usedDays;
 
   const handlePickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ multiple: true });
-    if (result.canceled) return;
+    const assets = await pickAttachments();
+    if (!assets.length) return;
 
     setIsUploading(true);
-    for (const asset of result.assets) {
+    for (const asset of assets) {
       try {
         const res = await uploadFile<{ path: string }>('/file-upload', asset.uri);
         if (res.status === 200) {
@@ -276,6 +279,11 @@ export default function AnnualLeaveRequestScreen() {
 
     if (data.periods.some((p) => !p.endDate)) {
       showError('Дуусах өдөр тооцоологдож дуусаагүй байна');
+      return;
+    }
+
+    if (maxLeaveSplits != null && data.periods.length > maxLeaveSplits) {
+      showError(`Ээлжийн амралтыг хамгийн ихдээ ${maxLeaveSplits} удаа хувааж болно`);
       return;
     }
 
@@ -385,6 +393,14 @@ export default function AnnualLeaveRequestScreen() {
                   {Math.max(0, remainingDays)} хоног
                 </AppText>
               </View>
+              {maxLeaveSplits != null && (
+                <View className="flex-row gap-2">
+                  <AppText className="text-sm text-darkblue w-48">Хуваах боломжит</AppText>
+                  <AppText className="text-sm font-medium text-darkerblue">
+                    {maxLeaveSplits} удаа
+                  </AppText>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -429,24 +445,31 @@ export default function AnnualLeaveRequestScreen() {
                   );
                 })}
 
-                <Pressable
-                  onPress={() => append({ startDate: '', days: '', endDate: '' })}
-                  disabled={remainingDays <= 0}
-                  className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
-                >
-                  <HugeiconsIcon
-                    icon={PlusSignIcon}
-                    color={remainingDays <= 0 ? '#9CA3AF' : '#222222'}
-                    size={20}
-                  />
-                  <AppText
-                    className={`text-sm font-medium ${
-                      remainingDays <= 0 ? 'text-darkgray/50' : 'text-black'
-                    }`}
-                  >
-                    Нэмэх
-                  </AppText>
-                </Pressable>
+                {(() => {
+                  const reachedSplitLimit =
+                    maxLeaveSplits != null && fields.length >= maxLeaveSplits;
+                  const addDisabled = remainingDays <= 0 || reachedSplitLimit;
+                  return (
+                    <Pressable
+                      onPress={() => append({ startDate: '', days: '', endDate: '' })}
+                      disabled={addDisabled}
+                      className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
+                    >
+                      <HugeiconsIcon
+                        icon={PlusSignIcon}
+                        color={addDisabled ? '#9CA3AF' : '#222222'}
+                        size={20}
+                      />
+                      <AppText
+                        className={`text-sm font-medium ${
+                          addDisabled ? 'text-darkgray/50' : 'text-black'
+                        }`}
+                      >
+                        {reachedSplitLimit ? `Дээд хязгаар ${maxLeaveSplits} удаа` : 'Нэмэх'}
+                      </AppText>
+                    </Pressable>
+                  );
+                })()}
 
                 <Controller
                   control={control}

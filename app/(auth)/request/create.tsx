@@ -6,6 +6,7 @@ import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
 import { api, uploadFile } from '@/config/api';
+import { pickAttachments } from '@/utils/pick-attachment';
 import {
   Alert01Icon,
   ArrowLeft02Icon,
@@ -17,9 +18,8 @@ import {
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { cn, Spinner, useToast } from 'heroui-native';
+import { Spinner, useToast } from 'heroui-native';
 import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
@@ -29,7 +29,7 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
+type FormType = 'dateRange' | 'timeRange' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
 
 interface HeaderInfoItem {
   label: string;
@@ -48,7 +48,6 @@ interface FormData {
   startTime?: string;
   shift: ShiftEntry;
   description: string;
-  compensatoryMode: 'day' | 'hour';
 }
 
 function parseDateTimeToString(s?: string): string | undefined {
@@ -111,11 +110,11 @@ export default function RequestCreateScreen() {
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
 
   const handlePickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ multiple: true });
-    if (result.canceled) return;
+    const assets = await pickAttachments();
+    if (!assets.length) return;
 
     setIsUploading(true);
-    for (const asset of result.assets) {
+    for (const asset of assets) {
       try {
         const res = await uploadFile<{ path: string }>('/file-upload', asset.uri);
         if (res.status === 200) {
@@ -140,21 +139,15 @@ export default function RequestCreateScreen() {
   } = useForm<FormData>({
     defaultValues: {
       description: '',
-      compensatoryMode: 'day',
       shift: initialShift,
     },
   });
 
-  const compensatoryMode = watch('compensatoryMode');
-
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const { compensatoryMode, shift, description, ...rest } = data;
+      const { shift, description, ...rest } = data;
       let detail: Record<string, unknown> = { ...rest, description };
-      if (type === 'compensatory') {
-        detail.compensatoryMode = compensatoryMode;
-      }
       if (type === 'timeCorrection') {
         const withSeconds = (t?: string) => (t ? `${t}:00` : undefined);
         detail = {
@@ -351,7 +344,7 @@ export default function RequestCreateScreen() {
             }}
             render={({ field: { onChange, onBlur, value } }) => (
               <AppTextField
-                label="Хугацаа"
+                label="Ажиллах цаг"
                 value={value ?? ''}
                 onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
                 onBlur={onBlur}
@@ -436,138 +429,6 @@ export default function RequestCreateScreen() {
     );
   };
 
-  const renderCompensatoryFields = () => (
-    <>
-      <Controller
-        control={control}
-        name="compensatoryMode"
-        render={({ field: { onChange, value } }) => (
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => onChange('day')}
-              className={cn(
-                'flex-1 h-11 rounded-full border items-center justify-center',
-                value === 'day' ? 'border-darkgray' : 'border-darkgray/30'
-              )}
-            >
-              <AppText
-                className={cn(
-                  'text-sm',
-                  value === 'day' ? 'font-medium text-black' : 'text-darkgray/50'
-                )}
-              >
-                Өдрөөр
-              </AppText>
-            </Pressable>
-            <Pressable
-              onPress={() => onChange('hour')}
-              className={cn(
-                'flex-1 h-11 rounded-full border items-center justify-center',
-                value === 'hour' ? 'border-darkgray' : 'border-darkgray/30'
-              )}
-            >
-              <AppText
-                className={cn(
-                  'text-sm',
-                  value === 'hour' ? 'font-medium text-black' : 'text-darkgray/50'
-                )}
-              >
-                Цагаар
-              </AppText>
-            </Pressable>
-          </View>
-        )}
-      />
-
-      {compensatoryMode === 'day' ? (
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Controller
-              control={control}
-              name="startDate"
-              rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
-              render={({ field: { onChange, value } }) => (
-                <AppDatePicker
-                  label="Эхлэх өдөр"
-                  mode="date"
-                  value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
-                  onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
-                  placeholder="00/00"
-                  format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                  isInvalid={!!errors.startDate}
-                  errorMessage={errors.startDate?.message}
-                />
-              )}
-            />
-          </View>
-          <View className="flex-1">
-            <Controller
-              control={control}
-              name="days"
-              rules={{ required: 'Хоног сонгоно уу' }}
-              render={({ field: { onChange, value } }) => (
-                <AppSelect
-                  label="Хоног"
-                  options={dayOptions}
-                  value={dayOptions.find(o => o.value === value)}
-                  onValueChange={(opt) => onChange(opt?.value ?? '')}
-                  placeholder="Сонгох"
-                  isInvalid={!!errors.days}
-                  errorMessage={errors.days?.message}
-                />
-              )}
-            />
-          </View>
-        </View>
-      ) : (
-        <>
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Controller
-                control={control}
-                name="startTime"
-                rules={{ required: 'Эхлэх цаг сонгоно уу' }}
-                render={({ field: { onChange, value } }) => (
-                  <AppDatePicker
-                    label="Эхлэх цаг"
-                    mode="datetime"
-                    value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
-                    onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
-                    placeholder="00/00 00:00"
-                    format="MM/DD HH:mm"
-                    minuteInterval={5}
-                    icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                    isInvalid={!!errors.startTime}
-                    errorMessage={errors.startTime?.message}
-                  />
-                )}
-              />
-            </View>
-            <View className="flex-1">
-              <Controller
-                control={control}
-                name="hours"
-                rules={{ required: 'Цаг сонгоно уу' }}
-                render={({ field: { onChange, value } }) => (
-                  <AppSelect
-                    label="Хугацаа"
-                    options={hourOptions}
-                    value={hourOptions.find(o => o.value === value)}
-                    onValueChange={(opt) => onChange(opt?.value ?? '')}
-                    placeholder="Сонгох"
-                    isInvalid={!!errors.hours}
-                    errorMessage={errors.hours?.message}
-                  />
-                )}
-              />
-            </View>
-          </View>
-        </>
-      )}
-    </>
-  );
-
   const renderFormFields = () => {
     switch (type) {
       case 'dateRange':
@@ -578,8 +439,6 @@ export default function RequestCreateScreen() {
         return renderOvertimeFields();
       case 'timeCorrection':
         return renderTimeCorrectionFields();
-      case 'compensatory':
-        return renderCompensatoryFields();
       case 'textOnly':
       default:
         return null;

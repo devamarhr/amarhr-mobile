@@ -74,11 +74,15 @@ function formatHolidayDates(dates: string[]): string {
   return `${formatted[0]} - ${formatted[formatted.length - 1]}`;
 }
 
+function hasPlannedShift(day: TimesheetDay): boolean {
+  return day.shifts.some((s) => !!s.planned_start && !!s.planned_end);
+}
+
 function deriveDayData(monthData: TimesheetDay[]): DayData[] {
   return monthData.map((d) => {
     const data: DayData = { date: d.cdate };
-    if (!d.is_work_day && !d.is_public_holiday) data.isNonWorkingDay = true;
-    if (d.is_public_holiday) data.isHoliday = true;
+    if (!hasPlannedShift(d)) data.isNonWorkingDay = true;
+    if (d.is_public_holiday && !hasPlannedShift(d)) data.isHoliday = true;
     if (d.total_overtime_minutes > 0) data.hasOvertime = true;
     if (d.total_lateness_minutes > 0) data.isLate = true;
     if (d.leave) data.isLeave = true;
@@ -260,10 +264,11 @@ function TimesheetListRow({
   const dayStr = String(dayNum).padStart(2, '0');
   const isFuture = dateStr > today;
   const isToday = dateStr === today;
-  const isNonWorkingDay = !day.is_work_day && !day.is_public_holiday;
+  const isPlanned = hasPlannedShift(day);
+  const isNonWorkingDay = !isPlanned;
 
   // Day number color
-  const dayColor = day.is_public_holiday
+  const dayColor = (day.is_public_holiday && !isPlanned)
     ? 'text-blue'
     : (isNonWorkingDay || day.annual || day.leave)
       ? 'text-darkgray'

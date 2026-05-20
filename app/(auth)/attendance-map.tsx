@@ -14,19 +14,6 @@ import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
-type PunchAction = 'punch_in' | 'punch_out' | 'retroactive_punch_out' | 'none';
-
-type TimesheetToday = {
-  shifts: unknown[];
-  action: PunchAction;
-  warning: string | null;
-};
-
-const actionLabel = (action: PunchAction): string => {
-  if (action === 'punch_out' || action === 'retroactive_punch_out') return 'Тарлаа';
-  return 'Ирлээ';
-};
-
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 interface Workplace {
@@ -88,20 +75,11 @@ export default function AttendanceMapScreen() {
   const [isInsideGeofence, setIsInsideGeofence] = useState(false);
   const [nearestWorkplace, setNearestWorkplace] = useState<Workplace | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [action, setAction] = useState<PunchAction>('punch_in');
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
   const workplacesRef = useRef<Workplace[]>([]);
   workplacesRef.current = workplaces;
 
   useEffect(() => {
-    api<TimesheetToday>({ path: '/timesheet/today', method: 'GET' })
-      .then((res) => {
-        if (res.status >= 200 && res.status < 300 && res.data) {
-          setAction(res.data.action);
-        }
-      })
-      .catch(console.error);
-
     api<Workplace[]>({ path: '/timesheet/locations', method: 'GET' })
       .then((res) => {
         if (res.status >= 200 && res.status < 300 && Array.isArray(res.data)) {
@@ -241,7 +219,7 @@ export default function AttendanceMapScreen() {
 
       {permissionDenied ? (
         <View className="flex-1 items-center justify-center px-4">
-          <AppText className="text-center text-darkgray">
+          <AppText className="text-sm text-center text-darkgray">
             Байршлын зөвшөөрөл олгоно уу
           </AppText>
         </View>
@@ -284,13 +262,13 @@ export default function AttendanceMapScreen() {
             style={{ paddingBottom: insets.bottom + 16 + 56 }}
           >
             <AppButton
-              label={actionLabel(action)}
+              label="Бүртгүүлэх"
               onPress={handleClockIn}
-              isDisabled={!isInsideGeofence || !userLocation || action === 'none'}
+              isDisabled={!isInsideGeofence || !userLocation}
               isLoading={isPunching}
               spinnerColor="#005FEE"
-              className="h-[44px] bg-lightblue border-lightblue"
-              labelClassName="text-blue text-base font-semibold"
+              className="h-[44px] bg-lightblue border-lightblue disabled:bg-gray/20 disabled:border-gray/20 disabled:opacity-100"
+              labelClassName="text-blue text-base font-semibold disabled:text-gray"
               style={{
                 shadowColor: '#005FEE',
                 shadowOffset: { width: 0, height: 4 },

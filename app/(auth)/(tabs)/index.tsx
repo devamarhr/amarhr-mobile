@@ -322,10 +322,10 @@ export default function HomeScreen() {
                     className={`${colors.bg} rounded-xl flex-row items-center px-4`}
                     style={{ height: 46 }}
                   >
-                    <AppText className={`${colors.text} font-medium mr-3`}>
+                    <AppText className={`text-sm ${colors.text} font-medium mr-3`}>
                       {formatEventDate(item.start_date, item.end_date)}
                     </AppText>
-                    <AppText className="text-black flex-1" numberOfLines={1}>{item.name}</AppText>
+                    <AppText className="text-sm text-black flex-1" numberOfLines={1}>{item.name}</AppText>
                   </View>
                 );
               })}

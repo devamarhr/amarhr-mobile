@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Separator } from 'heroui-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -28,6 +28,7 @@ interface RequestItem {
   maxHours?: number;
   availableStartDate?: string;
   availableEndDate?: string;
+  maxLeaveSplits?: number;
 }
 
 interface RequestCategory {
@@ -48,6 +49,7 @@ interface ApiRequestSetting {
     annual_leave_available_days?: number;
     annual_leave_available_start_date?: string;
     annual_leave_available_end_date?: string;
+    max_leave_splits?: number;
     compensatory_hours?: number;
     compensatory_max_hour?: number;
     compensatory_max_day?: number;
@@ -178,6 +180,7 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           maxHours,
           availableStartDate: detail.annual_leave_available_start_date,
           availableEndDate: detail.annual_leave_available_end_date,
+          maxLeaveSplits: detail.key === 'annual_leave' ? detail.max_leave_splits : undefined,
         };
       }),
     });
@@ -243,6 +246,7 @@ export default function RequestScreen() {
   const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequest[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshingSettings, setRefreshingSettings] = useState(false);
   const currentPage = useRef(1);
   const lastPage = useRef(1);
   const isFetching = useRef(false);
@@ -273,20 +277,32 @@ export default function RequestScreen() {
       });
   }, []);
 
-  useEffect(() => {
+  const fetchSettings = useCallback((isRefresh = false) => {
+    if (isRefresh) setRefreshingSettings(true);
     api<ApiResponse>({
       path: '/employee-request/settings',
       method: 'GET',
     }).then((res) => {
       if (res.status === 200) {
         setCategories(mapApiToCategories(res.data));
-      }else{
-        console.log(res.message)
+      } else {
+        console.log(res.message);
       }
-    }).catch(console.error);
+    }).catch(console.error)
+      .finally(() => {
+        if (isRefresh) setRefreshingSettings(false);
+      });
+  }, []);
 
-    fetchRequests(1);
-  }, [fetchRequests]);
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchRequests(1);
+    }
+  }, [activeTab, fetchRequests]);
 
   const handleEndReached = useCallback(() => {
     if (currentPage.current < lastPage.current) {
@@ -299,7 +315,12 @@ export default function RequestScreen() {
   }, [fetchRequests]);
 
   const handleItemPress = (item: RequestItem) => {
-    const pathname = item.type === 'annualLeave' ? '/request/annual-leave' : '/request/create';
+    const pathname =
+      item.type === 'annualLeave'
+        ? '/request/annual-leave'
+        : item.type === 'compensatory'
+          ? '/request/compensatory'
+          : '/request/create';
     router.navigate({
       pathname,
       params: {
@@ -311,6 +332,7 @@ export default function RequestScreen() {
         ...(item.maxHours && { maxHours: String(item.maxHours) }),
         ...(item.availableStartDate && { availableStartDate: item.availableStartDate }),
         ...(item.availableEndDate && { availableEndDate: item.availableEndDate }),
+        ...(item.maxLeaveSplits != null && { maxLeaveSplits: String(item.maxLeaveSplits) }),
       },
     });
   };
@@ -341,7 +363,17 @@ export default function RequestScreen() {
         </View>
 
         {activeTab === 0 ? (
-          <ScrollView className="flex-1" contentContainerClassName="pb-5" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="pb-5"
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshingSettings}
+                onRefresh={() => fetchSettings(true)}
+              />
+            }
+          >
             {categories.map((category) => (
               <View key={category.name}>
                 <View className="bg-lightblue px-4 py-2">

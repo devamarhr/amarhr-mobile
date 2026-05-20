@@ -202,7 +202,7 @@ export function AppSelect({
         onValueChange={handleValueChange}
         isDisabled={isDisabled}
       >
-        <Select.Trigger asChild className="">
+        <Select.Trigger variant="unstyled" asChild className="">
           {trigger ? (
             <PressableFeedback className={triggerClassName}>
               {trigger}
@@ -220,7 +220,7 @@ export function AppSelect({
                   renderValue(fullValue)
                 ) : (
                   <AppText className={cn(
-                    '',
+                    'text-sm',
                     !fullValue && 'text-muted'
                   )}>
                     {fullValue?.label ?? placeholder}

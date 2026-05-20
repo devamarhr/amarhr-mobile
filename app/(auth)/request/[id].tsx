@@ -322,7 +322,7 @@ export default function RequestDetailScreen() {
             <View className="gap-2">
               <AppText className="text-sm font-normal text-darkgray text-center">Дуусах</AppText>
               <View className="h-11 justify-center items-center">
-                <AppText className={p.end_date ? '' : 'text-muted'}>
+                <AppText className={`text-sm ${p.end_date ? '' : 'text-muted'}`}>
                   {p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD').format('MM/DD') : '--/--'}
                 </AppText>
               </View>
