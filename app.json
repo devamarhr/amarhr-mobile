@@ -3,6 +3,7 @@
     "name": "AmarHR",
     "slug": "amarhr-app",
     "version": "4.0.0",
+    "platforms": ["ios", "android"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "amarhr",
@@ -44,10 +45,6 @@
           "apiKey": "AIzaSyDLpCv5-KXGhpED2b-uPrM9M76r4d12QSs"
         }
       }
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -92,7 +89,10 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/d9685003-ec99-4a9e-b32d-0b8b9ed0986f"
+      "url": "https://u.expo.dev/d9685003-ec99-4a9e-b32d-0b8b9ed0986f",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     }
   }
 }

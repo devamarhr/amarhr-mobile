@@ -3,10 +3,11 @@ import { Inter_300Light, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, I
 import { useFonts } from "expo-font";
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Updates from 'expo-updates';
 import type { HeroUINativeConfig } from 'heroui-native';
 import { HeroUINativeProvider } from 'heroui-native';
-import { useCallback } from "react";
-import { StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
 import '../config/dayjs';
@@ -50,6 +51,44 @@ function AppContent() {
   );
 }
 
+function useUpdateGate() {
+  const [isReady, setIsReady] = useState(!Updates.isEnabled);
+
+  useEffect(() => {
+    if (!Updates.isEnabled) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await Updates.checkForUpdateAsync();
+        if (cancelled) return;
+
+        if (result.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          if (cancelled) return;
+          await Updates.reloadAsync();
+          return;
+        }
+      } catch {
+        // Fall through and let the app start even if the check fails.
+      }
+
+      if (!cancelled) {
+        setIsReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return isReady;
+}
+
 export default function RootLayout() {
   const fonts = useFonts({
     Inter_300Light,
@@ -58,9 +97,22 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const isUpdateReady = useUpdateGate();
 
-  if (!fonts) {
-    return null;
+  if (!fonts || !isUpdateReady) {
+    return (
+      <GestureHandlerRootView style={styles.root}>
+        <StatusBar style="dark" />
+        <View style={styles.loader}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.loaderText}>Шинэчилж байна...</Text>
+        </View>
+      </GestureHandlerRootView>
+    );
   }
 
   return (
@@ -76,5 +128,20 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+  },
+  logo: {
+    width: 200,
+    height: 50,
+    marginBottom: 16,
+  },
+  loaderText: {
+    fontSize: 15,
+    color: '#1a1a1a',
   },
 });

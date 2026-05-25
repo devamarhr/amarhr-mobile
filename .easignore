@@ -47,7 +47,6 @@ app-example
 
 # other
 .idea
-.npmrc
 example
 .agent
 .agents
