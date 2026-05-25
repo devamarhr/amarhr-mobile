@@ -4,6 +4,7 @@ import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
 import { ProfileData, useAuthStore } from "@/store/auth-store";
+import { processNotificationData } from "@/store/notification-store";
 import { registerForPushNotificationsAsync } from "@/utils/register-for-push-notifications";
 import {
   Alert01Icon,
@@ -114,6 +115,14 @@ export default function HomeScreen() {
 
   const toastRef = useRef(toast);
   toastRef.current = toast;
+
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+
+  useEffect(() => {
+    if (lastNotificationResponse) {
+      processNotificationData(lastNotificationResponse.notification.request.content.data);
+    }
+  }, [lastNotificationResponse]);
 
   const fetchTimesheet = useCallback(async () => {
     const res = await api<TimesheetToday>({ path: '/timesheet/today', method: 'GET' });
@@ -254,12 +263,18 @@ export default function HomeScreen() {
       })
       .catch((error: any) => console.log(error));
 
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log(JSON.stringify(notification));
+    Notifications.getPresentedNotificationsAsync()
+      .then((items) => {
+        items.forEach((n) => processNotificationData(n.request.content.data));
+      })
+      .catch(() => {});
+
+    const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
+      processNotificationData(notification.request.content.data);
     });
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log(response);
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      processNotificationData(response.notification.request.content.data);
     });
 
     return () => {

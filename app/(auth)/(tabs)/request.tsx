@@ -2,6 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { api } from '@/config/api';
+import { useNotificationStore } from '@/store/notification-store';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Separator } from 'heroui-native';
@@ -200,7 +201,7 @@ interface ReviewDetail {
 interface EmployeeRequest {
   id: number;
   employee_request_setting_id: number;
-  status: 'pending' | 'senior_pending' | 'approved' | 'rejected' | 'read';
+  status: 'pending' | 'senior_pending' | 'review_pending' | 'approved' | 'rejected' | 'read';
   review_by_type: ReviewerType;
   review_detail: ReviewDetail | null;
   decision_by_type: ReviewerType;
@@ -222,6 +223,7 @@ interface PaginatedRequestResponse {
 const statusMap: Record<string, { label: string; color: string }> = {
   pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
   senior_pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
+  review_pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
   approved: { label: 'Зөвшөөрсөн', color: 'text-green' },
   rejected: { label: 'Татгалзсан', color: 'text-red' },
   read: { label: 'Уншиж танилцсан', color: 'text-darkcyan' },
@@ -250,6 +252,7 @@ export default function RequestScreen() {
   const currentPage = useRef(1);
   const lastPage = useRef(1);
   const isFetching = useRef(false);
+  const hasEmployeeRequestNotification = useNotificationStore((s) => s.employee_request.length > 0);
 
   const fetchRequests = useCallback((page: number, isRefresh = false) => {
     if (isFetching.current) return;
@@ -301,6 +304,7 @@ export default function RequestScreen() {
   useEffect(() => {
     if (activeTab === 1) {
       fetchRequests(1);
+      useNotificationStore.getState().clear('employee_request');
     }
   }, [activeTab, fetchRequests]);
 
@@ -356,7 +360,9 @@ export default function RequestScreen() {
                 <AppText className={`text-sm ${activeTab === 1 ? 'font-medium text-black' : 'text-darkgray/50'}`}>
                   Шийдвэр
                 </AppText>
-                <View className="w-2 h-2 -mt-2 rounded-full bg-orange" />
+                {hasEmployeeRequestNotification && (
+                  <View className="w-2 h-2 -mt-2 rounded-full bg-orange" />
+                )}
               </View>
             }
           />
@@ -444,7 +450,7 @@ export default function RequestScreen() {
                       <AppText className="text-sm text-darkgray mt-1">
                         {getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр'}
                       </AppText>
-                      <AppText className="text-sm mt-0.5 mb-2">{employeeRequest.decision_detail.comment}</AppText>
+                      <AppText className="text-sm mt-0.5 mb-2" numberOfLines={3}>{employeeRequest.decision_detail.comment}</AppText>
                     </>
                   )}
                   {employeeRequest.review_detail?.comment && (
@@ -452,7 +458,7 @@ export default function RequestScreen() {
                       <AppText className="text-sm text-darkgray mt-1">
                         {getReviewLabel(employeeRequest.review_by_type) ?? 'Санал'}
                       </AppText>
-                      <AppText className="text-sm mt-0.5">{employeeRequest.review_detail.comment}</AppText>
+                      <AppText className="text-sm mt-0.5" numberOfLines={3}>{employeeRequest.review_detail.comment}</AppText>
                     </>
                   )}
                 </Pressable>

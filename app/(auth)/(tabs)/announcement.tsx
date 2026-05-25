@@ -2,11 +2,13 @@ import { AppButton } from "@/components/app-button";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { api } from "@/config/api";
+import { useNotificationStore } from "@/store/notification-store";
 import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
+import { useFocusEffect } from "expo-router";
 import { Separator } from 'heroui-native';
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Linking, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
@@ -136,9 +138,12 @@ export default function AnnouncementScreen() {
     fetchPage(1, true);
   }, [fetchPage]);
 
-  useEffect(() => {
-    fetchPage(1);
-  }, [fetchPage]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchPage(1);
+      useNotificationStore.getState().clear('announcement');
+    }, [fetchPage])
+  );
 
   const handleEndReached = useCallback(() => {
     if (currentPage.current < lastPage.current) {

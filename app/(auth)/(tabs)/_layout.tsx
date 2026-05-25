@@ -13,9 +13,13 @@ import {
 } from '@hugeicons-pro/core-stroke-standard';
 import { TugrugIcon } from '@/components/app-icon';
 import { useAuthStore } from '@/store/auth-store';
+import { useNotificationStore } from '@/store/notification-store';
 
 export default function TabLayout() {
   const isSenior = useAuthStore((state) => state.isSenior);
+  const hasAnnouncement = useNotificationStore((s) => s.announcement.length > 0);
+  const hasEmployeeRequest = useNotificationStore((s) => s.employee_request.length > 0);
+  const hasAssignedRequest = useNotificationStore((s) => s.employee_request_assigned.length > 0);
 
   return (
     <Tabs
@@ -53,7 +57,7 @@ export default function TabLayout() {
         name="request"
         options={{
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={28} color={color} />,
-          tabBarBadge: '',
+          tabBarBadge: hasEmployeeRequest ? '' : undefined,
         }}
       />
       <Tabs.Screen
@@ -66,6 +70,7 @@ export default function TabLayout() {
         name="announcement"
         options={{
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={28} color={color} />,
+          tabBarBadge: hasAnnouncement ? '' : undefined,
         }}
       />
       <Tabs.Screen
@@ -73,6 +78,7 @@ export default function TabLayout() {
         options={{
           href: isSenior ? '/(auth)/(tabs)/senior' : null,
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={28} color={color} />,
+          tabBarBadge: hasAssignedRequest ? '' : undefined,
         }}
       />
     </Tabs>
