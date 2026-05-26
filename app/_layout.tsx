@@ -1,3 +1,4 @@
+import { AttachmentPickerHost } from "@/components/attachment-picker-host";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { Inter_300Light, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
@@ -46,6 +47,7 @@ function AppContent() {
         }}
       >
         <Slot />
+        <AttachmentPickerHost />
       </HeroUINativeProvider>
     </AppThemeProvider>
   );

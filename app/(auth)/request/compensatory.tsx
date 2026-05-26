@@ -5,7 +5,7 @@ import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
 import { api, uploadFile } from '@/config/api';
-import { pickAttachments } from '@/utils/pick-attachment';
+import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import {
   Alert01Icon,
   ArrowLeft02Icon,
@@ -82,10 +82,8 @@ export default function CompensatoryRequestScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
 
-  const handlePickFile = async () => {
-    const assets = await pickAttachments();
+  const uploadAssets = async (assets: PickedAsset[]) => {
     if (!assets.length) return;
-
     setIsUploading(true);
     for (const asset of assets) {
       try {
@@ -98,6 +96,11 @@ export default function CompensatoryRequestScreen() {
       }
     }
     setIsUploading(false);
+  };
+
+  const handlePickAttachments = async () => {
+    const assets = await pickAttachments();
+    await uploadAssets(assets);
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -373,7 +376,7 @@ export default function CompensatoryRequestScreen() {
               )}
             />
 
-            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickFile} disabled={isUploading}>
+            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickAttachments} disabled={isUploading}>
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (

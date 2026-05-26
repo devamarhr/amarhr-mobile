@@ -16,7 +16,7 @@ import {
   PlusSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { pickAttachments } from '@/utils/pick-attachment';
+import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spinner, useToast } from 'heroui-native';
@@ -239,10 +239,8 @@ export default function AnnualLeaveRequestScreen() {
   const usedDays = periodsWatch.reduce((sum, p) => sum + (Number(p?.days) || 0), 0);
   const remainingDays = (availability?.available_days ?? 0) - usedDays;
 
-  const handlePickFile = async () => {
-    const assets = await pickAttachments();
+  const uploadAssets = async (assets: PickedAsset[]) => {
     if (!assets.length) return;
-
     setIsUploading(true);
     for (const asset of assets) {
       try {
@@ -255,6 +253,11 @@ export default function AnnualLeaveRequestScreen() {
       }
     }
     setIsUploading(false);
+  };
+
+  const handlePickAttachments = async () => {
+    const assets = await pickAttachments();
+    await uploadAssets(assets);
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -489,7 +492,7 @@ export default function AnnualLeaveRequestScreen() {
 
                 <Pressable
                   className="flex-row items-center justify-end gap-2"
-                  onPress={handlePickFile}
+                  onPress={handlePickAttachments}
                   disabled={isUploading}
                 >
                   {isUploading ? (
