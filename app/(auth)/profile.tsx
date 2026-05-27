@@ -3,10 +3,11 @@ import { AppHeader } from "@/components/app-header";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppSwitch } from "@/components/app-switch";
 import { AppText } from "@/components/app-text";
+import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
 import { useAuthStore, UserSettings } from '@/store/auth-store';
 import {
-  Agreement03Icon, Building06StrokeStandard,
+  Agreement03Icon, Alert01Icon, Building06StrokeStandard,
   Clock01Icon,
   InformationCircleIcon,
   LicenseIcon,
@@ -16,7 +17,7 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
 import { useRouter } from "expo-router";
-import { Avatar, cn, Dialog, Separator } from "heroui-native";
+import { Avatar, cn, Dialog, Separator, useToast } from "heroui-native";
 import React, { useState } from "react";
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -64,10 +65,24 @@ export default function ProfileScreen() {
   const attendanceReminder = useAuthStore((state) => state.attendanceReminder);
   const hidePhone = useAuthStore((state) => state.hidePhone);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const saveSetting = (settings: Partial<UserSettings>) => {
     useAuthStore.getState().setSettings(settings);
-    api({ path: '/settings', method: 'PUT', data: settings }).catch(console.error);
+    api({ path: '/settings', method: 'PUT', data: settings }).then((res) => {
+      if (res.status !== 200) {
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              description={res.message || 'Алдаа гарлаа'}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
+    });
   };
 
   const allMethodOptions: SelectOption[] = [

@@ -247,6 +247,8 @@ export default function AnnualLeaveRequestScreen() {
         const res = await uploadFile<{ path: string }>('/file-upload', asset.uri);
         if (res.status === 200) {
           setAttachments((prev) => [...prev, { name: asset.name, path: res.data.path }]);
+        } else {
+          showError(res.message || 'Алдаа гарлаа');
         }
       } catch (e) {
         console.error('Upload failed:', e);

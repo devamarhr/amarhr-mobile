@@ -223,6 +223,17 @@ export default function SeniorRequestDetailScreen() {
         const res = await uploadFile<{ path: string }>("/file-upload", asset.uri);
         if (res.status === 200) {
           setActionAttachments((prev) => [...prev, { name: asset.name, path: res.data.path }]);
+        } else {
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="danger"
+                description={res.message || "Алдаа гарлаа"}
+                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              />
+            ),
+          });
         }
       } catch (e) {
         console.error("Upload failed:", e);
@@ -282,7 +293,7 @@ export default function SeniorRequestDetailScreen() {
             <AppToast
               {...props}
               variant="danger"
-              description={res.message ?? "Алдаа гарлаа"}
+              description={res.message || "Алдаа гарлаа"}
               icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),

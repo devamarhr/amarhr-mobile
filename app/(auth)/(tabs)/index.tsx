@@ -153,10 +153,23 @@ export default function HomeScreen() {
     setMethodSheetOpen(false);
     if (saveSelection) {
       useAuthStore.getState().setSettings({ attendance_method: method });
-      api({ path: '/settings', method: 'PUT', data: { attendance_method: method } }).catch(console.error);
+      api({ path: '/settings', method: 'PUT', data: { attendance_method: method } }).then((res) => {
+        if (res.status !== 200) {
+          toast.show({
+            component: (props) => (
+              <AppToast
+                {...props}
+                variant="danger"
+                description={res.message || 'Алдаа гарлаа'}
+                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              />
+            ),
+          });
+        }
+      });
     }
     proceedWithAttendance(method);
-  }, [saveSelection]);
+  }, [saveSelection, toast]);
 
   const proceedWithAttendance = useCallback(async (method: 'geo' | 'wifi') => {
     if (method === 'wifi') {
