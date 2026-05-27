@@ -22,7 +22,7 @@ export default function AuthLayout() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'white' } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="personal-info/index" />
