@@ -221,7 +221,7 @@ export default function ProfileScreen() {
             </View>
             <View className="flex-row justify-end gap-3">
               <AppButton label="Үгүй" className="border-transparent bg-transparent" onPress={() => setLogoutDialogOpen(false)} />
-              <AppButton label="Тийм" labelClassName="text-white" className="bg-red" onPress={handleLogout} />
+              <AppButton label="Тийм" labelClassName="text-white" className="bg-blue" onPress={handleLogout} />
             </View>
           </Dialog.Content>
         </Dialog.Portal>

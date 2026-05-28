@@ -1,10 +1,10 @@
-import { cn, Text } from 'heroui-native';
+import { cn, Typography } from 'heroui-native';
 import React from 'react';
 import type { TextProps } from 'react-native';
 
-export const AppText = React.forwardRef<React.ElementRef<typeof Text>, TextProps>(
+export const AppText = React.forwardRef<React.ElementRef<typeof Typography>, TextProps>(
   ({ className, ...props }, ref) => (
-    <Text ref={ref} className={cn('text-foreground', className)} {...props} />
+    <Typography ref={ref} className={cn('text-foreground', className)} {...props} />
   ),
 );
 

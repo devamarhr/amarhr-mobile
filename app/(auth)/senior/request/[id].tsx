@@ -895,13 +895,7 @@ export default function SeniorRequestDetailScreen() {
             <AppButton
               label="Тийм"
               labelClassName="text-white"
-              className={
-                pendingAction === "reject"
-                  ? "bg-red"
-                  : pendingAction === "approve"
-                    ? "bg-green"
-                    : "bg-darkcyan"
-              }
+              className="bg-blue"
               isLoading={submittingAction !== null}
               onPress={async () => {
                 if (!pendingAction) return;

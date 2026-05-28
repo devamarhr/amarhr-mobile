@@ -9,14 +9,13 @@ import {
   LoginCircle02Icon,
   LogoutCircle02Icon,
   Sun03StrokeStandard,
-  TimeQuarterPassIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
 import { router } from "expo-router";
 import { cn, Separator } from 'heroui-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -26,6 +25,8 @@ type ViewMode = 'month' | 'year';
 
 // --- Timesheet day data (matches /timesheet API response shape) ---
 
+type OvertimeCategory = 'overtime' | 'compensatory' | 'accumulated' | 'compensatory_rest';
+
 interface Shift {
   id: number;
   planned_start: string | null;
@@ -34,7 +35,7 @@ interface Shift {
   actual_end: string | null;
   lateness_minutes: number;
   worked_duration_minutes: number | null;
-  overtime_minutes: number;
+  overtime_category: OvertimeCategory | null;
 }
 
 interface TimesheetDay {
@@ -189,8 +190,11 @@ function ShiftRow({
   const plannedStart = extractTime(shift?.planned_start);
   const plannedEnd = extractTime(shift?.planned_end);
   const workHour = formatMinutes(shift?.worked_duration_minutes);
-  const overtime = formatMinutes(shift?.overtime_minutes);
   const isLate = (shift?.lateness_minutes ?? 0) > 0;
+  const isOvertimeCategory =
+    shift?.overtime_category === 'overtime' ||
+    shift?.overtime_category === 'compensatory' ||
+    shift?.overtime_category === 'accumulated';
 
   let arrivedDisplay = '00:00';
   let arrivedColor = 'text-darkgray/15';
@@ -198,8 +202,6 @@ function ShiftRow({
   let leftColor = 'text-darkgray/15';
   let workHourDisplay = '00:00';
   let workHourColor = 'text-darkgray/15';
-  let overtimeDisplay = '00:00';
-  let overtimeColor = 'text-darkgray/15';
 
   if (arrived) {
     arrivedDisplay = arrived;
@@ -219,17 +221,12 @@ function ShiftRow({
 
   if (workHour) {
     workHourDisplay = workHour;
-    workHourColor = 'font-medium';
-  }
-
-  if (overtime) {
-    overtimeDisplay = overtime;
-    overtimeColor = 'text-green';
+    workHourColor = isOvertimeCategory ? 'text-green font-medium' : 'font-medium';
   }
 
   return (
     <View className={cn('flex-row', !isFirst && 'border-t border-darkgray/5')}>
-      <View className={cn('w-14 items-center justify-center py-4', isToday && isFirst && 'bg-lightblue')}>
+      <View className={cn('w-14 h-14 items-center justify-center', isToday && isFirst && 'bg-lightblue')}>
         <AppText className={cn('text-lg', dayColor, !isFirst && 'opacity-0')}>{dayStr}</AppText>
       </View>
       <View className="flex-1 items-center justify-center">
@@ -240,9 +237,6 @@ function ShiftRow({
       </View>
       <View className="flex-1 items-center justify-center">
         <AppText className={cn('text-sm', workHourColor)}>{workHourDisplay}</AppText>
-      </View>
-      <View className="flex-1 items-center justify-center">
-        <AppText className={cn('text-sm', overtimeColor)}>{overtimeDisplay}</AppText>
       </View>
     </View>
   );
@@ -268,10 +262,10 @@ function TimesheetListRow({
   const isNonWorkingDay = !isPlanned;
 
   // Day number color
-  const dayColor = (day.is_public_holiday && !isPlanned)
-    ? 'text-blue'
-    : (isNonWorkingDay || day.annual || day.leave)
-      ? 'text-darkgray'
+  const dayColor = day.annual || day.leave
+    ? 'text-darkgray'
+    : !isPlanned
+      ? 'text-blue'
       : '';
 
   // Annual leave: special row, no shift breakdown
@@ -279,13 +273,12 @@ function TimesheetListRow({
     return (
       <View className="border-b border-darkgray/10 bg-yellow/10">
         <View className="flex-row">
-          <View className="w-14 items-center justify-center py-4">
+          <View className="w-14 h-14 items-center justify-center">
             <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
           </View>
           <View className="flex-1 items-center justify-center">
             <HugeiconsIcon icon={Sun03StrokeStandard} size={24} color="#F0B400" />
           </View>
-          <View className="flex-1 items-center justify-center" />
           <View className="flex-1 items-center justify-center" />
           <View className="flex-1 items-center justify-center" />
         </View>
@@ -375,9 +368,6 @@ function TimesheetList({
         <View className="flex-1 items-center justify-center">
           <HugeiconsIcon icon={Clock01Icon} size={22} color="#005FEE" />
         </View>
-        <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={TimeQuarterPassIcon} size={22} color="#005FEE" />
-        </View>
       </View>
 
       {/* Rows */}
@@ -407,28 +397,37 @@ function MonthView({
 }) {
   const [monthData, setMonthData] = useState<TimesheetDay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await api<TimesheetDay[]>({ path: `/timesheet?year=${year}&month=${month}` });
+      if (res.status === 200 && Array.isArray(res.data)) {
+        setMonthData(res.data);
+      } else {
+        setMonthData([]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [year, month]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api<TimesheetDay[]>({ path: `/timesheet?year=${year}&month=${month}` })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.status === 200 && Array.isArray(res.data)) {
-          setMonthData(res.data);
-        } else {
-          setMonthData([]);
-        }
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
+    fetchData().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [year, month]);
+  }, [fetchData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const calendarDayData = useMemo(() => deriveDayData(monthData), [monthData]);
 
@@ -441,7 +440,11 @@ function MonthView({
   }
 
   return (
-    <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 px-4"
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View className="mb-5">
         <TimesheetCalendar
           year={year}
@@ -468,31 +471,40 @@ function YearView({
   const [showHoliday, setShowHoliday] = useState(false);
   const [summary, setSummary] = useState<YearSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await api<YearSummary>({ path: `/timesheet/year-summary?year=${year}` });
+      if (res.status === 200 && res.data && typeof res.data === 'object') {
+        setSummary(res.data);
+        if (Array.isArray(res.data.available_years)) {
+          onAvailableYearsChange?.(res.data.available_years);
+        }
+      } else {
+        setSummary(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [year, onAvailableYearsChange]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api<YearSummary>({ path: `/timesheet/year-summary?year=${year}` })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.status === 200 && res.data && typeof res.data === 'object') {
-          setSummary(res.data);
-          if (Array.isArray(res.data.available_years)) {
-            onAvailableYearsChange?.(res.data.available_years);
-          }
-        } else {
-          setSummary(null);
-        }
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
+    fetchData().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [year, onAvailableYearsChange]);
+  }, [fetchData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const stats = summary?.year_stats;
   const extra = summary?.year_extra;
@@ -565,7 +577,11 @@ function YearView({
   }
 
   return (
-    <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 px-4"
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Stats */}
       <View className="gap-3">
         {yearStatsRows.map((item) => (

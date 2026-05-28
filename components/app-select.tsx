@@ -239,6 +239,7 @@ export function AppSelect({
             snapPoints={snapPoints}
             topInset={insets.top}
             enableOverDrag={false}
+            enableDynamicSizing={false}
             handleComponent={null}
             contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
             contentContainerProps={{
