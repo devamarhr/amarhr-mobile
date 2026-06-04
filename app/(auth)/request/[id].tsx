@@ -106,7 +106,7 @@ function getFormType(setting: RequestSetting | undefined, detail: Record<string,
   if (key === 'annual_leave') return 'annualLeave';
 
   if (detail) {
-    if (Array.isArray(detail.periods)) return 'annualLeave';
+    if (Array.isArray(detail.splits)) return 'annualLeave';
     if (detail.endTime || detail.arrivalTime || detail.leaveTime || Array.isArray(detail.shifts)) {
       return 'timeCorrection';
     }
@@ -427,15 +427,15 @@ export default function RequestDetailScreen() {
   }, [request, formType, detail]);
 
   const renderAnnualLeave = () => {
-    const periods = Array.isArray(detail.periods) ? detail.periods : [];
-    if (periods.length === 0) return null;
-    const totalDays = periods.reduce(
+    const splits = Array.isArray(detail.splits) ? detail.splits : [];
+    if (splits.length === 0) return null;
+    const totalDays = splits.reduce(
       (sum: number, p: any) => sum + (Number(p?.days) || 0),
       0
     );
     return (
       <View className="gap-2.5">
-        {periods.map((p: any, i: number) => {
+        {splits.map((p: any, i: number) => {
           const start = p.start_date ? dayjs(p.start_date, 'YYYY-MM-DD') : null;
           const end = p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD') : null;
           const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, 'day');

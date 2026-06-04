@@ -52,18 +52,26 @@ async function calculateEndDate(startDate: string, days: number): Promise<string
   return res.data.end_date;
 }
 
-interface Period {
+interface AnnualLeaveSplit {
+  id: number;
+  start_date: string;
+  end_date: string;
+  days: number;
+}
+
+interface Split {
+  splitId?: number;
   startDate?: string;
   days?: string;
   endDate?: string;
 }
 
 interface AnnualLeaveForm {
-  periods: Period[];
+  splits: Split[];
   description: string;
 }
 
-interface PeriodRowProps {
+interface SplitRowProps {
   index: number;
   control: Control<AnnualLeaveForm>;
   setValue: UseFormSetValue<AnnualLeaveForm>;
@@ -73,7 +81,7 @@ interface PeriodRowProps {
   onRemove: () => void;
 }
 
-function PeriodRow({
+function SplitRow({
   index,
   control,
   setValue,
@@ -81,32 +89,32 @@ function PeriodRow({
   availability,
   maxDays,
   onRemove,
-}: PeriodRowProps) {
-  const startDate = useWatch({ control, name: `periods.${index}.startDate` });
-  const days = useWatch({ control, name: `periods.${index}.days` });
-  const endDate = useWatch({ control, name: `periods.${index}.endDate` });
-  const allPeriods = useWatch({ control, name: 'periods' }) ?? [];
+}: SplitRowProps) {
+  const startDate = useWatch({ control, name: `splits.${index}.startDate` });
+  const days = useWatch({ control, name: `splits.${index}.days` });
+  const endDate = useWatch({ control, name: `splits.${index}.endDate` });
+  const allSplits = useWatch({ control, name: 'splits' }) ?? [];
 
   const hasOverlap = useMemo(() => {
     if (!startDate || !endDate) return false;
     const s = dayjs(startDate, 'YYYY-MM-DD');
     const e = dayjs(endDate, 'YYYY-MM-DD');
-    return allPeriods.some((p, i) => {
+    return allSplits.some((p, i) => {
       if (i === index || !p?.startDate || !p?.endDate) return false;
       const ps = dayjs(p.startDate, 'YYYY-MM-DD');
       const pe = dayjs(p.endDate, 'YYYY-MM-DD');
       return !s.isAfter(pe) && !ps.isAfter(e);
     });
-  }, [startDate, endDate, allPeriods, index]);
+  }, [startDate, endDate, allSplits, index]);
 
   useEffect(() => {
     let cancelled = false;
     if (startDate && days) {
       calculateEndDate(startDate, Number(days)).then((end) => {
-        if (!cancelled) setValue(`periods.${index}.endDate`, end);
+        if (!cancelled) setValue(`splits.${index}.endDate`, end);
       });
     } else {
-      setValue(`periods.${index}.endDate`, '');
+      setValue(`splits.${index}.endDate`, '');
     }
     return () => {
       cancelled = true;
@@ -127,7 +135,7 @@ function PeriodRow({
     [availability.end_date],
   );
 
-  const rowErrors = errors?.periods?.[index];
+  const rowErrors = errors?.splits?.[index];
 
   return (
     <View className="gap-1">
@@ -135,7 +143,7 @@ function PeriodRow({
         <View className="flex-1">
           <Controller
             control={control}
-            name={`periods.${index}.startDate`}
+            name={`splits.${index}.startDate`}
             rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppDatePicker
@@ -156,7 +164,7 @@ function PeriodRow({
         <View className="flex-1">
           <Controller
             control={control}
-            name={`periods.${index}.days`}
+            name={`splits.${index}.days`}
             rules={{ required: 'Хоног сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppSelect
@@ -202,6 +210,7 @@ export default function AnnualLeaveRequestScreen() {
     availableStartDate?: string;
     availableEndDate?: string;
     maxLeaveSplits?: string;
+    annualLeaveSplits?: string;
   }>();
   const { toast } = useToast();
   const title = params.title ?? '';
@@ -217,6 +226,23 @@ export default function AnnualLeaveRequestScreen() {
 
   const maxLeaveSplits = params.maxLeaveSplits ? Number(params.maxLeaveSplits) : undefined;
 
+  const initialSplits = useMemo<Split[]>(() => {
+    const empty: Split[] = [{ startDate: '', days: '', endDate: '' }];
+    if (!params.annualLeaveSplits) return empty;
+    try {
+      const splits = JSON.parse(params.annualLeaveSplits) as AnnualLeaveSplit[];
+      if (!splits.length) return empty;
+      return splits.map((s) => ({
+        splitId: s.id,
+        startDate: s.start_date,
+        days: String(s.days),
+        endDate: s.end_date,
+      }));
+    } catch {
+      return empty;
+    }
+  }, [params.annualLeaveSplits]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
@@ -228,15 +254,15 @@ export default function AnnualLeaveRequestScreen() {
     formState: { errors },
   } = useForm<AnnualLeaveForm>({
     defaultValues: {
-      periods: [{ startDate: '', days: '', endDate: '' }],
+      splits: initialSplits,
       description: '',
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'periods' });
+  const { fields, append, remove } = useFieldArray({ control, name: 'splits' });
 
-  const periodsWatch = useWatch({ control, name: 'periods' }) ?? [];
-  const usedDays = periodsWatch.reduce((sum, p) => sum + (Number(p?.days) || 0), 0);
+  const splitsWatch = useWatch({ control, name: 'splits' }) ?? [];
+  const usedDays = splitsWatch.reduce((sum, p) => sum + (Number(p?.days) || 0), 0);
   const remainingDays = (availability?.available_days ?? 0) - usedDays;
 
   const uploadAssets = async (assets: PickedAsset[]) => {
@@ -282,23 +308,23 @@ export default function AnnualLeaveRequestScreen() {
   const handleSend = async (data: AnnualLeaveForm) => {
     if (!availability) return;
 
-    if (data.periods.some((p) => !p.endDate)) {
+    if (data.splits.some((p) => !p.endDate)) {
       showError('Дуусах өдөр тооцоологдож дуусаагүй байна');
       return;
     }
 
-    if (maxLeaveSplits != null && data.periods.length > maxLeaveSplits) {
+    if (maxLeaveSplits != null && data.splits.length > maxLeaveSplits) {
       showError(`Ээлжийн амралтыг хамгийн ихдээ ${maxLeaveSplits} удаа хувааж болно`);
       return;
     }
 
-    const totalDays = data.periods.reduce((sum, p) => sum + (Number(p.days) || 0), 0);
+    const totalDays = data.splits.reduce((sum, p) => sum + (Number(p.days) || 0), 0);
     if (totalDays > availability.available_days) {
       showError(`Сонгосон хоног боломжит ${availability.available_days} хоногоос хэтэрсэн байна`);
       return;
     }
 
-    const sorted = [...data.periods].sort((a, b) =>
+    const sorted = [...data.splits].sort((a, b) =>
       dayjs(a.startDate, 'YYYY-MM-DD').diff(dayjs(b.startDate, 'YYYY-MM-DD')),
     );
     for (let i = 1; i < sorted.length; i++) {
@@ -312,7 +338,7 @@ export default function AnnualLeaveRequestScreen() {
 
     const minDate = dayjs(availability.start_date, 'YYYY-MM-DD');
     const maxDate = dayjs(availability.end_date, 'YYYY-MM-DD');
-    for (const p of data.periods) {
+    for (const p of data.splits) {
       const s = dayjs(p.startDate, 'YYYY-MM-DD');
       const e = dayjs(p.endDate, 'YYYY-MM-DD');
       if (s.isBefore(minDate) || e.isAfter(maxDate)) {
@@ -325,7 +351,8 @@ export default function AnnualLeaveRequestScreen() {
     try {
       const body = {
         detail: {
-          periods: data.periods.map((p) => ({
+          splits: data.splits.map((p) => ({
+            ...(p.splitId != null && { id: p.splitId }),
             start_date: p.startDate,
             days: Number(p.days),
             end_date: p.endDate,
@@ -423,13 +450,13 @@ export default function AnnualLeaveRequestScreen() {
             ) : (
               <>
                 {fields.map((field, index) => {
-                  const otherDays = periodsWatch.reduce(
+                  const otherDays = splitsWatch.reduce(
                     (sum, p, i) => (i === index ? sum : sum + (Number(p?.days) || 0)),
                     0,
                   );
                   const rowMax = Math.max(1, availability.available_days - otherDays);
                   return (
-                    <PeriodRow
+                    <SplitRow
                       key={field.id}
                       index={index}
                       control={control}
@@ -441,9 +468,10 @@ export default function AnnualLeaveRequestScreen() {
                         if (fields.length > 1) {
                           remove(index);
                         } else {
-                          setValue(`periods.${index}.startDate`, '');
-                          setValue(`periods.${index}.days`, '');
-                          setValue(`periods.${index}.endDate`, '');
+                          setValue(`splits.${index}.splitId`, undefined);
+                          setValue(`splits.${index}.startDate`, '');
+                          setValue(`splits.${index}.days`, '');
+                          setValue(`splits.${index}.endDate`, '');
                         }
                       }}
                     />

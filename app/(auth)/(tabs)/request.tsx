@@ -20,6 +20,13 @@ interface HeaderInfoItem {
   value: string;
 }
 
+interface AnnualLeaveSplit {
+  id: number;
+  start_date: string;
+  end_date: string;
+  days: number;
+}
+
 interface RequestItem {
   id: string;
   label: string;
@@ -30,6 +37,7 @@ interface RequestItem {
   availableStartDate?: string;
   availableEndDate?: string;
   maxLeaveSplits?: number;
+  annualLeaveSplits?: AnnualLeaveSplit[];
 }
 
 interface RequestCategory {
@@ -48,9 +56,11 @@ interface ApiRequestSetting {
     show: boolean;
     fields: { time_unit?: string; has_salary?: boolean; time_value?: number; salary_percent?: number; salary_calculate?: string | null } | [];
     annual_leave_available_days?: number;
+    annual_leave_total_days?: number;
     annual_leave_available_start_date?: string;
     annual_leave_available_end_date?: string;
     max_leave_splits?: number;
+    annual_leave_splits?: AnnualLeaveSplit[];
     compensatory_hours?: number;
     compensatory_max_hour?: number;
     compensatory_max_day?: number;
@@ -104,8 +114,9 @@ function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined
     return [{ label: 'Хуримтлагдсан цаг', value: `${detail.compensatory_hours} цаг` }];
   }
 
-  if (detail.key === 'annual_leave' && detail.annual_leave_available_days != null) {
-    return [{ label: 'Боломжит хоног', value: `${detail.annual_leave_available_days} хоног` }];
+  const annualLeaveTotal = detail.annual_leave_total_days ?? detail.annual_leave_available_days;
+  if (detail.key === 'annual_leave' && annualLeaveTotal != null) {
+    return [{ label: 'Боломжит хоног', value: `${annualLeaveTotal} хоног` }];
   }
 
   if (setting.type === 'benefit' && setting.adjustment_setting?.detail?.length) {
@@ -164,8 +175,9 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           }
         }
 
-        if (detail.key === 'annual_leave' && detail.annual_leave_available_days) {
-          maxDays = detail.annual_leave_available_days;
+        if (detail.key === 'annual_leave') {
+          const total = detail.annual_leave_total_days ?? detail.annual_leave_available_days;
+          if (total) maxDays = total;
         }
         if (detail.key === 'compensatory') {
           if (detail.compensatory_max_day) maxDays = detail.compensatory_max_day;
@@ -182,6 +194,7 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           availableStartDate: detail.annual_leave_available_start_date,
           availableEndDate: detail.annual_leave_available_end_date,
           maxLeaveSplits: detail.key === 'annual_leave' ? detail.max_leave_splits : undefined,
+          annualLeaveSplits: detail.key === 'annual_leave' ? detail.annual_leave_splits : undefined,
         };
       }),
     });
@@ -337,6 +350,9 @@ export default function RequestScreen() {
         ...(item.availableStartDate && { availableStartDate: item.availableStartDate }),
         ...(item.availableEndDate && { availableEndDate: item.availableEndDate }),
         ...(item.maxLeaveSplits != null && { maxLeaveSplits: String(item.maxLeaveSplits) }),
+        ...(item.annualLeaveSplits?.length && {
+          annualLeaveSplits: JSON.stringify(item.annualLeaveSplits),
+        }),
       },
     });
   };
