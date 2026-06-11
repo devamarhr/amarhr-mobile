@@ -109,7 +109,7 @@ export default function SalaryScreen() {
               value={selectedMonth}
               onValueChange={(opt) => opt && setSelectedMonth(opt)}
               trigger={
-                <AppText className="text-xl leading-5 font-medium text-white">{selectedMonth.label}</AppText>
+                <AppText className="text-xl font-medium text-white">{selectedMonth.label}</AppText>
               }
               triggerClassName="bg-transparent p-0 min-h-0"
             />

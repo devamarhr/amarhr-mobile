@@ -116,7 +116,8 @@ interface YearSummaryHoliday {
 interface YearSummaryExtra {
   has_annual_leave: boolean;
   annual_leave_available_days: number;
-  splits: { start_date: string; end_date: string; days: number }[];
+  annual_leave_splits: { start_date: string; end_date: string; days: number }[];
+  annual_leave_plan_splits: { start_date: string; end_date: string; days: number }[];
   medical_examinations: string[];
 }
 
@@ -531,26 +532,35 @@ function YearView({
 
   const totalHolidayDays = holidays.reduce((sum, h) => sum + h.dates.length, 0);
 
-  const validSplits = (extra?.splits ?? []).filter((s) => s?.start_date && s?.end_date);
-  const hasSplits = !!extra?.has_annual_leave && validSplits.length > 0;
-  const splitFormattedList = validSplits.map(
-    (s) => `${s.start_date.slice(5).replace('-', '/')} - ${s.end_date.slice(5).replace('-', '/')}`,
-  );
+  const formatRange = (s: { start_date: string; end_date: string }) =>
+    `${s.start_date.slice(5).replace('-', '/')} - ${s.end_date.slice(5).replace('-', '/')}`;
+
+  const validSplits = (extra?.annual_leave_splits ?? []).filter((s) => s?.start_date && s?.end_date);
+  const validPlanSplits = (extra?.annual_leave_plan_splits ?? []).filter((s) => s?.start_date && s?.end_date);
+  const hasSplits = !!extra?.has_annual_leave && (validSplits.length > 0 || validPlanSplits.length > 0);
+  const splitFormattedList = validSplits.map(formatRange);
+  const planSplitFormattedList = validPlanSplits.map(formatRange);
   const hasMedical = !!extra?.medical_examinations?.[0];
   const medicalFormatted = hasMedical
     ? extra!.medical_examinations[0].slice(5).replace('-', '/')
     : 'Хамрагдаагүй';
 
   const highlightRanges = useMemo(() => {
-    const ranges: { start: string; end: string; color: 'blue' | 'green' | 'cyan' }[] = [];
+    const ranges: { start: string; end: string; color: 'blue' | 'green' | 'green/50' | 'cyan' }[] = [];
     holidays.forEach((h) => {
       if (h.dates.length === 0) return;
       ranges.push({ start: h.dates[0], end: h.dates[h.dates.length - 1], color: 'blue' });
     });
     if (extra?.has_annual_leave) {
-      extra.splits?.forEach((s) => {
+      // Confirmed splits (bright green) first so .find() picks them over plans on overlap.
+      extra.annual_leave_splits?.forEach((s) => {
         if (s?.start_date && s?.end_date) {
           ranges.push({ start: s.start_date, end: s.end_date, color: 'green' });
+        }
+      });
+      extra.annual_leave_plan_splits?.forEach((s) => {
+        if (s?.start_date && s?.end_date) {
+          ranges.push({ start: s.start_date, end: s.end_date, color: 'green/50' });
         }
       });
     }
@@ -606,7 +616,10 @@ function YearView({
           {hasSplits ? (
             <View className="items-end gap-1">
               {splitFormattedList.map((s, i) => (
-                <AppText key={i} className="text-sm text-green">{s}</AppText>
+                <AppText key={`s-${i}`} className="text-sm text-green">{s}</AppText>
+              ))}
+              {planSplitFormattedList.map((s, i) => (
+                <AppText key={`p-${i}`} className="text-sm text-green/50">{s}</AppText>
               ))}
             </View>
           ) : (
@@ -738,7 +751,7 @@ export default function TimesheetScreen() {
             value={selectedMonth}
             onValueChange={(opt) => opt && setSelectedMonth(opt)}
             trigger={
-              <AppText className="text-xl leading-5 font-medium">{selectedMonth.label}</AppText>
+              <AppText className="text-xl font-medium">{selectedMonth.label}</AppText>
             }
             triggerClassName="bg-transparent p-0 min-h-0"
           />
@@ -749,7 +762,7 @@ export default function TimesheetScreen() {
             value={selectedYear}
             onValueChange={(opt) => opt && setSelectedYear(opt)}
             trigger={
-              <AppText className="text-xl leading-5 font-medium">{selectedYear.label}</AppText>
+              <AppText className="text-xl font-medium">{selectedYear.label}</AppText>
             }
             triggerClassName="bg-transparent p-0 min-h-0"
           />

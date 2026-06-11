@@ -1,21 +1,22 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { TugrugIcon } from '@/components/app-icon';
+import { useAuthStore } from '@/store/auth-store';
+import { useNotificationStore } from '@/store/notification-store';
 import {
   Home01Icon
 } from '@hugeicons-pro/core-stroke-rounded';
 import {
   Calendar03Icon,
-  DollarCircleIcon,
   MailSend01Icon,
   Notification02Icon,
   UserGroupIcon
 } from '@hugeicons-pro/core-stroke-standard';
-import { TugrugIcon } from '@/components/app-icon';
-import { useAuthStore } from '@/store/auth-store';
-import { useNotificationStore } from '@/store/notification-store';
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const isSenior = useAuthStore((state) => state.isSenior);
   const hasAnnouncement = useNotificationStore((s) => s.announcement.length > 0);
   const hasEmployeeRequest = useNotificationStore((s) => s.employee_request.length > 0);
@@ -29,7 +30,15 @@ export default function TabLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          paddingTop: 4,
+          height: 50 + insets.bottom,
+        },
+        tabBarItemStyle: {
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        tabBarIconStyle: {
+          flex: 1,
+          alignSelf: "center",
         },
         tabBarBadgeStyle: {
           backgroundColor: '#EE5700',
@@ -37,8 +46,8 @@ export default function TabLayout() {
           height: 8,
           borderRadius: 4,
           fontSize: 1,
-          top: -4,
-          left: 28,
+          top: 0,
+          end: -6,
         },
       }}>
       <Tabs.Screen

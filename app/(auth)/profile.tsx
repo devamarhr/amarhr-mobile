@@ -49,7 +49,7 @@ function MenuItem({ icon, label, labelClassName, subtitle, onPress, trailing }: 
           labelClassName
         )}>{label}</AppText>
         {subtitle && (
-          <AppText className="text-xs text-darkgray mt-0.5 leading-3">{subtitle}</AppText>
+          <AppText className="text-xs text-darkgray mt-0.5">{subtitle}</AppText>
         )}
       </View>
       {trailing}
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
                     saveSetting({ attendance_method: method });
                   }}
                   trigger={
-                    <AppText className="text-xs text-darkgray mt-0.5 leading-3">
+                    <AppText className="text-xs text-darkgray mt-0.5">
                       {selectedAttendanceMethod?.label ?? 'Сонгох'}
                     </AppText>
                   }

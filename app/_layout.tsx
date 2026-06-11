@@ -16,8 +16,7 @@ import '../config/dayjs';
 import '../global.css';
 
 const textProps: HeroUINativeConfig['textProps'] = {
-  minimumFontScale: 0.5,
-  maxFontSizeMultiplier: 1.2,
+  allowFontScaling: false,
 };
 
 function AppContent() {
@@ -39,6 +38,7 @@ function AppContent() {
     <AppThemeProvider>
       <HeroUINativeProvider
         config={{
+          textProps,
           toast: {
             contentWrapper,
           },
@@ -112,7 +112,7 @@ export default function RootLayout() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.loaderText}>Шинэчилж байна...</Text>
+          <Text style={styles.loaderText} allowFontScaling={false}>Шинэчилж байна...</Text>
         </View>
       </GestureHandlerRootView>
     );

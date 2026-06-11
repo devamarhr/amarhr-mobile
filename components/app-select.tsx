@@ -1,12 +1,12 @@
 import { AppText } from '@/components/app-text';
+import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { ArrowDown01Icon, MultiplicationSignIcon, Tick02Icon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 
 export type SelectOption = {
   value: string;

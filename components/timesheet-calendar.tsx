@@ -207,7 +207,7 @@ interface MiniCalendarProps {
   year: number;
   month: number; // 1-12
   dayDataMap?: Record<string, DayData>;
-  highlightRanges?: { start: string; end: string; color: 'green' | 'blue' | 'cyan' }[];
+  highlightRanges?: { start: string; end: string; color: 'green' | 'green/50' | 'blue' | 'cyan' }[];
   hideOtherMonthDays?: boolean;
 }
 
@@ -230,8 +230,9 @@ function MiniDayCell({
   const rawHighlight = highlightRanges?.find(
     (r) => day.date >= r.start && day.date <= r.end && day.isCurrentMonth,
   );
-  // Annual leave (green) skips non-working days within the range.
-  const highlight = rawHighlight && rawHighlight.color === 'green' && isNonWorking ? undefined : rawHighlight;
+  // Annual leave (green/green-50) skips non-working days within the range.
+  const isAnnualLeave = rawHighlight?.color === 'green' || rawHighlight?.color === 'green/50';
+  const highlight = rawHighlight && isAnnualLeave && isNonWorking ? undefined : rawHighlight;
 
   return (
     <View className="flex-1 items-center py-0.5">
@@ -240,6 +241,7 @@ function MiniDayCell({
           'w-5 h-5 items-center justify-center rounded-full',
           day.isToday && 'bg-lightblue',
           highlight?.color === 'green' && 'bg-green',
+          highlight?.color === 'green/50' && 'bg-green/50',
           highlight?.color === 'blue' && 'bg-blue',
           highlight?.color === 'cyan' && 'bg-cyan',
         )}
