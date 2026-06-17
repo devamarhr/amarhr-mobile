@@ -22,12 +22,16 @@ const ITEMS: { key: SeniorMenuKey; icon: typeof Note02Icon }[] = [
 interface Props {
   active: SeniorMenuKey;
   onChange: (key: SeniorMenuKey) => void;
+  hiddenKeys?: SeniorMenuKey[];
 }
 
-export function SeniorMenuBar({ active, onChange }: Props) {
+export function SeniorMenuBar({ active, onChange, hiddenKeys }: Props) {
+  const items = hiddenKeys?.length
+    ? ITEMS.filter((item) => !hiddenKeys.includes(item.key))
+    : ITEMS;
   return (
     <View className="self-center flex-row items-center gap-2 bg-black rounded-full px-3 py-2 mb-2">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const isActive = item.key === active;
         return (
           <Pressable

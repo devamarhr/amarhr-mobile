@@ -705,14 +705,15 @@ export default function TimesheetScreen() {
   }, []);
 
   const currentMonth = today.month() + 1;
+  const maxMonth = Math.min(currentMonth + 1, 12);
   const MONTH_OPTIONS: SelectOption[] = useMemo(
     () =>
-      Array.from({ length: currentMonth }, (_, i) => {
-        const m = currentMonth - i;
+      Array.from({ length: maxMonth }, (_, i) => {
+        const m = maxMonth - i;
         const value = String(m).padStart(2, '0');
         return { value, label: `${value} сар` };
       }),
-    [currentMonth],
+    [maxMonth],
   );
 
   const [availableYears, setAvailableYears] = useState<number[]>([today.year()]);
@@ -725,7 +726,11 @@ export default function TimesheetScreen() {
     [availableYears],
   );
 
-  const [selectedMonth, setSelectedMonth] = useState<SelectOption>(MONTH_OPTIONS[0]);
+  const [selectedMonth, setSelectedMonth] = useState<SelectOption>(
+    () =>
+      MONTH_OPTIONS.find((o) => o.value === String(currentMonth).padStart(2, '0')) ??
+      MONTH_OPTIONS[0],
+  );
   const [selectedYear, setSelectedYear] = useState<SelectOption>({
     value: String(today.year()),
     label: `${today.year()} он`,
