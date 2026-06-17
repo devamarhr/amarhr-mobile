@@ -38,15 +38,16 @@ interface ShiftEmployee {
   roster_template?: { id: number; name: string } | null;
 }
 
-interface ScheduleShiftLite {
+interface MonthScheduleShift {
+  timesheet_id: number;
   shift_index: number;
-  start: string; // "HH:mm"
-  end: string; // "HH:mm"
-  employees: { id: number; timesheet_id: number }[];
+  planned_start: string; // "YYYY-MM-DD HH:mm:ss"
+  planned_end: string; // shöний ээлж маргааш руу шилжинэ
 }
 
-interface ScheduleResponseLite {
-  shifts: ScheduleShiftLite[];
+interface MonthScheduleDay {
+  day: number; // 1–31
+  shifts: MonthScheduleShift[]; // ээлжгүй/амралттай өдөр → []
 }
 
 interface DayShift {
@@ -120,8 +121,8 @@ export default function SeniorShiftSwapScreen() {
   const [calOpen, setCalOpen] = useState(false);
   const [calMonth, setCalMonth] = useState(() => dayjs(sourceDate).startOf("month"));
   const [pickDate, setPickDate] = useState<string | null>(null);
-  const [dayShifts, setDayShifts] = useState<DayShift[]>([]);
-  const [dayShiftsLoading, setDayShiftsLoading] = useState(false);
+  const [monthSchedule, setMonthSchedule] = useState<MonthScheduleDay[]>([]);
+  const [monthLoading, setMonthLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -170,40 +171,27 @@ export default function SeniorShiftSwapScreen() {
     setPickerOpen(false);
   }, []);
 
-  // Load the target employee's shifts for a picked calendar date.
-  const loadDayShifts = useCallback(
-    (date: string, employeeId: number) => {
-      if (rosterTemplateId == null) return;
-      setDayShifts([]);
-      setDayShiftsLoading(true);
-      api<ScheduleResponseLite>({
-        path: `/senior/timesheet/schedule?date=${date}&roster_template_id=${rosterTemplateId}`,
-        method: "GET",
+  // Fetch the target employee's planned shifts for the whole month so the
+  // calendar can mark working days (dark) vs non-working days (gray).
+  const loadMonthSchedule = useCallback((employeeId: number, month: dayjs.Dayjs) => {
+    setMonthSchedule([]);
+    setMonthLoading(true);
+    api<MonthScheduleDay[]>({
+      path: `/senior/timesheet/employee-schedule?employee_id=${employeeId}&year=${month.year()}&month=${month.month() + 1}`,
+      method: "GET",
+    })
+      .then((res) => {
+        if (res.status === 200 && Array.isArray(res.data)) {
+          setMonthSchedule(res.data);
+        }
       })
-        .then((res) => {
-          if (res.status === 200 && Array.isArray(res.data?.shifts)) {
-            const found: DayShift[] = [];
-            res.data.shifts.forEach((sh) => {
-              const me = sh.employees?.find((e) => e.id === employeeId);
-              if (me) found.push({ timesheet_id: me.timesheet_id, start: sh.start, end: sh.end });
-            });
-            setDayShifts(found);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setDayShiftsLoading(false));
-    },
-    [rosterTemplateId]
-  );
+      .catch(console.error)
+      .finally(() => setMonthLoading(false));
+  }, []);
 
-  const handlePickDate = useCallback(
-    (date: string) => {
-      if (!targetEmployee) return;
-      setPickDate(date);
-      loadDayShifts(date, targetEmployee.id);
-    },
-    [targetEmployee, loadDayShifts]
-  );
+  const handlePickDate = useCallback((date: string) => {
+    setPickDate(date);
+  }, []);
 
   const handleSelectDayShift = useCallback(
     (s: DayShift) => {
@@ -222,14 +210,19 @@ export default function SeniorShiftSwapScreen() {
     if (targetShift) {
       setCalMonth(dayjs(targetShift.date).startOf("month"));
       setPickDate(targetShift.date);
-      if (targetEmployee) loadDayShifts(targetShift.date, targetEmployee.id);
     } else {
       setCalMonth(dayjs(sourceDate).startOf("month"));
       setPickDate(null);
-      setDayShifts([]);
     }
     setCalOpen(true);
-  }, [targetShift, targetEmployee, sourceDate, loadDayShifts]);
+  }, [targetShift, sourceDate]);
+
+  // (Re)load the month schedule whenever the calendar is open for an employee
+  // or the displayed month changes.
+  useEffect(() => {
+    if (!calOpen || !targetEmployee) return;
+    loadMonthSchedule(targetEmployee.id, calMonth);
+  }, [calOpen, targetEmployee, calMonth, loadMonthSchedule]);
 
   // Calendar grid + navigation bounds (today's month .. +1 month, no past days).
   const todayStart = dayjs().startOf("day");
@@ -253,6 +246,26 @@ export default function SeniorShiftSwapScreen() {
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
     return rows;
   }, [calMonth]);
+
+  // Day numbers (1–31) the employee has at least one planned shift this month.
+  const workDays = useMemo(() => {
+    const s = new Set<number>();
+    monthSchedule.forEach((d) => {
+      if (d.shifts.length > 0) s.add(d.day);
+    });
+    return s;
+  }, [monthSchedule]);
+
+  // Shifts of the picked date, derived from the already-loaded month schedule.
+  const dayShifts = useMemo<DayShift[]>(() => {
+    if (!pickDate) return [];
+    const entry = monthSchedule.find((d) => d.day === dayjs(pickDate).date());
+    return (entry?.shifts ?? []).map((s) => ({
+      timesheet_id: s.timesheet_id,
+      start: dayjs(s.planned_start).format("HH:mm"),
+      end: dayjs(s.planned_end).format("HH:mm"),
+    }));
+  }, [pickDate, monthSchedule]);
 
   const canSubmit = targetShift != null && sourceTimesheetId !== targetShift.timesheet_id;
 
@@ -534,9 +547,9 @@ export default function SeniorShiftSwapScreen() {
               {calWeeks.map((row, ri) => (
                 <View key={ri} className="flex-row">
                   {row.map((cell, ci) => {
-                    const isWeekend = ci >= 5;
                     const isPast = cell ? dayjs(cell.date).isBefore(todayStart, "day") : false;
                     const isSel = cell && cell.date === pickDate;
+                    const isWorking = cell ? workDays.has(cell.day) : false;
                     return (
                       <Pressable
                         key={ci}
@@ -555,9 +568,9 @@ export default function SeniorShiftSwapScreen() {
                                 ? "text-darkgray/30"
                                 : isSel
                                   ? "text-darkblue font-medium"
-                                  : isWeekend
-                                    ? "text-darkgray/50"
-                                    : "text-black"
+                                  : isWorking
+                                    ? "text-black"
+                                    : "text-darkgray/50"
                             )}
                           >
                             {String(cell.day).padStart(2, "0")}
@@ -573,7 +586,7 @@ export default function SeniorShiftSwapScreen() {
             {/* Shifts of the picked date */}
             <View className="px-4 mt-3 flex-1">
               <Separator className="bg-darkgray/12 mb-2" />
-              {dayShiftsLoading ? (
+              {monthLoading ? (
                 <View className="py-4 items-center">
                   <ActivityIndicator />
                 </View>
