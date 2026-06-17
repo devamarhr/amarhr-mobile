@@ -17,6 +17,7 @@
   --snow: oklch(0.9911 0 0);
   --eclipse: oklch(0.252 0 89.876);
 
+  --text-2xs: calc(5px + 1.58vw); /* ~11.2px @390 */
   --text-xs: calc(6px + 1.89vw); /* ~13.4px @390 */
   --text-sm: calc(7px + 2.2vw); /* ~15.6px @390 */
   --text-base: calc(8px + 2.51vw); /* ~17.8px @390 */

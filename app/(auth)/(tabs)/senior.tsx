@@ -938,6 +938,11 @@ function ShiftRow({
   const late = emp.lateness_minutes > 0;
   const setting = emp.employee_request_setting?.name ?? null;
   const isLeave = number === null;
+  // Leave/request rows read as active (foreground/black) when the request is
+  // paid, and dimmed (#6A6A6A at 70%) when unpaid — per design.
+  const requestColor = emp.employee_request_setting?.has_salary
+    ? "text-foreground"
+    : "text-darkgray/70";
 
   const hasActual = !!emp.actual_start || !!emp.actual_end;
   // Does the employee's own planned time differ from the shift's nominal time?
@@ -961,7 +966,7 @@ function ShiftRow({
     );
   } else if (setting) {
     subtitle = (
-      <AppText className="text-sm text-darkgray" numberOfLines={1}>
+      <AppText className={cn("text-sm", requestColor)} numberOfLines={1}>
         {setting}
       </AppText>
     );
@@ -995,7 +1000,7 @@ function ShiftRow({
           </Avatar.Fallback>
         </Avatar>
         <View className="flex-1">
-          <AppText className={cn("text-sm", isLeave && "text-darkgray")} numberOfLines={1}>
+          <AppText className={cn("text-sm", isLeave && requestColor)} numberOfLines={1}>
             {name}
           </AppText>
           {subtitle}
@@ -1454,11 +1459,6 @@ function SeniorSchedule({ year, month }: { year: number; month: number }) {
                         <AppText className="text-sm" numberOfLines={1}>
                           {shortName(emp)}
                         </AppText>
-                        {emp.job_position ? (
-                          <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
-                            {emp.job_position}
-                          </AppText>
-                        ) : null}
                       </View>
                     </View>
                     {i < nonWorking.length - 1 && <Separator className="bg-darkgray/12" />}
@@ -2006,6 +2006,7 @@ export default function SeniorScreen() {
     <StyledSafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="flex-1 px-4">
         <AppHeader
+          className="items-end"
           subtitle="Ахлах"
           title={MENU_TITLES[activeMenu]}
           rightContent={

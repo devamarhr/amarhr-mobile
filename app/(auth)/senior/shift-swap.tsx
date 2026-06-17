@@ -73,7 +73,7 @@ function DateLabel({ date }: { date: string }) {
   return (
     <AppText className="text-sm text-darkgray">
       {dayjs(date).format("MM/DD")}{" "}
-      <AppText className="text-sm text-darkgray/50">{WEEKDAYS_FULL[dayjs(date).day()]}</AppText>
+      <AppText className="text-2xs text-darkgray">{WEEKDAYS_FULL[dayjs(date).day()]}</AppText>
     </AppText>
   );
 }
