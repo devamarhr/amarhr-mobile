@@ -11,11 +11,11 @@ import {
   CheckmarkCircle02Icon,
   Clock01Icon,
   Location01Icon,
-  LoginCircle02Icon,
-  LogoutCircle02Icon,
+  Login03Icon,
+  Logout03Icon,
   UserMultipleIcon,
   Wifi01Icon,
-} from "@hugeicons-pro/core-stroke-standard";
+} from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
@@ -309,7 +309,10 @@ export default function HomeScreen() {
             <AppText className="text-xl font-medium">{companyName}</AppText>
           </View>
           <View className="flex-row gap-4 items-center">
-            <Pressable onPress={() => router.navigate('/contact')}>
+            <Pressable
+              onPress={() => router.navigate('/contact')}
+              className="w-10 h-10 rounded-full bg-lightblue items-center justify-center"
+            >
               <HugeiconsIcon icon={UserMultipleIcon} color="#222222" size={24} />
             </Pressable>
             <Pressable onPress={() => router.navigate('/profile')}>
@@ -330,7 +333,7 @@ export default function HomeScreen() {
             <AppText className="font-light text-7xl">{formattedTime}</AppText>
           </View>
           <View className="w-full items-center">
-            <AppText className="text-sm text-black mt-2">{formattedDate}  {weekday}</AppText>
+            <AppText className="text-sm text-black mt-2 w-full text-center">{formattedDate}  {weekday}</AppText>
           </View>
         </View>
 
@@ -373,8 +376,10 @@ export default function HomeScreen() {
           </View>
         )}
 
+        <View className="flex-1" />
+
         {shifts.length > 0 && (
-          <View className="mt-10">
+          <View className="mb-[30px]">
             <PagerView
               style={{ height: 70 }}
               initialPage={0}
@@ -383,7 +388,7 @@ export default function HomeScreen() {
               {shifts.map((shift, index) => (
                 <View key={index} className="flex-row justify-around px-4">
                   <View className="items-center">
-                    <HugeiconsIcon icon={LoginCircle02Icon} color="#6A6A6A80" size={22} />
+                    <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
                     <AppText
                       className={`text-xl mt-2 ${shift.actual_start ? '' : 'text-darkgray/50'}`}
                     >
@@ -391,7 +396,7 @@ export default function HomeScreen() {
                     </AppText>
                   </View>
                   <View className="items-center">
-                    <HugeiconsIcon icon={LogoutCircle02Icon} color="#6A6A6A80" size={22} />
+                    <HugeiconsIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
                     <AppText
                       className={`text-xl mt-2 ${shift.actual_end ? '' : 'text-darkgray/50'}`}
                     >
@@ -420,7 +425,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View className="flex-1 items-center justify-center">
+        <View className="items-center pb-[60px]">
           <Pressable
             onPress={() => {
               if (action === 'none') {
@@ -458,7 +463,11 @@ export default function HomeScreen() {
               elevation: 12,
             }}
           >
-            <AppText className="text-2xl">
+            <AppText
+              className="text-2xl text-center w-full px-5"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {actionLabel(action)}
             </AppText>
           </Pressable>

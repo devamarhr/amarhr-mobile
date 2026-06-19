@@ -1,11 +1,11 @@
-import { View, ScrollView } from 'react-native';
-import { withUniwind } from "uniwind";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
-import React, { useEffect, useState } from "react";
-import { cn } from "heroui-native";
+import { AppText } from "@/components/app-text";
 import { api } from "@/config/api";
+import { cn } from "heroui-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withUniwind } from "uniwind";
 
 interface SalarySetting {
   type: string;
@@ -65,11 +65,11 @@ function formatCurrency(value: number) {
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-function InfoField({ label, value, className }: { label: string; value?: string | null; className?: string | null }) {
+function InfoField({ label, value, className, valueClassName }: { label: string; value?: string | null; className?: string | null; valueClassName?: string }) {
   return (
     <View className={cn('mb-4', className)}>
       <AppText className="text-sm text-darkgray">{label}</AppText>
-      <AppText className="text-sm mt-1">{value || '-'}</AppText>
+      <AppText className={cn('text-sm mt-1', valueClassName)}>{value || '-'}</AppText>
     </View>
   );
 }
@@ -102,12 +102,17 @@ export default function ContractInfoScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
-        <AppHeader backTitle="Хөд/гэрээний мэдээлэл" showBack className="px-4" />
+        <AppHeader backTitle="Гэрээ & Цалин" showBack className="px-4" />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4">
-            <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} />
-            <InfoField label="Гэрээ эхэлсэн/дуусах огноо" value={contractInfo?.startDate && contractInfo?.endDate ? `${contractInfo.startDate} - ${contractInfo.endDate}` : null} />
-            <InfoField label="Гэрээний төрөл" value={contractInfo?.type} />
+            <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} valueClassName="text-blue" />
+            <InfoField
+              label={contractInfo?.isPermanent ? 'Гэрээ эхэлсэн огноо' : 'Гэрээ эхэлсэн/дуусах огноо'}
+              value={contractInfo?.isPermanent
+                ? contractInfo?.startDate
+                : (contractInfo?.startDate && contractInfo?.endDate ? `${contractInfo.startDate} - ${contractInfo.endDate}` : null)}
+            />
+            <InfoField label="Гэрээний төрөл" value={contractInfo?.type} valueClassName="text-blue" />
             <InfoField label="Гэрээний дугаар" value={contractInfo?.contractNumber} />
             <InfoField label="НДШ тайлагнах төрөл" value={contractInfo?.insuranceType} />
             <InfoField label="НДШ төлсөн сар / Нийт ажилласан жилийн" value={contractInfo?.totalWorkMonths ? `${contractInfo.totalWorkMonths} сар` : null} />

@@ -12,6 +12,7 @@ import {
   InformationCircleIcon,
   LicenseIcon,
   Logout05Icon,
+  Notification01Icon,
   SmartPhone01Icon,
   UserIcon
 } from "@hugeicons-pro/core-stroke-standard";
@@ -30,24 +31,32 @@ interface MenuItemProps {
   label: string;
   labelClassName?: string;
   subtitle?: string;
+  info?: boolean;
   onPress?: () => void;
   trailing?: React.ReactNode;
 }
 
-function MenuItem({ icon, label, labelClassName, subtitle, onPress, trailing }: MenuItemProps) {
+function MenuItem({ icon, label, labelClassName, subtitle, info, onPress, trailing }: MenuItemProps) {
   return (
     <Pressable
       onPress={onPress}
       className="flex-row items-center h-12.5"
     >
-      <View className="w-7.5 h-7.5 bg-darkgray/7 rounded-[5px] justify-center items-center">
-        <HugeiconsIcon icon={icon} color="#959595" size={20} />
+      <View className="w-7.5 h-7.5 justify-center items-center">
+        <HugeiconsIcon icon={icon} color="#222222" size={20} />
       </View>
       <View className="flex-1 ml-3">
-        <AppText className={cn(
-          'text-sm font-medium',
-          labelClassName
-        )}>{label}</AppText>
+        <View className="flex-row items-center">
+          <AppText className={cn(
+            'text-sm font-medium',
+            labelClassName
+          )}>{label}</AppText>
+          {info && (
+            <View className="w-7.5 h-7.5 ml-3 justify-center items-center">
+              <HugeiconsIcon icon={InformationCircleIcon} color="#6a6a6a" size={20} />
+            </View>
+          )}
+        </View>
         {subtitle && (
           <AppText className="text-xs text-darkgray mt-0.5">{subtitle}</AppText>
         )}
@@ -137,19 +146,20 @@ export default function ProfileScreen() {
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={Agreement03Icon}
-              label="Хөдөлмөрийн гэрээний мэдээлэл"
+              label="Гэрээ & Цалингийн мэдээлэл"
               onPress={() => router.navigate('/contract-info')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={LicenseIcon}
-              label="Гэрээ & дүрэм журам"
+              label="Бусад гэрээ & дүрэм журам"
               onPress={() => router.navigate('/contract-files')}
             />
             <Separator className="bg-darkgray/12" />
             <MenuItem
-              icon={Clock01Icon}
-              label="Цаг бүртгэлийн мэдэгдэл"
+              icon={Notification01Icon}
+              label="Мэдэгдэл"
+              info
               trailing={
                 <AppSwitch
                   isSelected={attendanceReminder}
@@ -182,8 +192,8 @@ export default function ProfileScreen() {
             <Separator className="bg-darkgray/12" />
             <MenuItem
               icon={SmartPhone01Icon}
-              label="Холбоо барих дугаар"
-              subtitle="Бусад алба хэлтсийн ажилтнуудаас нуух"
+              label="Дугаараа нууцлах"
+              info
               trailing={
                 <AppSwitch
                   isSelected={hidePhone}

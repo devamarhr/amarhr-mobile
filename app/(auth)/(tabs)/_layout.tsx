@@ -31,6 +31,7 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           height: 50 + insets.bottom,
+          paddingHorizontal: 16
         },
         tabBarItemStyle: {
           alignItems: "center",

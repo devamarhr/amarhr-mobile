@@ -619,17 +619,17 @@ export default function OnboardingScreen() {
             <AppText className="text-red text-sm">{errors.profileImage.message}</AppText>
           )}
 
-          <View className="flex-row gap-3 w-full mt-4">
+          <View className="gap-5 w-full mt-4 items-center">
             <AppButton
               label="Утаснаас оруулах"
-              className="flex-1 bg-white border-darkgray/30 rounded-full"
-              labelClassName="text-black"
+              className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
+              labelClassName="text-black text-base"
               onPress={handleUploadFromPhone}
             />
             <AppButton
               label="Шинээр зураг авах"
-              className="flex-1 bg-white border-darkgray/30 rounded-full"
-              labelClassName="text-black"
+              className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
+              labelClassName="text-black text-base"
               onPress={handleTakePhoto}
             />
           </View>

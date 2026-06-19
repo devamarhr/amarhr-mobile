@@ -360,7 +360,7 @@ function SeniorAnnouncements() {
           ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
           ListEmptyComponent={
             <View className="items-center justify-center py-20">
-              <AppText className="text-sm text-darkgray">Зарлал байхгүй байна</AppText>
+              <AppText className="text-sm text-darkgray">Зарлал оруулаагүй байна</AppText>
             </View>
           }
           ListFooterComponent={

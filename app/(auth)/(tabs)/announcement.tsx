@@ -207,6 +207,12 @@ export default function AnnouncementScreen() {
             refreshing={refreshing}
             onRefresh={handleRefresh}
             ItemSeparatorComponent={() => <Separator className="bg-darkgray/20" />}
+            contentContainerStyle={announcements.length === 0 ? { flexGrow: 1 } : undefined}
+            ListEmptyComponent={
+              <View className="flex-1 items-center justify-center py-20">
+                <AppText className="text-sm text-darkgray">Зарлал оруулаагүй байна</AppText>
+              </View>
+            }
             ListFooterComponent={loadingMore ? (
               <View className="py-4 items-center">
                 <ActivityIndicator />
