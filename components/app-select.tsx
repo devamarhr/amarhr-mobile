@@ -88,6 +88,10 @@ interface AppSelectProps {
    */
   triggerClassName?: string;
   /**
+   * Optional icon element rendered on the left side of the trigger (before the value).
+   */
+  icon?: React.ReactNode;
+  /**
    * Color for the trigger arrow icon
    * @default '#222222'
    */
@@ -152,6 +156,7 @@ export function AppSelect({
   className,
   labelClassName,
   triggerClassName,
+  icon,
   arrowIconColor = '#222222',
   indicatorIconColor = '#18AA0B',
   indicatorIconSize = 24,
@@ -211,10 +216,12 @@ export function AppSelect({
             <PressableFeedback
               className={cn(
                 'flex-row rounded-lg border border-gray/30 items-center justify-center px-3 py-1 h-11 disabled:opacity-50',
+                icon && 'gap-2',
                 isInvalid && 'border-red',
                 triggerClassName
               )}
             >
+              {icon}
               <View className="flex-1">
                 {fullValue && renderValue ? (
                   renderValue(fullValue)

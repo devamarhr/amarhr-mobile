@@ -4,10 +4,12 @@ import type { DayData } from '@/components/timesheet-calendar';
 import { MiniCalendar, TimesheetCalendar } from '@/components/timesheet-calendar';
 import { api } from "@/config/api";
 import {
-  ArrowDown01Icon,
   Clock01Icon,
-  LoginCircle02Icon,
-  LogoutCircle02Icon,
+  Login03Icon,
+  Logout03Icon,
+} from '@hugeicons-pro/core-stroke-rounded';
+import {
+  ArrowDown01Icon,
   Sun03StrokeStandard,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -36,6 +38,21 @@ interface Shift {
   lateness_minutes: number;
   worked_duration_minutes: number | null;
   overtime_category: OvertimeCategory | null;
+}
+
+const OVERTIME_CATEGORY_LABELS: Record<OvertimeCategory, string> = {
+  overtime: 'Илүү цаг',
+  compensatory: 'Нөхөн олговорт цаг',
+  accumulated: 'Хуримтлуулсан цаг',
+  compensatory_rest: 'Нөхөн амралт',
+};
+
+// Цагийн төрөл (цаг засах header): илүү цаг -> ангилал, эс бөгөөс
+// тухайн өдөр чөлөө/амралттай бол түүний текст, аль нь ч биш бол "Энгийн цаг".
+function shiftTimeTypeLabel(shift: Shift, leave: string | null): string {
+  if (shift.overtime_category) return OVERTIME_CATEGORY_LABELS[shift.overtime_category];
+  if (leave) return leave;
+  return 'Энгийн цаг';
 }
 
 interface TimesheetDay {
@@ -77,6 +94,13 @@ function formatHolidayDates(dates: string[]): string {
 
 function hasPlannedShift(day: TimesheetDay): boolean {
   return day.shifts.some((s) => !!s.planned_start && !!s.planned_end);
+}
+
+// Monday-first weekday names.
+const WEEKDAY_LABELS = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
+
+function weekdayLabel(dateStr: string): string {
+  return WEEKDAY_LABELS[(dayjs(dateStr).day() + 6) % 7];
 }
 
 function deriveDayData(monthData: TimesheetDay[]): DayData[] {
@@ -171,6 +195,7 @@ function ShiftRow({
   shift,
   isFirst,
   dayStr,
+  weekdayStr,
   dayColor,
   isToday,
   isFuture,
@@ -180,6 +205,7 @@ function ShiftRow({
   shift: Shift | null;
   isFirst: boolean;
   dayStr: string;
+  weekdayStr: string;
   dayColor: string;
   isToday: boolean;
   isFuture: boolean;
@@ -227,8 +253,11 @@ function ShiftRow({
 
   return (
     <View className={cn('flex-row', !isFirst && 'border-t border-darkgray/5')}>
-      <View className={cn('w-14 h-14 items-center justify-center', isToday && isFirst && 'bg-lightblue')}>
-        <AppText className={cn('text-lg', dayColor, !isFirst && 'opacity-0')}>{dayStr}</AppText>
+      <View className={cn('w-[120px] px-[15px] py-[13px]', isToday && isFirst && 'bg-lightblue')}>
+        <View className={cn('flex-row items-baseline gap-2.5', !isFirst && 'opacity-0')}>
+          <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
+          <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
+        </View>
       </View>
       <View className="flex-1 items-center justify-center">
         <AppText className={cn('text-sm', arrivedColor)}>{arrivedDisplay}</AppText>
@@ -245,18 +274,17 @@ function ShiftRow({
 
 function TimesheetListRow({
   day,
-  month,
   today,
   timeCorrectionId,
 }: {
   day: TimesheetDay;
-  month: number;
   today: string;
   timeCorrectionId: string | null;
 }) {
   const dayNum = parseInt(day.cdate.split('-')[2], 10);
   const dateStr = day.cdate;
   const dayStr = String(dayNum).padStart(2, '0');
+  const weekdayStr = weekdayLabel(day.cdate);
   const isFuture = dateStr > today;
   const isToday = dateStr === today;
   const isPlanned = hasPlannedShift(day);
@@ -274,14 +302,17 @@ function TimesheetListRow({
     return (
       <View className="border-b border-darkgray/10 bg-yellow/10">
         <View className="flex-row">
-          <View className="w-14 h-14 items-center justify-center">
-            <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
+          <View className="w-[120px] px-[15px] py-[13px]">
+            <View className="flex-row items-baseline gap-2.5">
+              <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
+              <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
+            </View>
           </View>
-          <View className="flex-1 items-center justify-center">
+          <View className="flex-1 items-center">
             <HugeiconsIcon icon={Sun03StrokeStandard} size={24} color="#F0B400" />
           </View>
-          <View className="flex-1 items-center justify-center" />
-          <View className="flex-1 items-center justify-center" />
+          <View className="flex-1 items-center" />
+          <View className="flex-1 items-center" />
         </View>
       </View>
     );
@@ -293,12 +324,14 @@ function TimesheetListRow({
   const buildShiftPress = (shift: Shift) => {
     if (!timeCorrectionId || !isCurrentMonth || !shift.actual_start) return undefined;
     return () => {
-      const arrivedTime = extractTime(shift.actual_start) ?? '';
-      const leftTime = extractTime(shift.actual_end) ?? '';
+      const arrivedTime = extractTime(shift.actual_start) ?? '--:--';
+      const leftTime = extractTime(shift.actual_end) ?? '--:--';
       const arrivedDt = shift.actual_start?.slice(0, 16) ?? '';
       const leftDt = shift.actual_end?.slice(0, 16) ?? '';
       const headerInfoPayload = [
-        { label: 'Ирсэн, тарсан цаг', value: `${arrivedTime} - ${leftTime}` },
+        { label: 'Засах огноо', value: `${dayStr} / ${weekdayStr}` },
+        { label: 'Цагийн төрөл', value: shiftTimeTypeLabel(shift, day.leave) },
+        { label: 'Бүртгэгдсэн цаг', value: `${arrivedTime} - ${leftTime}` },
       ];
       const shiftPayload = { arrived: arrivedDt, left: leftDt };
       router.navigate({
@@ -307,7 +340,7 @@ function TimesheetListRow({
           id: timeCorrectionId,
           shiftId: String(shift.id),
           cdate: day.cdate,
-          title: `Цаг засах  ${String(month).padStart(2, '0')}/${dayStr}`,
+          title: 'Цаг засах',
           type: 'timeCorrection',
           headerInfo: JSON.stringify(headerInfoPayload),
           shift: JSON.stringify(shiftPayload),
@@ -326,6 +359,7 @@ function TimesheetListRow({
               shift={shift}
               isFirst={idx === 0}
               dayStr={dayStr}
+              weekdayStr={weekdayStr}
               dayColor={dayColor}
               isToday={isToday}
               isFuture={isFuture}
@@ -346,11 +380,9 @@ function TimesheetListRow({
 
 function TimesheetList({
   data,
-  month,
   timeCorrectionId,
 }: {
   data: TimesheetDay[];
-  month: number;
   timeCorrectionId: string | null;
 }) {
   const today = dayjs().format('YYYY-MM-DD');
@@ -359,15 +391,15 @@ function TimesheetList({
     <View className="pb-20">
       {/* Header */}
       <View className="flex-row">
-        <View className="w-14" />
-        <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={LoginCircle02Icon} size={22} color="#005FEE" />
+        <View className="w-[120px]" />
+        <View className="flex-1 items-center">
+          <HugeiconsIcon icon={Login03Icon} size={22} color="#6A6A6A80" />
         </View>
         <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={LogoutCircle02Icon} size={22} color="#005FEE" />
+          <HugeiconsIcon icon={Logout03Icon} size={22} color="#6A6A6A80" />
         </View>
         <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={Clock01Icon} size={22} color="#005FEE" />
+          <HugeiconsIcon icon={Clock01Icon} size={22} color="#6A6A6A80" />
         </View>
       </View>
 
@@ -376,7 +408,6 @@ function TimesheetList({
         <TimesheetListRow
           key={day.cdate}
           day={day}
-          month={month}
           today={today}
           timeCorrectionId={timeCorrectionId}
         />
@@ -455,7 +486,7 @@ function MonthView({
         />
       </View>
 
-      <TimesheetList data={monthData} month={month} timeCorrectionId={timeCorrectionId} />
+      <TimesheetList data={monthData} timeCorrectionId={timeCorrectionId} />
     </ScrollView>
   );
 }
@@ -646,11 +677,11 @@ function YearView({
       {/* Holidays */}
       {
         showHoliday && (
-          <View className="gap-3 mb-7.5">
+          <View className="gap-4 mb-7.5">
             {holidays.map((h) => (
-              <View key={h.key} className="flex-row gap-3">
-                <AppText className="text-sm text-blue w-24">{formatHolidayDates(h.dates)}</AppText>
-                <AppText className="text-sm flex-1">{h.name}</AppText>
+              <View key={h.key} className="gap-1">
+                <AppText className="text-sm text-blue">{formatHolidayDates(h.dates)}</AppText>
+                <AppText className="text-sm">{h.name}</AppText>
               </View>
             ))}
           </View>
@@ -751,7 +782,7 @@ export default function TimesheetScreen() {
       <View className="flex-row items-center justify-between px-4 mt-4 mb-5">
         {viewMode === 'month' ? (
           <AppSelect
-            title="Ажлын хуваарь, цагийн мэдээлэл"
+            title="Хуваарь, цагийн мэдээлэл"
             options={MONTH_OPTIONS}
             value={selectedMonth}
             onValueChange={(opt) => opt && setSelectedMonth(opt)}

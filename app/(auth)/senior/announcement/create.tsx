@@ -319,7 +319,7 @@ export default function CreateAnnouncementScreen() {
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
               )}
               <AppText className="text-sm text-darkgray">
                 {isUploading ? "Хуулж байна..." : "Файл хавсаргах"}
@@ -327,16 +327,16 @@ export default function CreateAnnouncementScreen() {
             </Pressable>
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-2">
+              <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={18} />
+                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

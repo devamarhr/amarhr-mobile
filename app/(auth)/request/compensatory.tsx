@@ -11,6 +11,7 @@ import {
   ArrowLeft02Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
+  Clock01Icon,
   FileAttachmentIcon,
   MultiplicationSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
@@ -36,6 +37,7 @@ type CompensatoryMode = 'day' | 'hour';
 
 interface FormData {
   compensatoryMode: CompensatoryMode;
+  hourDate?: string;
   start?: string;
   end?: string;
   description: string;
@@ -132,6 +134,7 @@ export default function CompensatoryRequestScreen() {
   });
 
   const compensatoryMode = watch('compensatoryMode');
+  const watchHourDate = watch('hourDate');
   const watchStart = watch('start');
   const watchEnd = watch('end');
   const [compensatoryCheck, setCompensatoryCheck] = useState<CompensatoryCheckResponse | null>(null);
@@ -193,6 +196,7 @@ export default function CompensatoryRequestScreen() {
 
   const handleModeChange = (mode: CompensatoryMode) => {
     setValue('compensatoryMode', mode);
+    setValue('hourDate', undefined);
     setValue('start', undefined);
     setValue('end', undefined);
     setCompensatoryCheck(null);
@@ -317,51 +321,130 @@ export default function CompensatoryRequestScreen() {
               </Pressable>
             </View>
 
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Controller
-                  control={control}
-                  name="start"
-                  rules={{ required: 'Эхлэх сонгоно уу' }}
-                  render={({ field: { onChange, value } }) => (
-                    <AppDatePicker
-                      label={compensatoryMode === 'day' ? 'Эхлэх өдөр' : 'Эхлэх цаг'}
-                      mode={compensatoryMode === 'day' ? 'date' : 'datetime'}
-                      value={value ? dayjs(value, dateFormat).toDate() : undefined}
-                      onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
-                      placeholder={compensatoryMode === 'day' ? '00/00' : '00/00 00:00'}
-                      format={compensatoryMode === 'day' ? 'MM/DD' : 'MM/DD HH:mm'}
-                      minuteInterval={compensatoryMode === 'hour' ? 5 : undefined}
-                      icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                      isInvalid={!!errors.start}
-                      errorMessage={errors.start?.message}
-                    />
-                  )}
-                />
+            {compensatoryMode === 'day' ? (
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Controller
+                    control={control}
+                    name="start"
+                    rules={{ required: 'Эхлэх сонгоно уу' }}
+                    render={({ field: { onChange, value } }) => (
+                      <AppDatePicker
+                        label="Эхлэх өдөр"
+                        mode="date"
+                        value={value ? dayjs(value, dateFormat).toDate() : undefined}
+                        onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
+                        placeholder="00/00"
+                        format="MM/DD"
+                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                        isInvalid={!!errors.start}
+                        errorMessage={errors.start?.message}
+                      />
+                    )}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Controller
+                    control={control}
+                    name="end"
+                    rules={{ required: 'Дуусах сонгоно уу' }}
+                    render={({ field: { onChange, value } }) => (
+                      <AppDatePicker
+                        label="Дуусах өдөр"
+                        mode="date"
+                        value={value ? dayjs(value, dateFormat).toDate() : undefined}
+                        onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
+                        placeholder="00/00"
+                        format="MM/DD"
+                        minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
+                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                        isInvalid={!!errors.end}
+                        errorMessage={errors.end?.message}
+                        isDisabled={!watchStart}
+                      />
+                    )}
+                  />
+                </View>
               </View>
-              <View className="flex-1">
-                <Controller
-                  control={control}
-                  name="end"
-                  rules={{ required: 'Дуусах сонгоно уу' }}
-                  render={({ field: { onChange, value } }) => (
-                    <AppDatePicker
-                      label={compensatoryMode === 'day' ? 'Дуусах өдөр' : 'Дуусах цаг'}
-                      mode={compensatoryMode === 'day' ? 'date' : 'datetime'}
-                      value={value ? dayjs(value, dateFormat).toDate() : undefined}
-                      onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
-                      placeholder={compensatoryMode === 'day' ? '00/00' : '00/00 00:00'}
-                      format={compensatoryMode === 'day' ? 'MM/DD' : 'MM/DD HH:mm'}
-                      minuteInterval={compensatoryMode === 'hour' ? 5 : undefined}
-                      minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
-                      icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                      isInvalid={!!errors.end}
-                      errorMessage={errors.end?.message}
+            ) : (
+              <>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Controller
+                      control={control}
+                      name="hourDate"
+                      rules={{ required: 'Өдөр сонгоно уу' }}
+                      render={({ field: { onChange, value } }) => (
+                        <AppDatePicker
+                          label="Нөхөж амрах өдөр"
+                          mode="date"
+                          value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                          onValueChange={(date) => {
+                            const d = dayjs(date).format('YYYY-MM-DD');
+                            onChange(d);
+                            // Re-anchor any already-picked times to the new date.
+                            if (watchStart) setValue('start', `${d} ${dayjs(watchStart, dateFormat).format('HH:mm')}`, { shouldValidate: true });
+                            if (watchEnd) setValue('end', `${d} ${dayjs(watchEnd, dateFormat).format('HH:mm')}`, { shouldValidate: true });
+                          }}
+                          placeholder="00/00"
+                          format="MM/DD"
+                          icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                          isInvalid={!!errors.hourDate}
+                          errorMessage={errors.hourDate?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </View>
-            </View>
+                  </View>
+                  <View className="flex-1" />
+                </View>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Controller
+                      control={control}
+                      name="start"
+                      rules={{ required: 'Эхлэх цаг сонгоно уу' }}
+                      render={({ field: { onChange, value } }) => (
+                        <AppDatePicker
+                          label="Эхлэх цаг"
+                          mode="time"
+                          value={value ? dayjs(value, dateFormat).toDate() : undefined}
+                          onValueChange={(date) => onChange(`${watchHourDate} ${dayjs(date).format('HH:mm')}`)}
+                          placeholder="00:00"
+                          format="HH:mm"
+                          minuteInterval={5}
+                          icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                          isInvalid={!!errors.start}
+                          errorMessage={errors.start?.message}
+                          isDisabled={!watchHourDate}
+                        />
+                      )}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Controller
+                      control={control}
+                      name="end"
+                      rules={{ required: 'Дуусах цаг сонгоно уу' }}
+                      render={({ field: { onChange, value } }) => (
+                        <AppDatePicker
+                          label="Дуусах цаг"
+                          mode="time"
+                          value={value ? dayjs(value, dateFormat).toDate() : undefined}
+                          onValueChange={(date) => onChange(`${watchHourDate} ${dayjs(date).format('HH:mm')}`)}
+                          placeholder="00:00"
+                          format="HH:mm"
+                          minuteInterval={5}
+                          icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                          isInvalid={!!errors.end}
+                          errorMessage={errors.end?.message}
+                          isDisabled={!watchHourDate}
+                        />
+                      )}
+                    />
+                  </View>
+                </View>
+              </>
+            )}
 
             {rangeError && (
               <AppText className="text-sm text-red -mt-3">{rangeError}</AppText>
@@ -376,13 +459,13 @@ export default function CompensatoryRequestScreen() {
               name="description"
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
-                  label="Тайлбар"
+                  label="Шалтгаан"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   isTextArea
                   className="h-22"
-                  placeholder="Тайлбараа энд бичнэ үү"
+                  placeholder="Шалтгаанаа энд бичнэ үү"
                 />
               )}
             />
@@ -391,22 +474,22 @@ export default function CompensatoryRequestScreen() {
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
               )}
               <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-2">
+              <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={18} />
+                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

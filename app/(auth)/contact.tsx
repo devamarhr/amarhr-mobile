@@ -8,9 +8,10 @@ import {
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Avatar, cn, Separator } from "heroui-native";
+import { Avatar, cn } from "heroui-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, LayoutChangeEvent, Linking, Pressable, ScrollView, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -85,13 +86,26 @@ function ContactCard({ contact, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  // show the divider only once the expand animation has fully settled;
+  // hide it immediately on collapse
+  const [showBorder, setShowBorder] = useState(false);
+
+  useEffect(() => {
+    if (!isExpanded) {
+      setShowBorder(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowBorder(true), 220);
+    return () => clearTimeout(timer);
+  }, [isExpanded]);
+
   return (
-    <View className={cn(
-      '',
-      isExpanded && 'bg-darkgray/5'
-    )}>
-      <Pressable onPress={onToggle} className="flex-row items-center gap-1 h-12.5">
-        <Avatar alt={contact.name} className="w-10 h-10">
+    <Animated.View
+      layout={LinearTransition.duration(220)}
+      className={cn(showBorder && 'border-b border-darkgray/30')}
+    >
+      <Pressable onPress={onToggle} className="flex-row items-center gap-2.5 h-16 py-1.5">
+        <Avatar alt={contact.name} className="w-13 h-13">
           {contact.avatar ? (
             <Avatar.Image source={{ uri: contact.avatar }} />
           ) : null}
@@ -105,27 +119,31 @@ function ContactCard({ contact, isExpanded, onToggle }: {
         </View>
       </Pressable>
       {isExpanded && (
-        <View className="pt-3 pb-2">
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(140)}
+          className="pt-3 pb-2"
+        >
           <Pressable
-            className="flex-row items-center mb-2 gap-1"
+            className="flex-row items-center mb-2 gap-2.5"
             onPress={() => contact.phone && Linking.openURL(`tel:${contact.phone}`)}
           >
-            <View className="w-10 items-center justify-center">
+            <View className="w-13 items-center justify-center">
               <HugeiconsIcon icon={SmartPhone01Icon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className={`text-sm ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
+            <AppText className={`text-sm font-medium ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
               {contact.phone ?? '********'}
             </AppText>
           </Pressable>
-          <View className="flex-row items-center">
-            <View className="w-10 items-center justify-center">
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-13 items-center justify-center">
               <HugeiconsIcon icon={AtIcon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className="text-sm">{contact.email ?? '-'}</AppText>
+            <AppText className="text-sm font-medium">{contact.email ?? '-'}</AppText>
           </View>
-        </View>
+        </Animated.View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -135,6 +153,34 @@ export default function ContactScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [contacts, setContacts] = useState<ContactApi[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tabLayouts, setTabLayouts] = useState<{ x: number; width: number }[]>([]);
+  const indicatorProgress = useSharedValue(0);
+
+  const handleTabLayout = (index: number, e: LayoutChangeEvent) => {
+    const { x, width } = e.nativeEvent.layout;
+    setTabLayouts((prev) => {
+      const next = [...prev];
+      next[index] = { x, width };
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    // re-grow the underline from its center to both sides on every tab change
+    indicatorProgress.value = 0;
+    indicatorProgress.value = withTiming(1, { duration: 280 });
+  }, [activeTab, indicatorProgress]);
+
+  const indicatorStyle = useAnimatedStyle(() => {
+    const layout = tabLayouts[activeTab];
+    if (!layout) return { opacity: 0 };
+    return {
+      opacity: 1,
+      left: layout.x,
+      width: layout.width,
+      transform: [{ scaleX: indicatorProgress.value }],
+    };
+  });
 
   useEffect(() => {
     api<ContactApi[]>({ path: '/contacts', method: 'GET' })
@@ -171,19 +217,25 @@ export default function ContactScreen() {
           />
         </View>
 
-        <View className="flex-row px-4 mb-4">
-          {TABS.map((tab, index) => (
-            <Pressable
-              key={tab}
-              onPress={() => setActiveTab(index)}
-              className="mr-6 pb-1"
-              style={activeTab === index ? { borderBottomWidth: 2, borderBottomColor: '#005FEE' } : undefined}
-            >
-              <AppText className={`text-sm ${activeTab === index ? 'font-medium text-black' : 'text-darkgray'}`}>
-                {tab}
-              </AppText>
-            </Pressable>
-          ))}
+        <View className="px-4 mb-4">
+          <View className="flex-row relative pb-1.5">
+            {TABS.map((tab, index) => (
+              <Pressable
+                key={tab}
+                onPress={() => setActiveTab(index)}
+                onLayout={(e) => handleTabLayout(index, e)}
+                className="mr-6"
+              >
+                <AppText className={`text-sm ${activeTab === index ? 'font-medium text-black' : 'text-darkgray'}`}>
+                  {tab}
+                </AppText>
+              </Pressable>
+            ))}
+            <Animated.View
+              className="absolute bottom-0 h-0.5 rounded-full bg-blue"
+              style={indicatorStyle}
+            />
+          </View>
         </View>
 
         {loading ? (
@@ -199,15 +251,13 @@ export default function ContactScreen() {
                 </View>
 
                 <View className="px-4">
-                  {dept.contacts.map((contact, index) => (
-                    <View key={contact.id}>
-                      <ContactCard
-                        contact={contact}
-                        isExpanded={expandedId === contact.id}
-                        onToggle={() => setExpandedId(expandedId === contact.id ? null : contact.id)}
-                      />
-                      {index < dept.contacts.length - 1 && <Separator className="bg-darkgray/12" />}
-                    </View>
+                  {dept.contacts.map((contact) => (
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      isExpanded={expandedId === contact.id}
+                      onToggle={() => setExpandedId(expandedId === contact.id ? null : contact.id)}
+                    />
                   ))}
                 </View>
               </View>

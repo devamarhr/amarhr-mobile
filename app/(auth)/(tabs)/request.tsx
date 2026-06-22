@@ -3,8 +3,9 @@ import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { api } from '@/config/api';
 import { useNotificationStore } from '@/store/notification-store';
+import { useRequestRefreshStore } from '@/store/request-refresh-store';
 import dayjs from 'dayjs';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Separator } from 'heroui-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
@@ -38,6 +39,8 @@ interface RequestItem {
   availableEndDate?: string;
   maxLeaveSplits?: number;
   annualLeaveSplits?: AnnualLeaveSplit[];
+  settingType?: string;
+  settingKey?: string;
 }
 
 interface RequestCategory {
@@ -61,7 +64,7 @@ interface ApiRequestSetting {
     annual_leave_available_end_date?: string;
     max_leave_splits?: number;
     annual_leave_splits?: AnnualLeaveSplit[];
-    compensatory_hours?: number;
+    compensatory_minutes?: number;
     compensatory_max_hour?: number;
     compensatory_max_day?: number;
   };
@@ -107,11 +110,19 @@ function getFormType(setting: ApiRequestSetting): FormType {
   return 'textOnly';
 }
 
+// Format a minutes value as HH:mm, e.g. 90 -> "01:30", 720 -> "12:00".
+function formatMinutesAsHHMM(minutes: number): string {
+  const safe = Math.max(0, Math.round(minutes));
+  const h = Math.floor(safe / 60);
+  const m = safe % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined {
   const detail = setting.detail;
 
-  if (detail.key === 'compensatory' && detail.compensatory_hours != null) {
-    return [{ label: 'Хуримтлагдсан цаг', value: `${detail.compensatory_hours} цаг` }];
+  if (detail.key === 'compensatory' && detail.compensatory_minutes != null) {
+    return [{ label: 'Хуримтлагдсан цаг', value: formatMinutesAsHHMM(detail.compensatory_minutes) }];
   }
 
   const annualLeaveTotal = detail.annual_leave_total_days ?? detail.annual_leave_available_days;
@@ -195,6 +206,8 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           availableEndDate: detail.annual_leave_available_end_date,
           maxLeaveSplits: detail.key === 'annual_leave' ? detail.max_leave_splits : undefined,
           annualLeaveSplits: detail.key === 'annual_leave' ? detail.annual_leave_splits : undefined,
+          settingType: s.type,
+          settingKey: detail.key ?? undefined,
         };
       }),
     });
@@ -321,6 +334,17 @@ export default function RequestScreen() {
     }
   }, [activeTab, fetchRequests]);
 
+  // Refetch the list when returning after a request was cancelled on the detail screen.
+  useFocusEffect(
+    useCallback(() => {
+      if (useRequestRefreshStore.getState().shouldRefresh) {
+        useRequestRefreshStore.getState().clearRefresh();
+        setActiveTab(1);
+        fetchRequests(1, true);
+      }
+    }, [fetchRequests])
+  );
+
   const handleEndReached = useCallback(() => {
     if (currentPage.current < lastPage.current) {
       fetchRequests(currentPage.current + 1);
@@ -353,6 +377,8 @@ export default function RequestScreen() {
         ...(item.annualLeaveSplits?.length && {
           annualLeaveSplits: JSON.stringify(item.annualLeaveSplits),
         }),
+        ...(item.settingType && { settingType: item.settingType }),
+        ...(item.settingKey && { settingKey: item.settingKey }),
       },
     });
   };
@@ -431,7 +457,7 @@ export default function RequestScreen() {
             onRefresh={handleRefresh}
             ItemSeparatorComponent={() => <Separator className="bg-darkgray/20" />}
             ListEmptyComponent={
-              <View className="items-center justify-center py-20">
+              <View className="items-center justify-center pt-5">
                 <AppText className="text-sm text-darkgray">Та одоогоор өргөдөл хүсэлт илгээгээгүй байна</AppText>
               </View>
             }
@@ -461,20 +487,20 @@ export default function RequestScreen() {
                       </AppText>
                     )}
                   </View>
-                  {employeeRequest.decision_detail?.comment && (
-                    <>
-                      <AppText className="text-sm text-darkgray mt-1">
-                        {getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр'}
-                      </AppText>
-                      <AppText className="text-sm mt-0.5 mb-2" numberOfLines={3}>{employeeRequest.decision_detail.comment}</AppText>
-                    </>
-                  )}
                   {employeeRequest.review_detail?.comment && (
                     <>
                       <AppText className="text-sm text-darkgray mt-1">
                         {getReviewLabel(employeeRequest.review_by_type) ?? 'Санал'}
                       </AppText>
-                      <AppText className="text-sm mt-0.5" numberOfLines={3}>{employeeRequest.review_detail.comment}</AppText>
+                      <AppText className="text-sm mt-0.5 mb-2" numberOfLines={3}>{employeeRequest.review_detail.comment}</AppText>
+                    </>
+                  )}
+                  {employeeRequest.decision_detail?.comment && (
+                    <>
+                      <AppText className="text-sm text-darkgray mt-1">
+                        {getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр'}
+                      </AppText>
+                      <AppText className="text-sm mt-0.5" numberOfLines={3}>{employeeRequest.decision_detail.comment}</AppText>
                     </>
                   )}
                 </Pressable>

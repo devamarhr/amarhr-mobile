@@ -6,6 +6,7 @@ import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
 import { api, uploadFile } from '@/config/api';
+import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import {
   Alert01Icon,
   ArrowLeft02Icon,
@@ -16,7 +17,6 @@ import {
   PlusSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spinner, useToast } from 'heroui-native';
@@ -126,10 +126,15 @@ function SplitRow({
     return Array.from({ length: cap }, (_, i) => ({ value: String(i + 1), label: `${i + 1} хоног` }));
   }, [maxDays, days]);
 
-  const minDate = useMemo(
-    () => dayjs(availability.start_date, 'YYYY-MM-DD').toDate(),
-    [availability.start_date],
-  );
+  const minDate = useMemo(() => {
+    const availStart = dayjs(availability.start_date, 'YYYY-MM-DD');
+    // for the 2nd split onward, the earliest selectable day is the day
+    // after the previous split's end date (no overlap allowed)
+    const prevEnd = index > 0 ? allSplits[index - 1]?.endDate : undefined;
+    if (!prevEnd) return availStart.toDate();
+    const afterPrev = dayjs(prevEnd, 'YYYY-MM-DD').add(1, 'day');
+    return (afterPrev.isAfter(availStart) ? afterPrev : availStart).toDate();
+  }, [availability.start_date, allSplits, index]);
   const maxDate = useMemo(
     () => dayjs(availability.end_date, 'YYYY-MM-DD').toDate(),
     [availability.end_date],
@@ -138,8 +143,8 @@ function SplitRow({
   const rowErrors = errors?.splits?.[index];
 
   return (
-    <View className="gap-1">
-      <View className="flex-row gap-2 items-end">
+    <View className="gap-5">
+      <View className="flex-row gap-3">
         <View className="flex-1">
           <Controller
             control={control}
@@ -147,7 +152,7 @@ function SplitRow({
             rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppDatePicker
-                label="Эхлэх"
+                label={index === 0 ? 'Эхлэх өдөр' : undefined}
                 mode="date"
                 value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
                 onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
@@ -168,29 +173,33 @@ function SplitRow({
             rules={{ required: 'Хоног сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppSelect
-                label="Хоног"
+                label={index === 0 ? 'Амрах хоног' : undefined}
                 options={dayOptions}
                 value={dayOptions.find((o) => o.value === value)}
                 onValueChange={(opt) => onChange(opt?.value ?? '')}
                 placeholder="Сонгох"
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                 isInvalid={!!rowErrors?.days || hasOverlap}
               />
             )}
           />
         </View>
-        <View className="gap-2">
-          <AppText className="text-sm font-normal text-darkgray text-center">Дуусах</AppText>
-          <View className="h-11 justify-center items-center">
-            <AppText className={`text-sm ${endDate ? '' : 'text-muted'}`}>
-              {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '--/--'}
-            </AppText>
-          </View>
+      </View>
+      <View className="flex-row gap-3 items-center">
+        <View className={`flex-1 flex-row items-center gap-2 border rounded-lg h-11 px-3 ${hasOverlap ? 'border-red' : 'border-gray/30'}`}>
+          <HugeiconsIcon icon={Calendar03Icon} color="#B4B4B4" size={20} />
+          <AppText className={`text-sm flex-1 ${startDate && endDate ? '' : 'text-muted'}`} numberOfLines={1}>
+            {startDate && endDate
+              ? `${dayjs(startDate, 'YYYY-MM-DD').format('YYYY/MM/DD')} - ${dayjs(endDate, 'YYYY-MM-DD').format('YYYY/MM/DD')}`
+              : '0000/00/00 - 0000/00/00'}
+          </AppText>
         </View>
         <Pressable
           onPress={onRemove}
-          className="w-7 h-11 items-center justify-center"
+          className="w-11 h-11 items-center justify-center border border-gray/30 rounded-lg"
         >
-          <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={16} />
+          <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
         </Pressable>
       </View>
       {hasOverlap && (
@@ -407,28 +416,28 @@ export default function AnnualLeaveRequestScreen() {
           {availability && (
             <View className="gap-2.5">
               <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-48">Боломжит хоног</AppText>
-                <AppText className="text-sm font-medium text-darkerblue">
-                  {availability.available_days} хоног
-                </AppText>
-              </View>
-              <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-48">Сонгох боломжит</AppText>
-                <AppText className="text-sm font-medium text-darkerblue">
+                <AppText className="text-sm text-darkblue w-[180px]">Э/амралтын цикл</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
                   {dayjs(availability.start_date, 'YYYY-MM-DD').format('YY/MM/DD')} -{' '}
                   {dayjs(availability.end_date, 'YYYY-MM-DD').format('YY/MM/DD')}
                 </AppText>
               </View>
               <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-48">Үлдсэн</AppText>
-                <AppText className="text-sm font-medium text-darkerblue">
+                <AppText className="text-sm text-darkblue w-[180px]">Боломжит хоног</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                  {availability.available_days} хоног
+                </AppText>
+              </View>
+              <View className="flex-row gap-2">
+                <AppText className="text-sm text-darkblue w-[180px]">Үлдсэн хоног</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
                   {Math.max(0, remainingDays)} хоног
                 </AppText>
               </View>
               {maxLeaveSplits != null && (
                 <View className="flex-row gap-2">
-                  <AppText className="text-sm text-darkblue w-48">Хуваах боломжит</AppText>
-                  <AppText className="text-sm font-medium text-darkerblue">
+                  <AppText className="text-sm text-darkblue w-[180px]">Хувааж авах боломж</AppText>
+                  <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
                     {maxLeaveSplits} удаа
                   </AppText>
                 </View>
@@ -483,24 +492,19 @@ export default function AnnualLeaveRequestScreen() {
                     maxLeaveSplits != null && fields.length >= maxLeaveSplits;
                   const addDisabled = remainingDays <= 0 || reachedSplitLimit;
                   return (
-                    <Pressable
-                      onPress={() => append({ startDate: '', days: '', endDate: '' })}
-                      disabled={addDisabled}
-                      className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
-                    >
-                      <HugeiconsIcon
-                        icon={PlusSignIcon}
-                        color={addDisabled ? '#9CA3AF' : '#222222'}
-                        size={20}
-                      />
-                      <AppText
-                        className={`text-sm font-medium ${
-                          addDisabled ? 'text-darkgray/50' : 'text-black'
-                        }`}
+                    <View className="flex-row justify-end">
+                      <Pressable
+                        onPress={() => append({ startDate: '', days: '', endDate: '' })}
+                        disabled={addDisabled}
+                        className="w-11 h-11 items-center justify-center border border-gray/30 rounded-lg disabled:opacity-50"
                       >
-                        {reachedSplitLimit ? `Дээд хязгаар ${maxLeaveSplits} удаа` : 'Нэмэх'}
-                      </AppText>
-                    </Pressable>
+                        <HugeiconsIcon
+                          icon={PlusSignIcon}
+                          color={addDisabled ? '#9CA3AF' : '#18AA0B'}
+                          size={24}
+                        />
+                      </Pressable>
+                    </View>
                   );
                 })()}
 
@@ -509,13 +513,13 @@ export default function AnnualLeaveRequestScreen() {
                   name="description"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppTextField
-                      label="Тайлбар"
+                      label="Шалтгаан"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
                       isTextArea
                       className="h-22"
-                      placeholder="Тайлбараа энд бичнэ үү"
+                      placeholder="Шалтгаанаа энд бичнэ үү"
                     />
                   )}
                 />
@@ -528,7 +532,7 @@ export default function AnnualLeaveRequestScreen() {
                   {isUploading ? (
                     <Spinner color="#005FEE" size="sm" />
                   ) : (
-                    <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                    <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
                   )}
                   <AppText className="text-sm text-darkgray">
                     {isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}
@@ -538,9 +542,9 @@ export default function AnnualLeaveRequestScreen() {
             )}
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-2">
+              <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>
                     {file.name}
                   </AppText>
@@ -549,7 +553,7 @@ export default function AnnualLeaveRequestScreen() {
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={18} />
+                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

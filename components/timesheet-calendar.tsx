@@ -118,7 +118,7 @@ function DayCell({
 
   return (
     <View className={cn(
-      'flex-1 items-center py-1 rounded-md',
+      'flex-1 aspect-square items-center justify-center rounded-md',
       day.isToday && day.isCurrentMonth && 'bg-lightblue',
     )}>
       <View className="">

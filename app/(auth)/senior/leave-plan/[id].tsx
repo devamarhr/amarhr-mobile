@@ -175,7 +175,7 @@ function SplitRow({
           </View>
         </View>
         <Pressable onPress={onRemove} className="w-7 h-11 items-center justify-center">
-          <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={16} />
+          <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
         </Pressable>
       </View>
       {hasOverlap && <AppText className="text-xs text-red">Өдөр давхцаж байна</AppText>}
@@ -195,6 +195,7 @@ export default function SeniorLeavePlanScreen() {
     startDate?: string;
     endDate?: string;
     profileImageUrl?: string;
+    maxSplits?: string;
   }>();
   const { toast } = useToast();
 
@@ -211,6 +212,11 @@ export default function SeniorLeavePlanScreen() {
       available_days: Number(params.totalDays),
     };
   }, [params.totalDays, params.startDate, params.endDate]);
+
+  const maxSplits = useMemo(() => {
+    const n = Number(params.maxSplits);
+    return Number.isFinite(n) && n > 0 ? n : Infinity;
+  }, [params.maxSplits]);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -405,26 +411,34 @@ export default function SeniorLeavePlanScreen() {
                 })}
 
                 {(() => {
-                  const addDisabled = remainingDays <= 0;
+                  const reachedMaxSplits = fields.length >= maxSplits;
+                  const addDisabled = remainingDays <= 0 || reachedMaxSplits;
                   return (
-                    <Pressable
-                      onPress={() => append({ startDate: '', days: '', endDate: '' })}
-                      disabled={addDisabled}
-                      className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
-                    >
-                      <HugeiconsIcon
-                        icon={PlusSignIcon}
-                        color={addDisabled ? '#9CA3AF' : '#222222'}
-                        size={20}
-                      />
-                      <AppText
-                        className={`text-sm font-medium ${
-                          addDisabled ? 'text-darkgray/50' : 'text-black'
-                        }`}
+                    <View className="gap-2">
+                      <Pressable
+                        onPress={() => append({ startDate: '', days: '', endDate: '' })}
+                        disabled={addDisabled}
+                        className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
                       >
-                        Нэмэх
-                      </AppText>
-                    </Pressable>
+                        <HugeiconsIcon
+                          icon={PlusSignIcon}
+                          color={addDisabled ? '#9CA3AF' : '#222222'}
+                          size={20}
+                        />
+                        <AppText
+                          className={`text-sm font-medium ${
+                            addDisabled ? 'text-darkgray/50' : 'text-black'
+                          }`}
+                        >
+                          Нэмэх
+                        </AppText>
+                      </Pressable>
+                      {reachedMaxSplits && (
+                        <AppText className="text-xs text-darkgray text-center">
+                          Дээд тал нь {maxSplits} удаа хуваах боломжтой
+                        </AppText>
+                      )}
+                    </View>
                   );
                 })()}
               </>

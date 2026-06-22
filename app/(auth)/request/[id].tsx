@@ -1,14 +1,19 @@
+import { AppButton } from '@/components/app-button';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
+import { AppToast } from '@/components/app-toast';
 import { api } from '@/config/api';
+import { useRequestRefreshStore } from '@/store/request-refresh-store';
 import {
+  Alert01Icon,
   ArrowLeft02Icon,
+  CheckmarkCircle02Icon,
   FileAttachmentIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { useLocalSearchParams } from 'expo-router';
-import { Dialog, Separator } from 'heroui-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Dialog, Separator, useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,9 +34,17 @@ type FormType =
 
 type ReviewerType = string | null;
 
+interface Attachment {
+  name: string;
+  path: string;
+  url: string;
+}
+
 interface ReviewDetail {
   comment: string | null;
+  attachments?: Attachment[] | null;
   review_at?: string | null;
+  reviewed_at?: string | null;
   decision_at?: string | null;
 }
 
@@ -42,7 +55,7 @@ interface SettingDetail {
   annual_leave_available_days?: number;
   annual_leave_available_start_date?: string | null;
   annual_leave_available_end_date?: string | null;
-  compensatory_hours?: number;
+  compensatory_minutes?: number;
   salary_percent?: number;
   has_salary?: boolean;
 }
@@ -64,7 +77,7 @@ interface EmployeeRequestDetail {
   decision_by_type: ReviewerType;
   decision_detail: ReviewDetail | null;
   detail: Record<string, any> | null;
-  attachments: { name: string; path: string; url: string }[] | null;
+  attachments: Attachment[] | null;
   created_at: string | null;
   setting: RequestSetting;
 }
@@ -132,23 +145,43 @@ interface InfoRow {
 function InfoRowsView({ rows }: { rows: InfoRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <View className="gap-2.5">
+    <View className="gap-5">
       {rows.map((row, i) => (
-        <View key={i} className="flex-row gap-2 justify-between">
-          <AppText className="text-sm text-darkblue">{row.label}</AppText>
-          <AppText className="text-sm font-medium text-darkerblue">{row.value}</AppText>
+        <View key={i} className="gap-1">
+          <AppText className="text-sm text-darkgray/50">{row.label}</AppText>
+          <AppText className="text-base font-medium text-black">{row.value}</AppText>
         </View>
       ))}
     </View>
   );
 }
 
+function AttachmentButton({
+  attachments,
+  onPress,
+}: {
+  attachments?: Attachment[] | null;
+  onPress: () => void;
+}) {
+  if (!attachments || attachments.length === 0) return null;
+  return (
+    <Pressable className="flex-row items-center gap-1.5 self-start mt-1.5" onPress={onPress}>
+      <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+      <AppText className="text-base text-blue">Хавсралттай</AppText>
+    </Pressable>
+  );
+}
+
 export default function RequestDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { toast } = useToast();
   const [request, setRequest] = useState<EmployeeRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [viewingAttachments, setViewingAttachments] = useState<Attachment[] | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     api<EmployeeRequestDetail>({
@@ -168,6 +201,48 @@ export default function RequestDetailScreen() {
   const detail = request?.detail ?? {};
   const description = (detail.description as string | undefined) ?? '';
   const status = request ? statusMap[request.status] ?? { label: request.status, color: 'text-darkgray' } : null;
+  const isPending = request
+    ? ['pending', 'senior_pending', 'review_pending'].includes(request.status)
+    : false;
+
+  const handleConfirmCancel = async () => {
+    if (!request || cancelling) return;
+    setCancelling(true);
+    try {
+      const res = await api<{ result?: string; message: string }>({
+        path: `/employee-request/${request.id}`,
+        method: 'DELETE',
+      });
+      setConfirmOpen(false);
+      if (res.status === 200) {
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="success"
+              description={res.message || 'Хүсэлт амжилттай устгалаа.'}
+              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            />
+          ),
+        });
+        useRequestRefreshStore.getState().requestRefresh();
+        router.back();
+      } else {
+        toast.show({
+          component: (props) => (
+            <AppToast
+              {...props}
+              variant="danger"
+              description={res.message || 'Алдаа гарлаа'}
+              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            />
+          ),
+        });
+      }
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const formRows = useMemo<InfoRow[]>(() => {
     if (!request) return [];
@@ -336,6 +411,13 @@ export default function RequestDetailScreen() {
       const settingFields = request.setting.detail?.fields;
       const settingFieldsObj =
         settingFields && !Array.isArray(settingFields) ? settingFields : undefined;
+
+      const hasSalary =
+        detail.has_salary ?? request.setting.detail?.has_salary ?? settingFieldsObj?.has_salary;
+      if (hasSalary != null) {
+        rows.push({ label: 'Амралт чөлөөний төрөл', value: hasSalary ? 'Цалинтай' : 'Цалингүй' });
+      }
+
       const isHourMode =
         detail.startTime != null ||
         detail.endTime != null ||
@@ -386,11 +468,6 @@ export default function RequestDetailScreen() {
         }
       }
 
-      const hasSalary =
-        detail.has_salary ?? request.setting.detail?.has_salary ?? settingFieldsObj?.has_salary;
-      if (hasSalary != null) {
-        rows.push({ label: 'Цалин', value: hasSalary ? 'Цалинтай' : 'Цалингүй' });
-      }
       return rows;
     }
 
@@ -434,7 +511,7 @@ export default function RequestDetailScreen() {
       0
     );
     return (
-      <View className="gap-2.5">
+      <View className="gap-5">
         {splits.map((p: any, i: number) => {
           const start = p.start_date ? dayjs(p.start_date, 'YYYY-MM-DD') : null;
           const end = p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD') : null;
@@ -446,16 +523,16 @@ export default function RequestDetailScreen() {
             value = start.format('YYYY/MM/DD');
           }
           return (
-            <View key={i} className="flex-row gap-2 justify-between">
-              <AppText className="text-sm text-darkblue">Амралт {i + 1}</AppText>
-              <AppText className="text-sm font-medium text-darkerblue">{value}</AppText>
+            <View key={i} className="gap-1">
+              <AppText className="text-sm text-darkgray/50">Амралт {i + 1}</AppText>
+              <AppText className="text-base font-medium text-black">{value}</AppText>
             </View>
           );
         })}
         {totalDays > 0 && (
-          <View className="flex-row gap-2 justify-between">
-            <AppText className="text-sm text-darkblue">Хоног</AppText>
-            <AppText className="text-sm font-medium text-darkerblue">{totalDays} хоног</AppText>
+          <View className="gap-1">
+            <AppText className="text-sm text-darkgray/50">Хоног</AppText>
+            <AppText className="text-base font-medium text-black">{totalDays} хоног</AppText>
           </View>
         )}
       </View>
@@ -463,7 +540,7 @@ export default function RequestDetailScreen() {
   };
 
   return (
-    <View className="flex-1 bg-lightblue">
+    <View className="flex-1 bg-[#f2f2f2]">
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
           backTitle="Буцах"
@@ -501,41 +578,42 @@ export default function RequestDetailScreen() {
                     ? <InfoRowsView rows={formRows} />
                     : null}
 
-                <View className="gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <AppText className="text-sm text-darkblue">Шалтгаан</AppText>
-                    {request.attachments && request.attachments.length > 0 && (
-                      <Pressable
-                        className="flex-row items-center gap-1.5"
-                        onPress={() => setAttachmentsOpen(true)}
-                      >
-                        <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={16} />
-                        <AppText className="text-sm text-blue">Хавсралттай</AppText>
-                      </Pressable>
-                    )}
-                  </View>
-                  <AppText className={`text-sm ${description ? 'text-darkerblue' : 'text-muted'}`}>
+                <View className="gap-1">
+                  <AppText className="text-sm text-darkgray/50">Шалтгаан</AppText>
+                  <AppText className={`text-base ${description ? 'text-black' : 'text-muted'}`}>
                     {description || '-'}
                   </AppText>
+                  <AttachmentButton
+                    attachments={request.attachments}
+                    onPress={() => setViewingAttachments(request.attachments)}
+                  />
                 </View>
 
                 {(request.decision_detail?.comment || request.review_detail?.comment) && (
                   <View className="gap-3 pt-2">
                     <Separator className="bg-darkgray/12" />
-                    {request.decision_detail?.comment && (
-                      <View>
-                        <AppText className="text-sm text-darkgray">
-                          {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
-                        </AppText>
-                        <AppText className="text-sm mt-1">{request.decision_detail.comment}</AppText>
-                      </View>
-                    )}
                     {request.review_detail?.comment && (
                       <View>
                         <AppText className="text-sm text-darkgray">
                           {getReviewLabel(request.review_by_type) ?? 'Санал'}
                         </AppText>
                         <AppText className="text-sm mt-1">{request.review_detail.comment}</AppText>
+                        <AttachmentButton
+                          attachments={request.review_detail.attachments}
+                          onPress={() => setViewingAttachments(request.review_detail!.attachments!)}
+                        />
+                      </View>
+                    )}
+                    {request.decision_detail?.comment && (
+                      <View>
+                        <AppText className="text-sm text-darkgray">
+                          {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
+                        </AppText>
+                        <AppText className="text-sm mt-1">{request.decision_detail.comment}</AppText>
+                        <AttachmentButton
+                          attachments={request.decision_detail.attachments}
+                          onPress={() => setViewingAttachments(request.decision_detail!.attachments!)}
+                        />
                       </View>
                     )}
                   </View>
@@ -546,19 +624,27 @@ export default function RequestDetailScreen() {
 
             {status && (
               <View
-                className="px-4 bg-background items-center"
+                className="px-4 bg-background"
                 style={{ paddingBottom: insets.bottom + 10, paddingTop: 12 }}
               >
-                <AppText className={`text-base font-medium ${status.color}`}>
+                <AppText className={`text-base font-medium text-center ${status.color}`}>
                   {status.label}
                 </AppText>
+                {isPending && (
+                  <AppButton
+                    label="Илгээсэн өргөдөл хүсэлтийг цуцлах"
+                    onPress={() => setConfirmOpen(true)}
+                    className="w-full rounded-full mt-3"
+                    labelClassName="text-red/50 text-base font-medium"
+                  />
+                )}
               </View>
             )}
           </>
         )}
       </StyledSafeAreaView>
 
-      <Dialog isOpen={attachmentsOpen} onOpenChange={setAttachmentsOpen}>
+      <Dialog isOpen={viewingAttachments !== null} onOpenChange={(o) => !o && setViewingAttachments(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="bg-[#6C719F]/40" />
           <Dialog.Content>
@@ -566,18 +652,47 @@ export default function RequestDetailScreen() {
               <Dialog.Title>Хавсралт</Dialog.Title>
             </View>
             <View className="gap-2">
-              {request?.attachments?.map((file, i) => (
+              {viewingAttachments?.map((file, i) => (
                 <Pressable
                   key={i}
                   className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
                   onPress={() => Linking.openURL(file.url)}
                 >
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
                   <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
                     {file.name}
                   </AppText>
                 </Pressable>
               ))}
+            </View>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      <Dialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="bg-[#6C719F]/40" />
+          <Dialog.Content>
+            <View className="mb-5 gap-1.5">
+              <Dialog.Title>Хүсэлт цуцлах</Dialog.Title>
+              <Dialog.Description>
+                Та илгээсэн өргөдөл хүсэлтээ цуцлахдаа итгэлтэй байна уу?
+              </Dialog.Description>
+            </View>
+            <View className="flex-row justify-end gap-3">
+              <AppButton
+                label="Үгүй"
+                className="border-transparent bg-transparent"
+                onPress={() => setConfirmOpen(false)}
+              />
+              <AppButton
+                label="Тийм"
+                labelClassName="text-white"
+                className="bg-red border-red/15"
+                isLoading={cancelling}
+                spinnerColor="#FFFFFF"
+                onPress={handleConfirmCancel}
+              />
             </View>
           </Dialog.Content>
         </Dialog.Portal>

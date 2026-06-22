@@ -1,6 +1,5 @@
-import { View, ScrollView, Pressable } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { Separator } from 'heroui-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 import { AppText } from '@/components/app-text';
@@ -23,17 +22,13 @@ interface SalaryLine {
   label: string;
   amount: string;
   detail?: string;
-  bold?: boolean;
-  labelColor?: string;
-  amountColor?: string;
 }
 
 const SALARY_ITEMS: SalaryLine[] = [
-  { label: 'Нийт цалин', amount: '5,500,000.00', bold: true, labelColor: 'text-darkgreen' },
   { label: 'Ирцэд ноогдох цалин', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Гүйцэтгэлийн цалин', amount: '5,500,000.00', detail: '100 %' },
-  { label: 'Гадуур', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
-  { label: 'Зайнаас', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
+  { label: 'Гадуур ажилласан', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
+  { label: 'Зайнаас ажилласан', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Сургалт', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Томилолт', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Шинээр нэмсэн', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
@@ -64,19 +59,26 @@ const DEDUCTION_ITEMS: SalaryLine[] = [
   { label: 'Урьдчилгаа цалин', amount: '5,500,000.00' },
   { label: 'Хооролтын суутгал', amount: '5,500,000.00' },
   { label: 'Суутгал', amount: '5,500,000.00' },
-  { label: 'Т/хөнгөлөлтийн тэгшитгэл', amount: '5,500,000.00', labelColor: 'text-blue' },
+  { label: 'Т/хөнгөлөлтийн тэгшитгэл', amount: '5,500,000.00' },
 ];
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-center">
+      <AppText numberOfLines={1} className="text-sm text-white/70 w-24">
+        {label}
+      </AppText>
+      <AppText className="text-base font-semibold text-white">{value}</AppText>
+    </View>
+  );
+}
 
 function SalaryRow({ item }: { item: SalaryLine }) {
   return (
-    <View className="flex-row justify-between py-2.5 px-4">
-      <AppText className={`text-sm flex-1 ${item.bold ? 'font-medium' : ''} ${item.labelColor ?? ''}`}>
-        {item.label}
-      </AppText>
-      <View className="items-end">
-        <AppText className={`text-sm ${item.bold ? 'font-medium' : ''} ${item.amountColor ?? ''}`}>
-          {item.amount}
-        </AppText>
+    <View className="px-4 py-2.5">
+      <AppText className="text-sm text-darkgray">{item.label}</AppText>
+      <View className="flex-row items-center justify-between mt-0.5">
+        <AppText className="text-base font-medium">{item.amount}</AppText>
         {item.detail && (
           <AppText className="text-sm text-darkgray">{item.detail}</AppText>
         )}
@@ -100,7 +102,7 @@ export default function SalaryScreen() {
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
           title="Цалин тооцоолол"
-          className="px-4"
+          className="px-4 mb-3"
           titleClassName="text-white"
           rightContent={
             <AppSelect
@@ -115,24 +117,23 @@ export default function SalaryScreen() {
             />
           }
         />
-        <ScrollView className="flex-1 pt-2.5 bg-background" showsVerticalScrollIndicator={false}>
-          {SALARY_ITEMS.map((item, index) => (
-            <View key={index}>
-              <SalaryRow item={item} />
-            </View>
-          ))}
 
-          {DEDUCTION_ITEMS.map((item, index) => (
-            <View key={index}>
-              <SalaryRow item={item} />
-            </View>
-          ))}
+        <View className="px-4 pb-4 gap-1.5">
+          <SummaryRow label="Нийт цалин" value="5,500,000.00" />
+          <SummaryRow label="Гарт олгох" value="5,500,000.00" />
+        </View>
 
-          <Separator className="bg-darkgray/15 my-2.5" />
+        <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+          <View className="pt-2.5 pb-28">
+            {SALARY_ITEMS.map((item, index) => (
+              <SalaryRow key={`earning-${index}`} item={item} />
+            ))}
 
-          <View className="flex-row justify-between pt-3 pb-20 px-4">
-            <AppText className="text-sm font-semibold text-green">ГАРТ ОЛГОХ</AppText>
-            <AppText className="text-sm font-semibold text-green">5,500,000.00</AppText>
+            <View className="h-4" />
+
+            {DEDUCTION_ITEMS.map((item, index) => (
+              <SalaryRow key={`deduction-${index}`} item={item} />
+            ))}
           </View>
         </ScrollView>
       </StyledSafeAreaView>

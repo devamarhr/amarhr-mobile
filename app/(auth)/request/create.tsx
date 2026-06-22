@@ -1,4 +1,5 @@
 import { AppButton } from '@/components/app-button';
+import { AppCheckbox } from '@/components/app-checkbox';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
 import { AppSelect } from '@/components/app-select';
@@ -7,13 +8,14 @@ import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
 import { api, uploadFile } from '@/config/api';
 import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
+import { Login03Icon, Logout03Icon } from '@hugeicons-pro/core-stroke-rounded';
 import {
   Alert01Icon,
   ArrowLeft02Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
+  Clock01Icon,
   FileAttachmentIcon,
-  LoginCircle02Icon, LogoutCircle02Icon,
   MultiplicationSignIcon
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -69,6 +71,8 @@ export default function RequestCreateScreen() {
     shift?: string;
     shiftId?: string;
     cdate?: string;
+    settingType?: string;
+    settingKey?: string;
   }>();
   const { toast } = useToast();
 
@@ -108,6 +112,7 @@ export default function RequestCreateScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
+  const [crossesDay, setCrossesDay] = useState(false);
 
   const uploadAssets = async (assets: PickedAsset[]) => {
     if (!assets.length) return;
@@ -149,6 +154,7 @@ export default function RequestCreateScreen() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -156,6 +162,19 @@ export default function RequestCreateScreen() {
       shift: initialShift,
     },
   });
+
+  // "Хоног дамжина": checked -> pick a full date+time (crosses midnight),
+  // unchecked -> time only, anchored to the shift's day.
+  const handleCrossesDayChange = (checked: boolean) => {
+    setCrossesDay(checked);
+    if (!checked) {
+      const current = watch('shift.leaveTime');
+      if (current) {
+        const time = dayjs(current, 'YYYY-MM-DD HH:mm').format('HH:mm');
+        setValue('shift.leaveTime', `${params.cdate} ${time}`, { shouldValidate: true });
+      }
+    }
+  };
 
   const handleSend = async (data: FormData) => {
     setIsLoading(true);
@@ -168,6 +187,13 @@ export default function RequestCreateScreen() {
           id: params.shiftId ? Number(params.shiftId) : undefined,
           startTime: withSeconds(shift.arrivalTime),
           endTime: withSeconds(shift.leaveTime),
+          description,
+        };
+      } else if (type === 'timeRange' || type === 'overtime') {
+        // startDate (YYYY-MM-DD) + startTime (HH:mm) -> combined datetime for the backend.
+        detail = {
+          startTime: rest.startDate && rest.startTime ? `${rest.startDate} ${rest.startTime}` : undefined,
+          hours: rest.hours,
           description,
         };
       }
@@ -220,16 +246,18 @@ export default function RequestCreateScreen() {
       <View className="gap-2.5">
         {headerInfo.map((item, index) => (
           <View key={index} className="flex-row gap-2">
-            <AppText className={`text-sm text-darkblue ${headerInfo.length > 1 ? 'w-48' : ''}`}>{item.label}</AppText>
-            <AppText className="text-sm font-medium text-darkerblue">{item.value}</AppText>
+            <AppText className={`text-sm text-darkblue ${headerInfo.length > 1 ? (type === 'timeCorrection' ? 'w-[150px]' : 'w-52') : ''}`}>{item.label}</AppText>
+            <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>{item.value}</AppText>
           </View>
         ))}
       </View>
     );
   };
 
-  const renderDateRangeFields = () => (
-    <>
+  const renderDateRangeFields = () => {
+    const startDateSelected = !!watch('startDate');
+    const isRemote = params.settingType === 'remote';
+    return (
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Controller
@@ -238,7 +266,7 @@ export default function RequestCreateScreen() {
             rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppDatePicker
-                label="Эхлэх өдөр"
+                label={isRemote ? 'Ажиллах өдөр' : 'Эхлэх өдөр'}
                 mode="date"
                 value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
                 onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
@@ -258,124 +286,194 @@ export default function RequestCreateScreen() {
             rules={{ required: 'Хоног сонгоно уу' }}
             render={({ field: { onChange, value } }) => (
               <AppSelect
-                label="Хоног"
+                label={isRemote ? 'Ажиллах хоног' : 'Дуусах өдөр'}
                 options={dayOptions}
                 value={value != null ? dayOptions.find(o => o.value === String(value)) : undefined}
                 onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
                 placeholder="Сонгох"
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                 isInvalid={!!errors.days}
                 errorMessage={errors.days?.message}
+                isDisabled={!startDateSelected || dayOptions.length === 0}
               />
             )}
           />
         </View>
       </View>
-    </>
-  );
+    );
+  };
 
-  const renderTimeRangeFields = () => (
-    <>
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="startTime"
-            rules={{ required: 'Эхлэх цаг сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Эхлэх цаг"
-                mode="datetime"
-                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
-                placeholder="00/00 00:00"
-                format="MM/DD HH:mm"
-                minuteInterval={5}
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.startTime}
-                errorMessage={errors.startTime?.message}
-              />
-            )}
-          />
+  const renderTimeRangeFields = () => {
+    const dateSelected = !!watch('startDate');
+    const isRemote = params.settingType === 'remote';
+    return (
+      <View className="gap-6">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="startDate"
+              rules={{ required: 'Огноо сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label={isRemote ? 'Ажиллах өдөр' : 'Огноо'}
+                  mode="date"
+                  value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
+                  placeholder="00/00"
+                  format="MM/DD"
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!errors.startDate}
+                  errorMessage={errors.startDate?.message}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1" />
         </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="hours"
-            rules={{ required: 'Цаг сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppSelect
-                label="Хугацаа"
-                options={hourOptions}
-                value={value != null ? hourOptions.find(o => o.value === String(value)) : undefined}
-                onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
-                placeholder="Сонгох"
-                isInvalid={!!errors.hours}
-                errorMessage={errors.hours?.message}
-              />
-            )}
-          />
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="startTime"
+              rules={{ required: 'Эхлэх цаг сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Эхлэх цаг"
+                  mode="time"
+                  value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
+                  placeholder="00:00"
+                  format="HH:mm"
+                  minuteInterval={5}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!errors.startTime}
+                  errorMessage={errors.startTime?.message}
+                  isDisabled={!dateSelected}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="hours"
+              rules={{ required: 'Цаг сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppSelect
+                  label={isRemote ? 'Ажиллах цаг' : 'Дуусах цаг'}
+                  options={hourOptions}
+                  value={value != null ? hourOptions.find(o => o.value === String(value)) : undefined}
+                  onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
+                  placeholder="Сонгох"
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
+                  isInvalid={!!errors.hours}
+                  errorMessage={errors.hours?.message}
+                  isDisabled={!dateSelected || hourOptions.length === 0}
+                />
+              )}
+            />
+          </View>
         </View>
       </View>
-    </>
-  );
+    );
+  };
 
-  const renderOvertimeFields = () => (
-    <>
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="startTime"
-            rules={{ required: 'Эхлэх цаг сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Эхлэх цаг"
-                mode="datetime"
-                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
-                placeholder="00/00 00:00"
-                format="MM/DD HH:mm"
-                minuteInterval={5}
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.startTime}
-                errorMessage={errors.startTime?.message}
-              />
-            )}
-          />
+  const renderOvertimeFields = () => {
+    const dateSelected = !!watch('startDate');
+    // Overtime duration is picked as HH:mm in 30-min steps; cap at the API max hours (default 24h).
+    const cap = Math.min(maxHours || 24, 24);
+    const baseDay = dayjs().startOf('day');
+    const maxDurationDate = baseDay.add(cap, 'hour').toDate();
+    // Form stores duration as decimal hours (2:30 -> 2.5); convert to/from a Date for the picker.
+    const hoursToDate = (h?: number) => {
+      if (h == null) return undefined;
+      const whole = Math.floor(h);
+      const minutes = Math.round((h - whole) * 60);
+      return baseDay.hour(whole).minute(minutes).toDate();
+    };
+    const dateToHours = (d: Date) => dayjs(d).hour() + dayjs(d).minute() / 60;
+    return (
+      <View className="gap-6">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="startDate"
+              rules={{ required: 'Ажиллах өдөр сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Ажиллах өдөр"
+                  mode="date"
+                  value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
+                  placeholder="00/00"
+                  format="MM/DD"
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!errors.startDate}
+                  errorMessage={errors.startDate?.message}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1" />
         </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="hours"
-            rules={{
-              required: 'Цаг оруулна уу',
-              validate: (v) => {
-                const n = Number(v);
-                if (!Number.isInteger(n) || n <= 0) return 'Бүхэл тоо оруулна уу';
-                if (maxHours && n > maxHours) return `Дээд тал нь ${maxHours} цаг`;
-                return true;
-              },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <AppTextField
-                label="Ажиллах цаг"
-                value={value != null ? String(value) : ''}
-                onChangeText={(text) => {
-                  const cleaned = text.replace(/[^0-9]/g, '');
-                  onChange(cleaned === '' ? undefined : parseInt(cleaned, 10));
-                }}
-                onBlur={onBlur}
-                keyboardType="number-pad"
-                placeholder="Цаг"
-                isInvalid={!!errors.hours}
-                errorMessage={errors.hours?.message}
-              />
-            )}
-          />
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="startTime"
+              rules={{ required: 'Эхлэх цаг сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Эхлэх цаг"
+                  mode="time"
+                  value={value ? dayjs(value, 'HH:mm').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('HH:mm'))}
+                  placeholder="00:00"
+                  format="HH:mm"
+                  minuteInterval={5}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!errors.startTime}
+                  errorMessage={errors.startTime?.message}
+                  isDisabled={!dateSelected}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="hours"
+              rules={{
+                required: 'Цаг сонгоно уу',
+                validate: (v) => (v != null && v > 0) || 'Цаг сонгоно уу',
+              }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Ажиллах цаг"
+                  mode="time"
+                  value={hoursToDate(value)}
+                  onValueChange={(date) => onChange(dateToHours(date))}
+                  placeholder="00:00"
+                  format="HH:mm"
+                  minuteInterval={30}
+                  initialDate={baseDay.toDate()}
+                  maximumDate={maxDurationDate}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!errors.hours}
+                  errorMessage={errors.hours?.message}
+                  isDisabled={!dateSelected}
+                />
+              )}
+            />
+          </View>
         </View>
       </View>
-    </>
-  );
+    );
+  };
 
   const renderTimeCorrectionFields = () => {
     const arrivalError = errors.shift?.arrivalTime;
@@ -387,60 +485,79 @@ export default function RequestCreateScreen() {
       ? dayjs(watchedArrival, 'YYYY-MM-DD HH:mm').toDate()
       : undefined;
     return (
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="shift.arrivalTime"
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Ирсэн цаг"
-                mode="time"
-                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
-                onValueChange={(date) => {
-                  const time = dayjs(date).format('HH:mm');
-                  onChange(`${params.cdate} ${time}`);
-                }}
-                placeholder="--:--"
-                format="HH:mm"
-                minuteInterval={5}
-                icon={<HugeiconsIcon icon={LoginCircle02Icon} color="#005FEE" size={22} />}
-                isInvalid={!!arrivalError}
-                errorMessage={arrivalError?.message}
-                isDisabled={arrivalDisabled}
-              />
-            )}
-          />
+      <View className="gap-2.5">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="shift.arrivalTime"
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Ирсэн цаг"
+                  mode="time"
+                  value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                  onValueChange={(date) => {
+                    const time = dayjs(date).format('HH:mm');
+                    onChange(`${params.cdate} ${time}`);
+                  }}
+                  placeholder="--:--"
+                  format="HH:mm"
+                  minuteInterval={5}
+                  placeholderClassName="text-darkerblue/50"
+                  icon={<HugeiconsIcon icon={Login03Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!arrivalError}
+                  errorMessage={arrivalError?.message}
+                  isDisabled={arrivalDisabled}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="shift.leaveTime"
+              rules={{
+                validate: (v) => {
+                  if (!v || !watchedArrival) return true;
+                  const start = dayjs(watchedArrival, 'YYYY-MM-DD HH:mm');
+                  const end = dayjs(v, 'YYYY-MM-DD HH:mm');
+                  return end.isAfter(start) || 'Тарсан цаг ирсэн цагаас хойно байх ёстой';
+                },
+              }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label="Тарсан цаг"
+                  mode={crossesDay ? 'datetime' : 'time'}
+                  value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
+                  onValueChange={(date) => {
+                    if (crossesDay) {
+                      onChange(dayjs(date).format('YYYY-MM-DD HH:mm'));
+                    } else {
+                      const time = dayjs(date).format('HH:mm');
+                      onChange(`${params.cdate} ${time}`);
+                    }
+                  }}
+                  placeholder={crossesDay ? '00/00 00:00' : '--:--'}
+                  format={crossesDay ? 'MM/DD HH:mm' : 'HH:mm'}
+                  minuteInterval={5}
+                  placeholderClassName="text-darkerblue/50"
+                  minimumDate={crossesDay ? minLeaveDate : undefined}
+                  icon={<HugeiconsIcon icon={Logout03Icon} color="#005FEE" size={22} />}
+                  isInvalid={!!leaveError}
+                  errorMessage={leaveError?.message}
+                  isDisabled={leaveDisabled}
+                />
+              )}
+            />
+          </View>
         </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="shift.leaveTime"
-            rules={{
-              validate: (v) => {
-                if (!v || !watchedArrival) return true;
-                const start = dayjs(watchedArrival, 'YYYY-MM-DD HH:mm');
-                const end = dayjs(v, 'YYYY-MM-DD HH:mm');
-                return end.isAfter(start) || 'Тарсан цаг ирсэн цагаас хойно байх ёстой';
-              },
-            }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Тарсан цаг"
-                mode="datetime"
-                value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD HH:mm'))}
-                placeholder="00/00 00:00"
-                format="MM/DD HH:mm"
-                minuteInterval={5}
-                minimumDate={minLeaveDate}
-                icon={<HugeiconsIcon icon={LogoutCircle02Icon} color="#005FEE" size={22} />}
-                isInvalid={!!leaveError}
-                errorMessage={leaveError?.message}
-                isDisabled={leaveDisabled}
-              />
-            )}
+        <View className="flex-row items-center justify-end gap-2">
+          <AppCheckbox
+            isSelected={crossesDay}
+            onSelectedChange={handleCrossesDayChange}
+            size={20}
           />
+          <AppText className="text-sm text-darkgray">Хоног дамжина</AppText>
         </View>
       </View>
     );
@@ -490,13 +607,25 @@ export default function RequestCreateScreen() {
               name="description"
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
-                  label="Тайлбар"
+                  label={
+                    params.settingKey === 'feedback'
+                      ? 'Санал, хүсэлт'
+                      : params.settingKey === 'anonymous_feedback'
+                        ? 'Санал, гомдол'
+                        : 'Шалтгаан'
+                  }
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   isTextArea
-                  className={type === 'textOnly' ? 'h-40' : 'h-22'}
-                  placeholder="Тайлбараа энд бичнэ үү"
+                  className={type === 'textOnly' ? 'h-80' : 'h-22'}
+                  placeholder={
+                    params.settingKey === 'feedback'
+                      ? 'Санал, хүсэлтээ энд бичнэ үү'
+                      : params.settingKey === 'anonymous_feedback'
+                        ? 'Санал, гомдлоо энд бичнэ үү'
+                        : 'Шалтгаанаа энд бичнэ үү'
+                  }
                 />
               )}
             />
@@ -505,22 +634,22 @@ export default function RequestCreateScreen() {
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
               )}
               <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-2">
+              <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF4444" size={18} />
+                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

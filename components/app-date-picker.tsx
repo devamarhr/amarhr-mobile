@@ -74,6 +74,11 @@ interface AppDatePickerProps {
    */
   triggerClassName?: string;
   /**
+   * CSS classes for the placeholder text (shown when no value is selected).
+   * Overrides the default muted color.
+   */
+  placeholderClassName?: string;
+  /**
    * Minimum date that can be selected
    */
   minimumDate?: Date;
@@ -81,6 +86,11 @@ interface AppDatePickerProps {
    * Maximum date that can be selected
    */
   maximumDate?: Date;
+  /**
+   * Date the picker spinner starts on when no value is selected yet.
+   * Falls back to the current date/time.
+   */
+  initialDate?: Date;
   /**
    * Minute interval for time/datetime mode (e.g. 5 for 5-minute steps)
    */
@@ -103,8 +113,10 @@ export function AppDatePicker({
   className,
   labelClassName,
   triggerClassName,
+  placeholderClassName,
   minimumDate,
   maximumDate,
+  initialDate,
   minuteInterval,
 }: AppDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -164,7 +176,7 @@ export function AppDatePicker({
         )}
       >
         {renderIcon()}
-        <AppText className={cn('text-sm', !value && 'text-muted')}>
+        <AppText className={cn('text-sm', !value && (placeholderClassName ?? 'text-muted'))}>
           {value ? formatValue(value) : getDefaultPlaceholder()}
         </AppText>
       </PressableFeedback>
@@ -179,7 +191,7 @@ export function AppDatePicker({
         modal
         open={isOpen}
         mode={mode}
-        date={value || new Date()}
+        date={value || initialDate || new Date()}
         minimumDate={minimumDate}
         maximumDate={maximumDate}
         minuteInterval={minuteInterval}

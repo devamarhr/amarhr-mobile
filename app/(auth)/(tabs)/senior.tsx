@@ -1618,6 +1618,7 @@ interface MonthlyCount {
 }
 
 interface AnnualLeavePlansResponse {
+  max_leave_splits: number;
   years: number[];
   monthly_counts: MonthlyCount[];
   unplanned: UnplannedEmployee[];
@@ -1773,6 +1774,7 @@ function SeniorLeave({
                       startDate: emp.start_date,
                       endDate: emp.end_date,
                       profileImageUrl: emp.profile_image_url ?? "",
+                      maxSplits: String(data?.max_leave_splits ?? ""),
                     },
                   })
                 }
