@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/app-button";
+import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
@@ -13,7 +14,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
-import { Avatar, Dialog, Separator, Spinner, useToast } from "heroui-native";
+import { Avatar, Separator, Spinner, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -838,90 +839,74 @@ export default function SeniorRequestDetailScreen() {
       </View>
     </StyledSafeAreaView>
 
-    <Dialog
+    <AppDialog
       isOpen={viewingAttachments !== null}
       onOpenChange={(open) => !open && setViewingAttachments(null)}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="bg-[#6C719F]/40" />
-        <Dialog.Content>
-          <View className="mb-4 gap-1.5">
-            <Dialog.Title>Хавсралт</Dialog.Title>
-          </View>
-          <View className="gap-2">
-            {viewingAttachments?.map((file, i) => (
-              <Pressable
-                key={i}
-                className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-                onPress={() => Linking.openURL(file.url)}
-              >
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
-                <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                  {file.name}
-                </AppText>
-              </Pressable>
-            ))}
-          </View>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+      <View className="mb-4 gap-1.5">
+        <AppDialog.Title>Хавсралт</AppDialog.Title>
+      </View>
+      <View className="gap-2">
+        {viewingAttachments?.map((file, i) => (
+          <Pressable
+            key={i}
+            className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+            onPress={() => Linking.openURL(file.url)}
+          >
+            <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
+            <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
+              {file.name}
+            </AppText>
+          </Pressable>
+        ))}
+      </View>
+    </AppDialog>
 
-    <Dialog isOpen={pendingAction !== null} onOpenChange={(open) => !open && setPendingAction(null)}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="bg-[#6C719F]/40" />
-        <Dialog.Content>
-          <View className="mb-5 gap-1.5">
-            <Dialog.Title>
-              {pendingAction === "reject"
-                ? "Татгалзах"
-                : pendingAction === "approve"
-                  ? "Зөвшөөрөх"
-                  : "Санал илгээх"}
-            </Dialog.Title>
-            <Dialog.Description>
-              {pendingAction === "reject"
-                ? "Та энэ хүсэлтийг татгалзахдаа итгэлтэй байна уу?"
-                : pendingAction === "approve"
-                  ? "Та энэ хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?"
-                  : "Та саналаа илгээхдээ итгэлтэй байна уу?"}
-            </Dialog.Description>
-          </View>
-          <View className="flex-row justify-end gap-3">
-            <AppButton
-              label="Үгүй"
-              className="border-transparent bg-transparent"
-              onPress={() => setPendingAction(null)}
-            />
-            <AppButton
-              label="Тийм"
-              labelClassName="text-white"
-              className="bg-blue"
-              isLoading={submittingAction !== null}
-              onPress={async () => {
-                if (!pendingAction) return;
-                const action = pendingAction;
-                await submitAction(action);
-                setPendingAction(null);
-              }}
-            />
-          </View>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+    <AppDialog isOpen={pendingAction !== null} onOpenChange={(open) => !open && setPendingAction(null)}>
+      <View className="mb-5 gap-1.5">
+        <AppDialog.Title>
+          {pendingAction === "reject"
+            ? "Татгалзах"
+            : pendingAction === "approve"
+              ? "Зөвшөөрөх"
+              : "Санал илгээх"}
+        </AppDialog.Title>
+        <AppDialog.Description>
+          {pendingAction === "reject"
+            ? "Та энэ хүсэлтийг татгалзахдаа итгэлтэй байна уу?"
+            : pendingAction === "approve"
+              ? "Та энэ хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?"
+              : "Та саналаа илгээхдээ итгэлтэй байна уу?"}
+        </AppDialog.Description>
+      </View>
+      <View className="flex-row gap-3">
+        <AppDialog.Button
+          label="Үгүй"
+          className="flex-1"
+          onPress={() => setPendingAction(null)}
+        />
+        <AppDialog.Button
+          label="Тийм"
+          className="flex-1"
+          isLoading={submittingAction !== null}
+          onPress={async () => {
+            if (!pendingAction) return;
+            const action = pendingAction;
+            await submitAction(action);
+            setPendingAction(null);
+          }}
+        />
+      </View>
+    </AppDialog>
 
-    <Dialog isOpen={expandedText !== null} onOpenChange={(open) => !open && setExpandedText(null)}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="bg-[#6C719F]/40" />
-        <Dialog.Content>
-          <View className="mb-4 gap-1.5">
-            <Dialog.Title>{expandedText?.title ?? ""}</Dialog.Title>
-          </View>
-          <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
-            <AppText className="text-sm text-black">{expandedText?.text ?? ""}</AppText>
-          </ScrollView>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+    <AppDialog isOpen={expandedText !== null} onOpenChange={(open) => !open && setExpandedText(null)}>
+      <View className="mb-4 gap-1.5">
+        <AppDialog.Title>{expandedText?.title ?? ""}</AppDialog.Title>
+      </View>
+      <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+        <AppText className="text-sm text-black">{expandedText?.text ?? ""}</AppText>
+      </ScrollView>
+    </AppDialog>
     </>
   );
 }

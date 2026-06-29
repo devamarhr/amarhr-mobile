@@ -1,4 +1,5 @@
 import { AppButton } from '@/components/app-button';
+import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
@@ -13,7 +14,7 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Dialog, Separator, useToast } from 'heroui-native';
+import { Separator, useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -644,59 +645,47 @@ export default function RequestDetailScreen() {
         )}
       </StyledSafeAreaView>
 
-      <Dialog isOpen={viewingAttachments !== null} onOpenChange={(o) => !o && setViewingAttachments(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-4 gap-1.5">
-              <Dialog.Title>Хавсралт</Dialog.Title>
-            </View>
-            <View className="gap-2">
-              {viewingAttachments?.map((file, i) => (
-                <Pressable
-                  key={i}
-                  className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-                  onPress={() => Linking.openURL(file.url)}
-                >
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
-                  <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                    {file.name}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+      <AppDialog isOpen={viewingAttachments !== null} onOpenChange={(o) => !o && setViewingAttachments(null)}>
+        <View className="mb-4 gap-1.5">
+          <AppDialog.Title>Хавсралт</AppDialog.Title>
+        </View>
+        <View className="gap-2">
+          {viewingAttachments?.map((file, i) => (
+            <Pressable
+              key={i}
+              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+              onPress={() => Linking.openURL(file.url)}
+            >
+              <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
+              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
+                {file.name}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      </AppDialog>
 
-      <Dialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>Хүсэлт цуцлах</Dialog.Title>
-              <Dialog.Description>
-                Та илгээсэн өргөдөл хүсэлтээ цуцлахдаа итгэлтэй байна уу?
-              </Dialog.Description>
-            </View>
-            <View className="flex-row justify-end gap-3">
-              <AppButton
-                label="Үгүй"
-                className="border-transparent bg-transparent"
-                onPress={() => setConfirmOpen(false)}
-              />
-              <AppButton
-                label="Тийм"
-                labelClassName="text-white"
-                className="bg-red border-red/15"
-                isLoading={cancelling}
-                spinnerColor="#FFFFFF"
-                onPress={handleConfirmCancel}
-              />
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+      <AppDialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>Хүсэлт цуцлах</AppDialog.Title>
+          <AppDialog.Description>
+            Та илгээсэн өргөдөл хүсэлтээ цуцлахдаа итгэлтэй байна уу?
+          </AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button
+            label="Үгүй"
+            className="flex-1"
+            onPress={() => setConfirmOpen(false)}
+          />
+          <AppDialog.Button
+            label="Тийм"
+            className="flex-1"
+            isLoading={cancelling}
+            onPress={handleConfirmCancel}
+          />
+        </View>
+      </AppDialog>
     </View>
   );
 }

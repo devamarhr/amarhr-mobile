@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/app-button";
+import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppText } from "@/components/app-text";
@@ -14,7 +15,6 @@ import {
 } from "@/hooks/use-hide-tab-bar";
 import { useNotificationStore } from "@/store/notification-store";
 import { BottomSheetScrollView, type BottomSheetScrollViewMethods } from "@gorhom/bottom-sheet";
-import { useIsFocused } from "@react-navigation/native";
 import {
   Alert01Icon,
   ArrowDown01Icon,
@@ -30,9 +30,10 @@ import {
   Task01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
+import { useIsFocused } from "@react-navigation/native";
 import dayjs from "dayjs";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, Dialog, Portal, PressableFeedback, Separator, useToast } from "heroui-native";
+import { Avatar, BottomSheet, cn, Portal, PressableFeedback, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -383,33 +384,28 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
         />
       )}
 
-      <Dialog
+      <AppDialog
         isOpen={viewingAttachments !== null}
         onOpenChange={(open) => !open && setViewingAttachments(null)}
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-4 gap-1.5">
-              <Dialog.Title>Хавсралт</Dialog.Title>
-            </View>
-            <View className="gap-2">
-              {viewingAttachments?.map((file, i) => (
-                <Pressable
-                  key={i}
-                  className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-                  onPress={() => Linking.openURL(file.url)}
-                >
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-                  <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                    {file.name ?? file.path.split("/").pop()}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+        <View className="mb-4 gap-1.5">
+          <AppDialog.Title>Хавсралт</AppDialog.Title>
+        </View>
+        <View className="gap-2">
+          {viewingAttachments?.map((file, i) => (
+            <Pressable
+              key={i}
+              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+              onPress={() => Linking.openURL(file.url)}
+            >
+              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
+                {file.name ?? file.path.split("/").pop()}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      </AppDialog>
     </>
   );
 }
@@ -795,56 +791,51 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
         />
       )}
 
-      <Dialog isOpen={noteFor !== null} onOpenChange={(open) => !open && setNoteFor(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-4 gap-1.5">
-              <Dialog.Title>Тэмдэглэл</Dialog.Title>
-            </View>
-            {noteFor?.notes?.length ? (
-              <ScrollView
-                className="max-h-48 mb-4"
-                showsVerticalScrollIndicator={false}
-              >
-                <View className="gap-2">
-                  {noteFor.notes.map((note, i) => (
-                    <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
-                      <AppText className="text-sm">{note.content}</AppText>
-                      <View className="flex-row items-center justify-between mt-1 gap-3">
-                        {note.creator_name ? (
-                          <AppText className="text-xs text-darkgray" numberOfLines={1}>
-                            {note.creator_name}
-                          </AppText>
-                        ) : (
-                          <View />
-                        )}
-                        {note.created_at ? (
-                          <AppText className="text-xs text-darkgray">
-                            {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
-                          </AppText>
-                        ) : null}
-                      </View>
-                    </View>
-                  ))}
+      <AppDialog isOpen={noteFor !== null} onOpenChange={(open) => !open && setNoteFor(null)}>
+        <View className="mb-4 gap-1.5">
+          <AppDialog.Title>Тэмдэглэл</AppDialog.Title>
+        </View>
+        {noteFor?.notes?.length ? (
+          <ScrollView
+            className="max-h-48 mb-4"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="gap-2">
+              {noteFor.notes.map((note, i) => (
+                <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
+                  <AppText className="text-sm">{note.content}</AppText>
+                  <View className="flex-row items-center justify-between mt-1 gap-3">
+                    {note.creator_name ? (
+                      <AppText className="text-xs text-darkgray" numberOfLines={1}>
+                        {note.creator_name}
+                      </AppText>
+                    ) : (
+                      <View />
+                    )}
+                    {note.created_at ? (
+                      <AppText className="text-xs text-darkgray">
+                        {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
+                      </AppText>
+                    ) : null}
+                  </View>
                 </View>
-              </ScrollView>
-            ) : null}
-            <AppTextField
-              isTextArea
-              placeholder="Тэмдэглэл бичих"
-              value={noteDraft}
-              onChangeText={setNoteDraft}
-            />
-            <AppButton
-              label="Хадгалах"
-              className="mt-4"
-              isDisabled={noteDraft.trim() === "" || savingNote}
-              onPress={saveNote}
-            />
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+              ))}
+            </View>
+          </ScrollView>
+        ) : null}
+        <AppTextField
+          isTextArea
+          placeholder="Тэмдэглэл бичих"
+          value={noteDraft}
+          onChangeText={setNoteDraft}
+        />
+        <AppDialog.Button
+          label="Хадгалах"
+          className="mt-4"
+          isDisabled={noteDraft.trim() === "" || savingNote}
+          onPress={saveNote}
+        />
+      </AppDialog>
     </>
   );
 }
@@ -1075,7 +1066,7 @@ function SeniorSchedule({
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // Чөлөөлэх confirm
+  // Чөлөөлөх confirm
   const [releaseTarget, setReleaseTarget] = useState<ScheduleEmployee | null>(null);
   const [releasing, setReleasing] = useState(false);
 
@@ -1492,40 +1483,33 @@ function SeniorSchedule({
         )}
       </ScrollView>
 
-      {/* Чөлөөлэх confirm dialog */}
-      <Dialog
+      {/* Чөлөөлөх confirm dialog */}
+      <AppDialog
         isOpen={!!releaseTarget}
         onOpenChange={(o) => {
           if (!o) setReleaseTarget(null);
         }}
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>Чөлөөлөх</Dialog.Title>
-              <Dialog.Description>
-                Та {releaseTarget ? shortName(releaseTarget) : ""}-г чөлөөлөхдөө итгэлтэй байна уу?
-              </Dialog.Description>
-            </View>
-            <View className="flex-row justify-end gap-3">
-              <AppButton
-                label="Үгүй"
-                className="border-transparent bg-transparent"
-                onPress={() => setReleaseTarget(null)}
-              />
-              <AppButton
-                label="Тийм"
-                labelClassName="text-white"
-                className="bg-red border-red/15"
-                isLoading={releasing}
-                spinnerColor="#FFFFFF"
-                onPress={handleRelease}
-              />
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>Чөлөөлөх</AppDialog.Title>
+          <AppDialog.Description>
+            Та {releaseTarget ? shortName(releaseTarget) : ""}-г чөлөөлөхдөө итгэлтэй байна уу?
+          </AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button
+            label="Үгүй"
+            className="flex-1"
+            onPress={() => setReleaseTarget(null)}
+          />
+          <AppDialog.Button
+            label="Тийм"
+            className="flex-1"
+            isLoading={releasing}
+            onPress={handleRelease}
+          />
+        </View>
+      </AppDialog>
 
       {/* Ажилтан нэмэх bottom sheet */}
       <BottomSheet

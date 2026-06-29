@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/app-button";
+import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { api } from "@/config/api";
@@ -7,7 +8,7 @@ import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
-import { Dialog, Separator } from 'heroui-native';
+import { Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Linking, Pressable, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -222,33 +223,28 @@ export default function AnnouncementScreen() {
         )}
       </View>
 
-      <Dialog
+      <AppDialog
         isOpen={viewingAttachments !== null}
         onOpenChange={(open) => !open && setViewingAttachments(null)}
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-4 gap-1.5">
-              <Dialog.Title>Хавсралт</Dialog.Title>
-            </View>
-            <View className="gap-2">
-              {viewingAttachments?.map((file, i) => (
-                <Pressable
-                  key={i}
-                  className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-                  onPress={() => Linking.openURL(file.url)}
-                >
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-                  <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                    {file.name ?? file.path.split('/').pop()}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+        <View className="mb-4 gap-1.5">
+          <AppDialog.Title>Хавсралт</AppDialog.Title>
+        </View>
+        <View className="gap-2">
+          {viewingAttachments?.map((file, i) => (
+            <Pressable
+              key={i}
+              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+              onPress={() => Linking.openURL(file.url)}
+            >
+              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
+              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
+                {file.name ?? file.path.split('/').pop()}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      </AppDialog>
     </StyledSafeAreaView>
   );
 }

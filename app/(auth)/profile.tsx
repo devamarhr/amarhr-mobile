@@ -1,4 +1,4 @@
-import { AppButton } from "@/components/app-button";
+import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppSwitch } from "@/components/app-switch";
@@ -18,7 +18,7 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
 import { useRouter } from "expo-router";
-import { Avatar, cn, Dialog, Separator, useToast } from "heroui-native";
+import { Avatar, cn, Separator, useToast } from "heroui-native";
 import React, { useState } from "react";
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,11 +32,12 @@ interface MenuItemProps {
   labelClassName?: string;
   subtitle?: string;
   info?: boolean;
+  onInfoPress?: () => void;
   onPress?: () => void;
   trailing?: React.ReactNode;
 }
 
-function MenuItem({ icon, label, labelClassName, subtitle, info, onPress, trailing }: MenuItemProps) {
+function MenuItem({ icon, label, labelClassName, subtitle, info, onInfoPress, onPress, trailing }: MenuItemProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -52,9 +53,13 @@ function MenuItem({ icon, label, labelClassName, subtitle, info, onPress, traili
             labelClassName
           )}>{label}</AppText>
           {info && (
-            <View className="w-7.5 h-7.5 ml-3 justify-center items-center">
+            <Pressable
+              onPress={onInfoPress}
+              hitSlop={8}
+              className="w-7.5 h-7.5 ml-3 justify-center items-center"
+            >
               <HugeiconsIcon icon={InformationCircleIcon} color="#6a6a6a" size={20} />
-            </View>
+            </Pressable>
           )}
         </View>
         {subtitle && (
@@ -74,6 +79,12 @@ export default function ProfileScreen() {
   const attendanceReminder = useAuthStore((state) => state.attendanceReminder);
   const hidePhone = useAuthStore((state) => state.hidePhone);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+  const [confirmToggle, setConfirmToggle] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
   const { toast } = useToast();
 
   const saveSetting = (settings: Partial<UserSettings>) => {
@@ -160,10 +171,25 @@ export default function ProfileScreen() {
               icon={Notification01Icon}
               label="Мэдэгдэл"
               info
+              onInfoPress={() =>
+                setInfoDialog({
+                  title: 'Мэдэгдэл',
+                  description:
+                    'Энэ тохиргоог идэвхжүүлснээр ажилдаа ирэх, тарах цаг ойртоход цаг бүртгүүлэхийг сануулсан мэдэгдэл хүлээн авна.',
+                })
+              }
               trailing={
                 <AppSwitch
                   isSelected={attendanceReminder}
-                  onSelectedChange={(v) => saveSetting({ attendance_reminder: v })}
+                  onSelectedChange={(v) =>
+                    setConfirmToggle({
+                      title: 'Мэдэгдэл',
+                      description: v
+                        ? 'Мэдэгдэл хүлээн авахаар тохируулах уу?'
+                        : 'Мэдэгдэл хүлээн авахаа болих уу?',
+                      onConfirm: () => saveSetting({ attendance_reminder: v }),
+                    })
+                  }
                 />
               }
             />
@@ -194,10 +220,25 @@ export default function ProfileScreen() {
               icon={SmartPhone01Icon}
               label="Дугаараа нууцлах"
               info
+              onInfoPress={() =>
+                setInfoDialog({
+                  title: 'Дугаараа нууцлах',
+                  description:
+                    'Энэ тохиргоог идэвхжүүлснээр таны утасны дугаар бусад ажилтнуудад харагдахгүй болно.',
+                })
+              }
               trailing={
                 <AppSwitch
                   isSelected={hidePhone}
-                  onSelectedChange={(v) => saveSetting({ hide_phone: v })}
+                  onSelectedChange={(v) =>
+                    setConfirmToggle({
+                      title: 'Дугаараа нууцлах',
+                      description: v
+                        ? 'Дугаараа нууцлах уу?'
+                        : 'Дугаараа нууцлахаа болих уу?',
+                      onConfirm: () => saveSetting({ hide_phone: v }),
+                    })
+                  }
                 />
               }
             />
@@ -219,23 +260,57 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Dialog isOpen={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="bg-[#6C719F]/40" />
-          <Dialog.Content>
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>Апп-с гарах</Dialog.Title>
-              <Dialog.Description>
-                Та системээс гарахдаа итгэлтэй байна уу?
-              </Dialog.Description>
-            </View>
-            <View className="flex-row justify-end gap-3">
-              <AppButton label="Үгүй" className="border-transparent bg-transparent" onPress={() => setLogoutDialogOpen(false)} />
-              <AppButton label="Тийм" labelClassName="text-white" className="bg-blue" onPress={handleLogout} />
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+      <AppDialog isOpen={infoDialog !== null} onOpenChange={(open) => !open && setInfoDialog(null)}>
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>{infoDialog?.title}</AppDialog.Title>
+          <AppDialog.Description>{infoDialog?.description}</AppDialog.Description>
+        </View>
+        <View className="flex-row justify-end">
+          <AppDialog.Button
+            label="Ойлголоо"
+            className="w-[145px]"
+            onPress={() => setInfoDialog(null)}
+          />
+        </View>
+      </AppDialog>
+
+      <AppDialog
+        isOpen={confirmToggle !== null}
+        onOpenChange={(open) => !open && setConfirmToggle(null)}
+      >
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>{confirmToggle?.title}</AppDialog.Title>
+          <AppDialog.Description>{confirmToggle?.description}</AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button
+            label="Үгүй"
+            className="flex-1"
+            onPress={() => setConfirmToggle(null)}
+          />
+          <AppDialog.Button
+            label="Тийм"
+            className="flex-1"
+            onPress={() => {
+              confirmToggle?.onConfirm();
+              setConfirmToggle(null);
+            }}
+          />
+        </View>
+      </AppDialog>
+
+      <AppDialog isOpen={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>Апп-с гарах</AppDialog.Title>
+          <AppDialog.Description>
+            Та системээс гарахдаа итгэлтэй байна уу?
+          </AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button label="Үгүй" className="flex-1" onPress={() => setLogoutDialogOpen(false)} />
+          <AppDialog.Button label="Тийм" className="flex-1" onPress={handleLogout} />
+        </View>
+      </AppDialog>
     </StyledSafeAreaView>
   );
 }

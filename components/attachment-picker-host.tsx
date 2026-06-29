@@ -1,3 +1,4 @@
+import { AppDialog } from '@/components/app-dialog';
 import { AppText } from '@/components/app-text';
 import {
   pickDocuments,
@@ -7,7 +8,6 @@ import {
 } from '@/utils/pick-attachment';
 import { File02Icon, Image02Icon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Dialog } from 'heroui-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -55,31 +55,26 @@ export function AttachmentPickerHost() {
   };
 
   return (
-    <Dialog isOpen={isOpen} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="bg-[#6C719F]/40" />
-        <Dialog.Content>
-          <View className="mb-4 gap-1.5">
-            <Dialog.Title>Хавсралт сонгох</Dialog.Title>
-          </View>
-          <View className="gap-2">
-            <Pressable
-              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-              onPress={handlePhotos}
-            >
-              <HugeiconsIcon icon={Image02Icon} color="#005FEE" size={20} />
-              <AppText className="text-sm flex-1">Зураг сонгох</AppText>
-            </Pressable>
-            <Pressable
-              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-              onPress={handleDocuments}
-            >
-              <HugeiconsIcon icon={File02Icon} color="#005FEE" size={20} />
-              <AppText className="text-sm flex-1">Файл сонгох</AppText>
-            </Pressable>
-          </View>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+    <AppDialog isOpen={isOpen} onOpenChange={handleOpenChange}>
+      <View className="mb-4 gap-1.5">
+        <AppDialog.Title>Хавсралт сонгох</AppDialog.Title>
+      </View>
+      <View className="gap-2">
+        <Pressable
+          className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+          onPress={handlePhotos}
+        >
+          <HugeiconsIcon icon={Image02Icon} color="#005FEE" size={20} />
+          <AppText className="text-sm flex-1">Зураг сонгох</AppText>
+        </Pressable>
+        <Pressable
+          className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
+          onPress={handleDocuments}
+        >
+          <HugeiconsIcon icon={File02Icon} color="#005FEE" size={20} />
+          <AppText className="text-sm flex-1">Файл сонгох</AppText>
+        </Pressable>
+      </View>
+    </AppDialog>
   );
 }

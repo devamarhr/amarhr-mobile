@@ -33,13 +33,22 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type PunchAction = 'punch_in' | 'punch_out' | 'retroactive_punch_out' | 'none';
 
+type OvertimeCategory = 'overtime' | 'compensatory' | 'accumulated' | 'compensatory_rest';
+
 type Shift = {
   planned_start: string;
   planned_end: string;
   actual_start: string | null;
   actual_end: string | null;
   worked_duration_minutes: number | null;
+  overtime_category: OvertimeCategory | null;
 };
+
+// Илүү цаг / нөхөн олговорт / хуримтлуулсан цагийн ээлжийг ногоон өнгөөр ялгана (timesheet-тэй ижил).
+const isOvertimeShift = (shift?: Shift | null): boolean =>
+  shift?.overtime_category === 'overtime' ||
+  shift?.overtime_category === 'compensatory' ||
+  shift?.overtime_category === 'accumulated';
 
 type TimesheetToday = {
   shifts: Shift[];
@@ -385,30 +394,35 @@ export default function HomeScreen() {
               initialPage={0}
               onPageSelected={(e) => setActiveShiftIndex(e.nativeEvent.position)}
             >
-              {shifts.map((shift, index) => (
-                <View key={index} className="flex-row justify-around px-4">
-                  <View className="items-center">
-                    <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
-                    <AppText
-                      className={`text-xl mt-2 ${shift.actual_start ? '' : 'text-darkgray/50'}`}
-                    >
-                      {formatTime(shift.actual_start ?? shift.planned_start)}
-                    </AppText>
+              {shifts.map((shift, index) => {
+                const overtime = isOvertimeShift(shift);
+                return (
+                  <View key={index} className="flex-row justify-around px-4">
+                    <View className="items-center">
+                      <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
+                      <AppText
+                        className={`text-xl mt-2 ${shift.actual_start ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
+                      >
+                        {formatTime(shift.actual_start ?? shift.planned_start)}
+                      </AppText>
+                    </View>
+                    <View className="items-center">
+                      <HugeiconsIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
+                      <AppText
+                        className={`text-xl mt-2 ${shift.actual_end ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
+                      >
+                        {formatTime(shift.actual_end ?? shift.planned_end)}
+                      </AppText>
+                    </View>
+                    <View className="items-center">
+                      <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
+                      <AppText className={`text-xl mt-2 ${overtime ? (shift.worked_duration_minutes ? 'text-green' : 'text-green/50') : ''}`}>
+                        {formatDuration(shift.worked_duration_minutes)}
+                      </AppText>
+                    </View>
                   </View>
-                  <View className="items-center">
-                    <HugeiconsIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
-                    <AppText
-                      className={`text-xl mt-2 ${shift.actual_end ? '' : 'text-darkgray/50'}`}
-                    >
-                      {formatTime(shift.actual_end ?? shift.planned_end)}
-                    </AppText>
-                  </View>
-                  <View className="items-center">
-                    <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
-                    <AppText className="text-xl mt-2">{formatDuration(shift.worked_duration_minutes)}</AppText>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </PagerView>
             {shifts.length > 1 && (
               <View className="flex-row justify-center gap-1.5 mt-2">
@@ -416,7 +430,9 @@ export default function HomeScreen() {
                   <View
                     key={index}
                     className={`w-1.5 h-1.5 rounded-full ${
-                      index === activeShiftIndex ? 'bg-darkgray/50' : 'bg-darkgray/20'
+                      index === activeShiftIndex
+                        ? isOvertimeShift(shifts[activeShiftIndex]) ? 'bg-green' : 'bg-darkgray/50'
+                        : 'bg-darkgray/20'
                     }`}
                   />
                 ))}
