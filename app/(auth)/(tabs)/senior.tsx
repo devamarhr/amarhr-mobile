@@ -6,8 +6,15 @@ import { AppTextField } from "@/components/app-text-field";
 import { AppToast } from "@/components/app-toast";
 import { SeniorMenuBar, SeniorMenuKey } from "@/components/senior-menu-bar";
 import { api } from "@/config/api";
+import {
+  ScrollHandler,
+  TAB_BAR_BASE_HEIGHT,
+  tabBarHidden,
+  useHideTabBarOnScroll,
+} from "@/hooks/use-hide-tab-bar";
 import { useNotificationStore } from "@/store/notification-store";
 import { BottomSheetScrollView, type BottomSheetScrollViewMethods } from "@gorhom/bottom-sheet";
+import { useIsFocused } from "@react-navigation/native";
 import {
   Alert01Icon,
   ArrowDown01Icon,
@@ -25,7 +32,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, Dialog, PressableFeedback, Separator, useToast } from "heroui-native";
+import { Avatar, BottomSheet, cn, Dialog, Portal, PressableFeedback, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -36,6 +43,7 @@ import {
   ScrollView,
   View,
 } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -159,7 +167,7 @@ interface AnnouncementsResponse {
   total: number;
 }
 
-function SeniorAnnouncements() {
+function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [summaries, setSummaries] = useState<MonthlySummary[]>([]);
@@ -352,6 +360,8 @@ function SeniorAnnouncements() {
           keyExtractor={(item, index) => `${item.id}-${index}`}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           refreshing={refreshing}
@@ -439,7 +449,7 @@ interface SalaryPerfResponse {
 
 const PERF_STEP = 5;
 
-function SeniorPerformance() {
+function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
   const [months, setMonths] = useState<SalaryPerfMonth[]>([]);
   const [items, setItems] = useState<SalaryPerfItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<SelectOption | null>(null);
@@ -771,6 +781,8 @@ function SeniorPerformance() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: 88 }}
           ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
           refreshing={refreshing}
@@ -1034,7 +1046,15 @@ function ShiftRow({
   );
 }
 
-function SeniorSchedule({ year, month }: { year: number; month: number }) {
+function SeniorSchedule({
+  year,
+  month,
+  onScroll,
+}: {
+  year: number;
+  month: number;
+  onScroll?: ScrollHandler;
+}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
@@ -1288,6 +1308,8 @@ function SeniorSchedule({ year, month }: { year: number; month: number }) {
     <>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         // Cancel the parent's px-4 so the scroll view spans full width; re-inset
         // normal content via contentContainer padding while bands use -mx-4 to
         // reach the screen edges.
@@ -1655,9 +1677,11 @@ function LeaveSplitRow({ split }: { split: LeaveSplit }) {
 function SeniorLeave({
   year,
   onYearsLoaded,
+  onScroll,
 }: {
   year: number;
   onYearsLoaded: (years: number[]) => void;
+  onScroll?: ScrollHandler;
 }) {
   const router = useRouter();
   const [data, setData] = useState<AnnualLeavePlansResponse | null>(null);
@@ -1722,6 +1746,8 @@ function SeniorLeave({
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       contentContainerStyle={{ paddingBottom: 88 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={() => fetchPlans(true)} />
@@ -1824,8 +1850,57 @@ function SeniorLeave({
   );
 }
 
+// The floating menu pill. Rendered through a Portal (app root) so it can slide
+// down into the area the bottom tab bar vacates without being clipped by the
+// screen's scene bounds. Only shown while the senior tab is focused, since tab
+// screens stay mounted in the background.
+function SeniorMenuOverlay({
+  active,
+  onChange,
+  hiddenKeys,
+  badges,
+}: {
+  active: SeniorMenuKey;
+  onChange: (key: SeniorMenuKey) => void;
+  hiddenKeys: SeniorMenuKey[];
+  badges?: SeniorMenuKey[];
+}) {
+  const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
+  // Resting position: 16px above the bottom tab bar.
+  const restBottom = TAB_BAR_BASE_HEIGHT + insets.bottom + 16;
+  const animatedStyle = useAnimatedStyle(() => ({
+    // When hidden, drop the pill so it rests flush against the bottom safe-area
+    // inset (restBottom → insets.bottom), filling the space the tab bar vacates.
+    transform: [{ translateY: tabBarHidden.value * (restBottom - insets.bottom) }],
+  }));
+
+  if (!isFocused) return null;
+
+  return (
+    <Portal name="senior-menu-overlay">
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          {
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: restBottom,
+            alignItems: "center",
+          },
+          animatedStyle,
+        ]}
+      >
+        <SeniorMenuBar active={active} onChange={onChange} hiddenKeys={hiddenKeys} badges={badges} />
+      </Animated.View>
+    </Portal>
+  );
+}
+
 export default function SeniorScreen() {
   const router = useRouter();
+  const { onScroll, reset: resetTabBar } = useHideTabBarOnScroll();
   const [activeMenu, setActiveMenu] = useState<SeniorMenuKey>("request");
   const [requests, setRequests] = useState<AssignedRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1893,6 +1968,18 @@ export default function SeniorScreen() {
     useCallback(() => {
       useNotificationStore.getState().clear("employee_request_assigned");
     }, [])
+  );
+
+  // Reveal the bottom tab bar whenever the active section changes, and restore
+  // it when the screen loses focus so the other tabs never inherit a hidden bar.
+  useEffect(() => {
+    resetTabBar();
+  }, [activeMenu, resetTabBar]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => resetTabBar();
+    }, [resetTabBar])
   );
 
   // Does this senior manage any shift-roster employees? If not, the schedule
@@ -2081,6 +2168,8 @@ export default function SeniorScreen() {
                   data={requests}
                   keyExtractor={(item, index) => `${item.id}-${index}`}
                   showsVerticalScrollIndicator={false}
+                  onScroll={onScroll}
+                  scrollEventThrottle={16}
                   onEndReached={handleEndReached}
                   onEndReachedThreshold={0.3}
                   refreshing={refreshing}
@@ -2152,13 +2241,17 @@ export default function SeniorScreen() {
               )}
             </>
           ) : activeMenu === "announcement" ? (
-            <SeniorAnnouncements />
+            <SeniorAnnouncements onScroll={onScroll} />
           ) : activeMenu === "performance" ? (
-            <SeniorPerformance />
+            <SeniorPerformance onScroll={onScroll} />
           ) : activeMenu === "schedule" ? (
-            <SeniorSchedule year={scheduleYear} month={scheduleMonthNum} />
+            <SeniorSchedule year={scheduleYear} month={scheduleMonthNum} onScroll={onScroll} />
           ) : activeMenu === "leave" ? (
-            <SeniorLeave year={leaveYear} onYearsLoaded={handleLeaveYearsLoaded} />
+            <SeniorLeave
+              year={leaveYear}
+              onYearsLoaded={handleLeaveYearsLoaded}
+              onScroll={onScroll}
+            />
           ) : (
             <View className="flex-1 items-center justify-center">
               <AppText className="text-sm text-darkgray">Удахгүй нэмэгдэнэ</AppText>
@@ -2166,13 +2259,14 @@ export default function SeniorScreen() {
           )}
         </View>
 
-        <View className="absolute bottom-2 left-0 right-0 items-center" pointerEvents="box-none">
-          <SeniorMenuBar
-            active={activeMenu}
-            onChange={setActiveMenu}
-            hiddenKeys={hasShiftEmployees ? [] : ["schedule"]}
-          />
-        </View>
+        <SeniorMenuOverlay
+          active={activeMenu}
+          onChange={setActiveMenu}
+          hiddenKeys={hasShiftEmployees ? [] : ["schedule"]}
+          // TODO: badge-ийг бодит өгөгдөлд холбох (Хүсэлт ← assigned-request,
+          // Гүйцэтгэл ← үнэлгээний төлөв). Одоохондоо дизайны дагуу default-аар асаалттай.
+          badges={["request", "performance"]}
+        />
       </View>
     </StyledSafeAreaView>
   );

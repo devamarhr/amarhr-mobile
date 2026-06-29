@@ -1,8 +1,10 @@
 import { TugrugIcon } from '@/components/app-icon';
+import { TAB_BAR_BASE_HEIGHT, tabBarHidden } from '@/hooks/use-hide-tab-bar';
 import { useAuthStore } from '@/store/auth-store';
 import { useNotificationStore } from '@/store/notification-store';
+import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import {
-  Home01Icon
+  ClockCheckIcon
 } from '@hugeicons-pro/core-stroke-rounded';
 import {
   Calendar03Icon,
@@ -13,7 +15,25 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Tabs } from 'expo-router';
 import React from 'react';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Wraps the default tab bar so screens can slide it off the bottom edge on
+// scroll via the shared `tabBarHidden` value. Kept in normal layout flow, so
+// the scene still insets for it and tabs that never drive the value are
+// unchanged.
+function AnimatedTabBar(props: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const fullHeight = TAB_BAR_BASE_HEIGHT + insets.bottom;
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: tabBarHidden.value * fullHeight }],
+  }));
+  return (
+    <Animated.View style={animatedStyle}>
+      <BottomTabBar {...props} />
+    </Animated.View>
+  );
+}
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -24,22 +44,24 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
         tabBarActiveTintColor: '#222222',
         tabBarInactiveTintColor: '#B4B4B4',
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: 'Inter_500Medium',
+          marginTop: 2,
+        },
         tabBarStyle: {
-          height: 50 + insets.bottom,
-          paddingHorizontal: 16
-        },
-        tabBarItemStyle: {
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        tabBarIconStyle: {
-          flex: 1,
-          alignSelf: "center",
+          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+          paddingTop: 8,
+          paddingHorizontal: 16,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(106,106,106,0.2)',
         },
         tabBarBadgeStyle: {
           backgroundColor: '#EE5700',
@@ -54,32 +76,37 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Home01Icon} size={28} color={color} />,
+          tabBarLabel: 'Бүртгэл',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={ClockCheckIcon} size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="timesheet"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Calendar03Icon} size={28} color={color} />,
+          tabBarLabel: 'Хуваарь',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Calendar03Icon} size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="request"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={28} color={color} />,
+          tabBarLabel: 'Хүсэлт',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={24} color={color} />,
           tabBarBadge: hasEmployeeRequest ? '' : undefined,
         }}
       />
       <Tabs.Screen
         name="salary"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={TugrugIcon} size={28} color={color} />,
+          tabBarLabel: 'Цалин',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={TugrugIcon} size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="announcement"
         options={{
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={28} color={color} />,
+          tabBarLabel: 'Мэдээлэл',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={24} color={color} />,
           tabBarBadge: hasAnnouncement ? '' : undefined,
         }}
       />
@@ -87,7 +114,8 @@ export default function TabLayout() {
         name="senior"
         options={{
           href: isSenior ? '/(auth)/(tabs)/senior' : null,
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={28} color={color} />,
+          tabBarLabel: 'Ахлах',
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={24} color={color} />,
           tabBarBadge: hasAssignedRequest ? '' : undefined,
         }}
       />

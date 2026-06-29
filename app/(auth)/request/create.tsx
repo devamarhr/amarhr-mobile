@@ -618,7 +618,7 @@ export default function RequestCreateScreen() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   isTextArea
-                  className={type === 'textOnly' ? 'h-80' : 'h-22'}
+                  className={type === 'textOnly' ? 'h-80' : 'h-25'}
                   placeholder={
                     params.settingKey === 'feedback'
                       ? 'Санал, хүсэлтээ энд бичнэ үү'

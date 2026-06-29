@@ -450,26 +450,29 @@ export default function HomeScreen() {
                 setMethodSheetOpen(true);
               }
             }}
-            className="w-[180px] h-[180px] rounded-full"
+            className="w-[200px] h-[200px] rounded-full items-center justify-center"
             style={{
-              backgroundColor: '#FFFFFF',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: action === 'none' ? 0.5 : 1,
-              shadowColor: '#A8C8F0',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 30,
-              elevation: 12,
+              backgroundColor: action === 'none' ? 'rgba(106,106,106,0.07)' : '#CCDFFC',
             }}
           >
-            <AppText
-              className="text-2xl text-center w-full px-5"
-              numberOfLines={1}
-              adjustsFontSizeToFit
+            <View
+              className="w-[180px] h-[180px] rounded-full bg-white items-center justify-center"
+              style={{
+                shadowColor: '#00265F',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: action === 'none' ? 0.15 : 0.25,
+                shadowRadius: 4,
+                elevation: 8,
+              }}
             >
-              {actionLabel(action)}
-            </AppText>
+              <AppText
+                className="text-[28px] leading-9 text-center"
+                style={{ color: action === 'none' ? 'rgba(180,180,180,0.5)' : '#090B42' }}
+                numberOfLines={1}
+              >
+                {actionLabel(action)}
+              </AppText>
+            </View>
           </Pressable>
         </View>
       </View>

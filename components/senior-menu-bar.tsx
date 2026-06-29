@@ -1,9 +1,10 @@
+import { AppText } from "@/components/app-text";
 import {
-  Calendar03Icon,
-  ChartIncreaseIcon,
-  IslandIcon,
-  Megaphone01Icon,
-  Note02Icon,
+  CalendarUserIcon,
+  LicenseDraftIcon,
+  MailReceive01Icon,
+  PercentIcon,
+  Sun03Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import React from "react";
@@ -11,42 +12,49 @@ import { Pressable, View } from "react-native";
 
 export type SeniorMenuKey = "request" | "announcement" | "performance" | "schedule" | "leave";
 
-const ITEMS: { key: SeniorMenuKey; icon: typeof Note02Icon }[] = [
-  { key: "request", icon: Note02Icon },
-  { key: "announcement", icon: Megaphone01Icon },
-  { key: "performance", icon: ChartIncreaseIcon },
-  { key: "schedule", icon: Calendar03Icon },
-  { key: "leave", icon: IslandIcon },
+const ITEMS: { key: SeniorMenuKey; icon: typeof PercentIcon; label: string }[] = [
+  { key: "request", icon: MailReceive01Icon, label: "Хүсэлт" },
+  { key: "announcement", icon: LicenseDraftIcon, label: "Зарлал" },
+  { key: "performance", icon: PercentIcon, label: "Гүйцэтгэл" },
+  { key: "schedule", icon: CalendarUserIcon, label: "Хуваарь" },
+  { key: "leave", icon: Sun03Icon, label: "Амралт" },
 ];
 
 interface Props {
   active: SeniorMenuKey;
   onChange: (key: SeniorMenuKey) => void;
   hiddenKeys?: SeniorMenuKey[];
+  badges?: SeniorMenuKey[];
 }
 
-export function SeniorMenuBar({ active, onChange, hiddenKeys }: Props) {
+export function SeniorMenuBar({ active, onChange, hiddenKeys, badges }: Props) {
   const items = hiddenKeys?.length
     ? ITEMS.filter((item) => !hiddenKeys.includes(item.key))
     : ITEMS;
   return (
-    <View className="self-center flex-row items-center gap-2 bg-black rounded-full px-3 py-2 mb-2">
+    <View className="flex-row items-center bg-lightblue rounded-[10px] overflow-hidden">
       {items.map((item) => {
         const isActive = item.key === active;
+        const hasBadge = badges?.includes(item.key);
         return (
           <Pressable
             key={item.key}
             onPress={() => {
               if (!isActive) onChange(item.key);
             }}
-            className="w-11 h-11 rounded-full items-center justify-center"
-            hitSlop={4}
+            className={`w-[60px] h-[60px] items-center justify-center rounded-[10px] ${
+              isActive ? "bg-darkblue" : ""
+            }`}
           >
-            <HugeiconsIcon
-              icon={item.icon}
-              size={24}
-              color={isActive ? "#FFFFFF" : "#949494"}
-            />
+            <HugeiconsIcon icon={item.icon} size={24} color={isActive ? "#FFFFFF" : "#A3ACC1"} />
+            <AppText
+              className={`text-[10px] font-medium mt-1 ${isActive ? "text-white" : "text-[#A3ACC1]"}`}
+            >
+              {item.label}
+            </AppText>
+            {hasBadge && (
+              <View className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-orange" />
+            )}
           </Pressable>
         );
       })}
