@@ -10,6 +10,7 @@ import {
 } from '@hugeicons-pro/core-stroke-rounded';
 import {
   ArrowDown01Icon,
+  ArrowUp01Icon,
   Sun03StrokeStandard,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -60,7 +61,9 @@ interface TimesheetDay {
   shifts: Shift[];
   is_work_day: boolean;
   is_public_holiday: boolean;
+  public_holiday_name: string | null;
   leave: string | null;
+  leave_type: string | null;
   annual: boolean;
   total_lateness_minutes: number;
   total_overtime_minutes: number;
@@ -110,7 +113,10 @@ function deriveDayData(monthData: TimesheetDay[]): DayData[] {
     if (d.is_public_holiday && !hasPlannedShift(d)) data.isHoliday = true;
     if (d.total_overtime_minutes > 0) data.hasOvertime = true;
     if (d.total_lateness_minutes > 0) data.isLate = true;
-    if (d.leave) data.isLeave = true;
+    if (d.leave) {
+      if (d.leave_type === 'remote') data.isRemote = true;
+      else data.isLeave = true;
+    }
     if (d.annual) data.isAnnualLeave = true;
     return data;
   });
@@ -119,16 +125,25 @@ function deriveDayData(monthData: TimesheetDay[]): DayData[] {
 interface YearSummaryStats {
   total_planned_minutes: number;
   total_worked_minutes: number;
+  total_break_minutes: number;
   total_regular_overtime_minutes: number;
   total_night_overtime_minutes: number;
   total_holiday_overtime_minutes: number;
   total_rest_day_overtime_minutes: number;
+  total_compensatory_minutes: number;
+  total_accumulated_minutes: number;
   total_compensatory_rest_minutes: number;
   total_lateness_minutes: number;
+  total_early_leave_minutes: number;
+  total_annual_leave_minutes: number;
+  total_annual_leave_days: number;
   total_paid_leave_minutes: number;
   total_unpaid_leave_minutes: number;
   total_work_days: number;
+  total_worked_days: number;
   total_public_holidays: number;
+  total_leave_days: number;
+  total_absent_days: number;
 }
 
 interface YearSummaryHoliday {
@@ -141,7 +156,6 @@ interface YearSummaryExtra {
   has_annual_leave: boolean;
   annual_leave_available_days: number;
   annual_leave_splits: { start_date: string; end_date: string; days: number }[];
-  annual_leave_plan_splits: { start_date: string; end_date: string; days: number }[];
   medical_examinations: string[];
 }
 
@@ -370,8 +384,13 @@ function TimesheetListRow({
         );
       })}
       {day.leave && (
-        <View className="bg-darkgray/7 px-3 py-1">
-          <AppText className="text-gray text-xs">{day.leave}</AppText>
+        <View className={cn('px-[15px] py-1', day.leave_type === 'remote' ? 'bg-[#e4f4ff]' : 'bg-yellow/10')}>
+          <AppText className="text-darkgray/70 text-xs">{day.leave}</AppText>
+        </View>
+      )}
+      {day.public_holiday_name && (
+        <View className="bg-blue/20 px-[15px] py-1">
+          <AppText className="text-darkgray/70 text-xs">{day.public_holiday_name}</AppText>
         </View>
       )}
     </View>
@@ -548,16 +567,12 @@ function YearView({
     (stats?.total_holiday_overtime_minutes ?? 0) +
     (stats?.total_rest_day_overtime_minutes ?? 0);
 
-  const yearStatsRows = [
-    {
-      label: 'Тайлант жил',
-      value: `${stats?.total_work_days ?? 0} хоног, ${formatMinutesHHMM(stats?.total_planned_minutes ?? 0)} цаг`,
-    },
+  const workHourRows = [
     { label: 'Ажилласан энгийн', value: `${formatMinutesHHMM(stats?.total_worked_minutes ?? 0)} цаг` },
     { label: 'Илүү цаг', value: `${formatMinutesHHMM(totalOvertimeMinutes)} цаг` },
     { label: 'Нөхөн амарсан цаг', value: `${formatMinutesHHMM(stats?.total_compensatory_rest_minutes ?? 0)} цаг` },
     { label: 'Цалинтай чөлөө', value: `${formatMinutesHHMM(stats?.total_paid_leave_minutes ?? 0)} цаг` },
-    { label: 'Хоцорсон', value: `${formatMinutesHHMM(stats?.total_lateness_minutes ?? 0)} цаг` },
+    { label: 'Хоцорсон, тасалсан', value: `${formatMinutesHHMM(stats?.total_lateness_minutes ?? 0)} цаг` },
     { label: 'Цалингүй чөлөө', value: `${formatMinutesHHMM(stats?.total_unpaid_leave_minutes ?? 0)} цаг` },
   ];
 
@@ -567,31 +582,24 @@ function YearView({
     `${s.start_date.slice(5).replace('-', '/')} - ${s.end_date.slice(5).replace('-', '/')}`;
 
   const validSplits = (extra?.annual_leave_splits ?? []).filter((s) => s?.start_date && s?.end_date);
-  const validPlanSplits = (extra?.annual_leave_plan_splits ?? []).filter((s) => s?.start_date && s?.end_date);
-  const hasSplits = !!extra?.has_annual_leave && (validSplits.length > 0 || validPlanSplits.length > 0);
+  const hasSplits = !!extra?.has_annual_leave && validSplits.length > 0;
   const splitFormattedList = validSplits.map(formatRange);
-  const planSplitFormattedList = validPlanSplits.map(formatRange);
   const hasMedical = !!extra?.medical_examinations?.[0];
   const medicalFormatted = hasMedical
     ? extra!.medical_examinations[0].slice(5).replace('-', '/')
-    : 'Хамрагдаагүй';
+    : 'Хамрагдахгүй';
 
   const highlightRanges = useMemo(() => {
-    const ranges: { start: string; end: string; color: 'blue' | 'green' | 'green/50' | 'cyan' }[] = [];
+    const ranges: { start: string; end: string; color: 'blue' | 'annual' | 'cyan' }[] = [];
     holidays.forEach((h) => {
       if (h.dates.length === 0) return;
       ranges.push({ start: h.dates[0], end: h.dates[h.dates.length - 1], color: 'blue' });
     });
     if (extra?.has_annual_leave) {
-      // Confirmed splits (bright green) first so .find() picks them over plans on overlap.
+      // Confirmed annual-leave splits (solid #DF9800).
       extra.annual_leave_splits?.forEach((s) => {
         if (s?.start_date && s?.end_date) {
-          ranges.push({ start: s.start_date, end: s.end_date, color: 'green' });
-        }
-      });
-      extra.annual_leave_plan_splits?.forEach((s) => {
-        if (s?.start_date && s?.end_date) {
-          ranges.push({ start: s.start_date, end: s.end_date, color: 'green/50' });
+          ranges.push({ start: s.start_date, end: s.end_date, color: 'annual' });
         }
       });
     }
@@ -623,9 +631,20 @@ function YearView({
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* Stats */}
+      {/* Тайлант жил */}
+      <View className="flex-row justify-between">
+        <AppText className="text-sm text-darkgray">Тайлант жил</AppText>
+        <View className="items-end">
+          <AppText className="text-sm">{stats?.total_work_days ?? 0} хоног</AppText>
+          <AppText className="text-sm">{formatMinutesHHMM(stats?.total_planned_minutes ?? 0)} цаг</AppText>
+        </View>
+      </View>
+
+      <Separator className="bg-darkgray/15 my-5" />
+
+      {/* Work-hour stats */}
       <View className="gap-3">
-        {yearStatsRows.map((item) => (
+        {workHourRows.map((item) => (
           <View key={item.label} className="flex-row justify-between">
             <AppText className="text-sm text-darkgray">{item.label}</AppText>
             <AppText className="text-sm">{item.value}</AppText>
@@ -638,19 +657,16 @@ function YearView({
       {/* Extra stats */}
       <View className="gap-3">
         <View className="flex-row justify-between">
-          <AppText className="text-sm text-darkgray">Э/амралтын боломжит хоног</AppText>
+          <AppText className="text-sm text-darkgray">Э/амралтын хоног</AppText>
           <AppText className="text-sm">{extra?.annual_leave_available_days ?? 0} хоног</AppText>
         </View>
 
         <View className="flex-row justify-between">
-          <AppText className="text-sm text-darkgray">Э/амралт төлөвлөсөн хуваарь</AppText>
+          <AppText className="text-sm text-darkgray">Э/а төлөвлөсөн хуваарь</AppText>
           {hasSplits ? (
             <View className="items-end gap-1">
               {splitFormattedList.map((s, i) => (
-                <AppText key={`s-${i}`} className="text-sm text-green">{s}</AppText>
-              ))}
-              {planSplitFormattedList.map((s, i) => (
-                <AppText key={`p-${i}`} className="text-sm text-green/50">{s}</AppText>
+                <AppText key={`s-${i}`} className="text-sm text-[#DF9800]">{s}</AppText>
               ))}
             </View>
           ) : (
@@ -660,15 +676,15 @@ function YearView({
 
         <View className="flex-row justify-between">
           <AppText className="text-sm text-darkgray">Эрүүл мэндийн үзлэг</AppText>
-          <AppText className={cn('text-sm', hasMedical ? 'text-darkcyan' : 'text-red')}>
+          <AppText className={cn('text-sm', hasMedical ? 'text-darkcyan' : 'text-black')}>
             {medicalFormatted}
           </AppText>
         </View>
 
         <View className="flex-row justify-between mb-7.5">
-          <AppText className="text-sm text-darkgray">Нийтээр амрах баярын өдөр</AppText>
+          <AppText className="text-sm text-darkgray">Баярын өдөр</AppText>
           <Pressable className="flex-row gap-1 items-center" onPress={() => setShowHoliday(!showHoliday)}>
-            <HugeiconsIcon icon={ArrowDown01Icon} />
+            <HugeiconsIcon icon={showHoliday ? ArrowUp01Icon : ArrowDown01Icon} />
             <AppText className="text-sm font-medium text-blue">{totalHolidayDays} хоног</AppText>
           </Pressable>
         </View>

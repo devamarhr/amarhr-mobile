@@ -37,6 +37,8 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
+const MAX_ATTACHMENTS = 3;
+
 interface Availability {
   start_date: string;
   end_date: string;
@@ -160,7 +162,7 @@ function SplitRow({
                 format="MM/DD"
                 minimumDate={minDate}
                 maximumDate={maxDate}
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                 isInvalid={!!rowErrors?.startDate || hasOverlap}
               />
             )}
@@ -178,7 +180,7 @@ function SplitRow({
                 value={dayOptions.find((o) => o.value === value)}
                 onValueChange={(opt) => onChange(opt?.value ?? '')}
                 placeholder="Сонгох"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                 renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                 isInvalid={!!rowErrors?.days || hasOverlap}
               />
@@ -292,9 +294,28 @@ export default function AnnualLeaveRequestScreen() {
     setIsUploading(false);
   };
 
+  const notifyAttachmentLimit = () => {
+    toast.show({
+      component: (props) => (
+        <AppToast
+          {...props}
+          variant="danger"
+          description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
+          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+        />
+      ),
+    });
+  };
+
   const handlePickAttachments = async () => {
-    const assets = await pickAttachments();
-    await uploadAssets(assets);
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+    if (remaining <= 0) {
+      notifyAttachmentLimit();
+      return;
+    }
+    const assets = await pickAttachments(remaining);
+    await uploadAssets(assets.slice(0, remaining));
+    if (assets.length > remaining) notifyAttachmentLimit();
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -525,14 +546,14 @@ export default function AnnualLeaveRequestScreen() {
                 />
 
                 <Pressable
-                  className="flex-row items-center justify-end gap-2"
+                  className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
                   onPress={handlePickAttachments}
-                  disabled={isUploading}
+                  disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
                 >
                   {isUploading ? (
                     <Spinner color="#005FEE" size="sm" />
                   ) : (
-                    <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
+                    <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   )}
                   <AppText className="text-sm text-darkgray">
                     {isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}
@@ -544,7 +565,7 @@ export default function AnnualLeaveRequestScreen() {
             {attachments.map((file, index) => (
               <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>
                     {file.name}
                   </AppText>

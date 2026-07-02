@@ -1,7 +1,7 @@
 import { AppText } from '@/components/app-text';
 import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { ArrowDown01Icon, MultiplicationSignIcon, Tick02Icon } from '@hugeicons-pro/core-stroke-standard';
+import { MultiplicationSignIcon, Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from 'react';
@@ -234,7 +234,7 @@ export function AppSelect({
                   </AppText>
                 )}
               </View>
-              <HugeiconsIcon icon={ArrowDown01Icon} size={24} color={arrowIconColor} />
+              <HugeiconsIcon icon={UnfoldMoreIcon} size={20} color={arrowIconColor} />
             </PressableFeedback>
           )}
         </Select.Trigger>
@@ -297,18 +297,20 @@ export function AppSelect({
                       )
                     ) : (
                       // Default render
-                      <>
-                        <View className="flex-1">
-                          <Select.ItemLabel />
-                        </View>
-                        <Select.ItemIndicator>
-                          <HugeiconsIcon
-                            icon={Tick02Icon}
-                            size={indicatorIconSize}
-                            color={indicatorIconColor}
-                          />
-                        </Select.ItemIndicator>
-                      </>
+                      ({ isSelected }) => (
+                        <>
+                          <View className="flex-1">
+                            <Select.ItemLabel className={isSelected ? 'font-medium' : 'font-normal'} />
+                          </View>
+                          <Select.ItemIndicator>
+                            <HugeiconsIcon
+                              icon={Tick02Icon}
+                              size={indicatorIconSize}
+                              color={indicatorIconColor}
+                            />
+                          </Select.ItemIndicator>
+                        </>
+                      )
                     )}
                   </Select.Item>
                   {showSeparators && index < options.length - 1 && (

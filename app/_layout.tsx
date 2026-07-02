@@ -6,7 +6,7 @@ import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
 import type { HeroUINativeConfig } from 'heroui-native';
-import { HeroUINativeProvider } from 'heroui-native';
+import { HeroUINativeProvider, PortalHost } from 'heroui-native';
 import { useCallback, useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -48,6 +48,11 @@ function AppContent() {
         }}
       >
         <Slot />
+        {/* Host for persistent floating overlays (e.g. the senior menu pill).
+            HeroUINativeProvider renders its default PortalHost after children,
+            so anything portaled here is guaranteed to draw below bottom sheets,
+            dialogs and toasts — deterministic z-order on Android included. */}
+        <PortalHost name="floating-overlay" />
         <AttachmentPickerHost />
       </HeroUINativeProvider>
     </AppThemeProvider>

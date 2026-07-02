@@ -1,9 +1,11 @@
+import { AppAttachmentList } from "@/components/app-attachment-list";
 import { AppButton } from "@/components/app-button";
 import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
 import { AppToast } from "@/components/app-toast";
+import { InfoRowsView, type InfoRow } from "@/components/info-rows";
 import { api, uploadFile } from "@/config/api";
 import { pickAttachments, type PickedAsset } from "@/utils/pick-attachment";
 import {
@@ -14,9 +16,10 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
-import { Avatar, Separator, Spinner, useToast } from "heroui-native";
+import { Avatar, Spinner, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -33,6 +36,8 @@ type FormType =
   | "employeeStatus"
   | "attendance";
 
+const MAX_ATTACHMENTS = 3;
+
 type ReviewerType = string | null;
 
 interface ReviewDetail {
@@ -41,8 +46,6 @@ interface ReviewDetail {
   decision_at?: string | null;
   attachments?: { name: string; path: string; url: string }[] | null;
 }
-
-type AttachmentItem = { name: string; path: string; url: string };
 
 interface SettingDetail {
   name?: string;
@@ -133,9 +136,12 @@ function getFormType(setting: RequestSetting | undefined, detail: Record<string,
   return "textOnly";
 }
 
-interface InfoRow {
-  label: string;
-  value: string;
+// Day-of-week index (0 = Sunday) → full Mongolian weekday name. The app has no
+// dayjs Mongolian locale, so weekday names are mapped manually.
+const WEEKDAYS_FULL = ["Ням", "Даваа", "Мягмар", "Лхагва", "Пүрэв", "Баасан", "Бямба"];
+
+function formatDayWeekday(d: dayjs.Dayjs): string {
+  return `${d.format("DD")} / ${WEEKDAYS_FULL[d.day()]}`;
 }
 
 function TruncatedText({
@@ -168,20 +174,6 @@ function TruncatedText({
   );
 }
 
-function InfoRowsView({ rows }: { rows: InfoRow[] }) {
-  if (rows.length === 0) return null;
-  return (
-    <View className="gap-2.5">
-      {rows.map((row, i) => (
-        <View key={i} className="flex-row gap-2 justify-between">
-          <AppText className="text-sm text-darkgray">{row.label}</AppText>
-          <AppText className="text-sm font-medium text-black">{row.value}</AppText>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function employeeFullName(emp: AssignedEmployee): string {
   const first = emp.first_name?.trim();
   const lastInitial = emp.last_name?.trim()?.[0];
@@ -209,7 +201,6 @@ export default function SeniorRequestDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [submittingAction, setSubmittingAction] = useState<ActionType | null>(null);
-  const [viewingAttachments, setViewingAttachments] = useState<AttachmentItem[] | null>(null);
   const [actionAttachments, setActionAttachments] = useState<{ name: string; path: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingAction, setPendingAction] = useState<ActionType | null>(null);
@@ -243,9 +234,28 @@ export default function SeniorRequestDetailScreen() {
     setIsUploading(false);
   };
 
+  const notifyAttachmentLimit = () => {
+    toast.show({
+      component: (props) => (
+        <AppToast
+          {...props}
+          variant="danger"
+          description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
+          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+        />
+      ),
+    });
+  };
+
   const handlePickAttachments = async () => {
-    const assets = await pickAttachments();
-    await uploadAssets(assets);
+    const remaining = MAX_ATTACHMENTS - actionAttachments.length;
+    if (remaining <= 0) {
+      notifyAttachmentLimit();
+      return;
+    }
+    const assets = await pickAttachments(remaining);
+    await uploadAssets(assets.slice(0, remaining));
+    if (assets.length > remaining) notifyAttachmentLimit();
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -320,7 +330,7 @@ export default function SeniorRequestDetailScreen() {
       const rows: InfoRow[] = [];
       if (detail.startDate) {
         const d = dayjs(detail.startDate, "YYYY-MM-DD");
-        if (d.isValid()) rows.push({ label: "Эхлэх өдөр", value: d.format("MM/DD") });
+        if (d.isValid()) rows.push({ label: "Эхлэх өдөр", value: formatDayWeekday(d) });
       }
       if (detail.days != null) rows.push({ label: "Хоног", value: `${detail.days} хоног` });
       return rows;
@@ -337,7 +347,7 @@ export default function SeniorRequestDetailScreen() {
           ? start.add(detail.hours, "hour")
           : null;
       if (start && start.isValid()) {
-        rows.push({ label: "Огноо", value: start.format("MM/DD") });
+        rows.push({ label: "Огноо", value: formatDayWeekday(start) });
       }
       if (start && start.isValid() && end && end.isValid()) {
         const hoursText = detail.hours != null ? ` (${detail.hours} цаг)` : "";
@@ -382,7 +392,7 @@ export default function SeniorRequestDetailScreen() {
         : null;
       const rows: InfoRow[] = [];
       if (shiftDate && shiftDate.isValid()) {
-        rows.push({ label: "Огноо", value: shiftDate.format("MM/DD") });
+        rows.push({ label: "Огноо", value: formatDayWeekday(shiftDate) });
       }
       shifts.forEach((s, idx) => {
         const arrival = parseDt(s.arrivalTime);
@@ -418,7 +428,7 @@ export default function SeniorRequestDetailScreen() {
       const rows: InfoRow[] = [{ label: "Төрөл", value: mode === "day" ? "Өдрөөр" : "Цагаар" }];
 
       if (mode === "hour") {
-        if (startValue) rows.push({ label: "Огноо", value: startValue.format("MM/DD") });
+        if (startValue) rows.push({ label: "Огноо", value: formatDayWeekday(startValue) });
         if (startValue && endValue) {
           const workMinutes = typeof detail.work_minutes === "number" ? detail.work_minutes : null;
           const durationText =
@@ -434,10 +444,10 @@ export default function SeniorRequestDetailScreen() {
         if (startValue && endValue) {
           rows.push({
             label: "Огноо",
-            value: `${startValue.format("MM/DD")} — ${endValue.format("MM/DD")}`,
+            value: `${formatDayWeekday(startValue)} — ${formatDayWeekday(endValue)}`,
           });
         } else if (startValue) {
-          rows.push({ label: "Огноо", value: startValue.format("MM/DD") });
+          rows.push({ label: "Огноо", value: formatDayWeekday(startValue) });
         }
         if (detail.days != null) {
           rows.push({ label: "Хугацаа", value: `${detail.days} өдөр` });
@@ -467,7 +477,7 @@ export default function SeniorRequestDetailScreen() {
             ? start.add(detail.hours, "hour")
             : null;
         if (start && start.isValid()) {
-          rows.push({ label: "Огноо", value: start.format("YYYY/MM/DD") });
+          rows.push({ label: "Огноо", value: formatDayWeekday(start) });
         }
         if (start && start.isValid() && end && end.isValid()) {
           const hoursText = detail.hours != null ? ` (${detail.hours} цаг)` : "";
@@ -491,10 +501,10 @@ export default function SeniorRequestDetailScreen() {
         if (startDay && startDay.isValid() && endDay && endDay.isValid() && !sameDay) {
           rows.push({
             label: "Огноо",
-            value: `${startDay.format("YYYY/MM/DD")} — ${endDay.format("YYYY/MM/DD")}`,
+            value: `${formatDayWeekday(startDay)} — ${formatDayWeekday(endDay)}`,
           });
         } else if (startDay && startDay.isValid()) {
-          rows.push({ label: "Огноо", value: startDay.format("YYYY/MM/DD") });
+          rows.push({ label: "Огноо", value: formatDayWeekday(startDay) });
         }
         if (detail.days != null) {
           rows.push({ label: "Хугацаа", value: `${detail.days} хоног` });
@@ -511,14 +521,6 @@ export default function SeniorRequestDetailScreen() {
 
     if (formType === "remote") {
       const rows: InfoRow[] = [];
-      const dateSrc = detail.date ?? detail.startDate ?? detail.start;
-      if (dateSrc) {
-        const d = dayjs(dateSrc, ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD"]);
-        if (d.isValid()) rows.push({ label: "Огноо", value: d.format("YYYY/MM/DD") });
-      }
-      if (detail.days != null) {
-        rows.push({ label: "Хугацаа", value: `${detail.days} хоног` });
-      }
       const settingFields = request.setting.detail?.fields;
       const settingFieldsObj =
         settingFields && !Array.isArray(settingFields) ? settingFields : undefined;
@@ -527,7 +529,20 @@ export default function SeniorRequestDetailScreen() {
         request.setting.detail?.salary_percent ??
         settingFieldsObj?.salary_percent;
       if (salaryPercent != null) {
-        rows.push({ label: "Ирцээс хамаарсан цалин", value: `${salaryPercent}%` });
+        rows.push({ label: "Цалин бодолт", value: `${salaryPercent} %` });
+      }
+      const parseDate = (s?: string) =>
+        s ? dayjs(s, ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD"]) : null;
+      const start = parseDate(detail.startDate ?? detail.start ?? detail.date);
+      let end = parseDate(detail.endDate ?? detail.end);
+      if ((!end || !end.isValid()) && start && start.isValid() && detail.days != null) {
+        end = start.add(detail.days, "day");
+      }
+      if (start && start.isValid()) {
+        rows.push({ label: "Эхлэх өдөр", value: formatDayWeekday(start) });
+      }
+      if (end && end.isValid()) {
+        rows.push({ label: "Дуусах өдөр", value: formatDayWeekday(end) });
       }
       return rows;
     }
@@ -543,9 +558,9 @@ export default function SeniorRequestDetailScreen() {
         ? dayjs(endSrc, ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD"])
         : null;
       if (start && start.isValid() && end && end.isValid()) {
-        rows.push({ label: "Огноо", value: `${start.format("MM/DD")} - ${end.format("MM/DD")}` });
+        rows.push({ label: "Огноо", value: `${formatDayWeekday(start)} — ${formatDayWeekday(end)}` });
       } else if (start && start.isValid()) {
-        rows.push({ label: "Огноо", value: start.format("MM/DD") });
+        rows.push({ label: "Огноо", value: formatDayWeekday(start) });
       }
       if (detail.days != null) {
         rows.push({ label: "Нийт хоног", value: `${detail.days} хоног` });
@@ -567,37 +582,23 @@ export default function SeniorRequestDetailScreen() {
   const renderAnnualLeave = () => {
     const splits = Array.isArray(detail.splits) ? detail.splits : [];
     if (splits.length === 0) return null;
-    const totalDays = splits.reduce(
-      (sum: number, p: any) => sum + (Number(p?.days) || 0),
-      0
-    );
-    return (
-      <View className="gap-2.5">
-        {splits.map((p: any, i: number) => {
-          const start = p.start_date ? dayjs(p.start_date, "YYYY-MM-DD") : null;
-          const end = p.end_date ? dayjs(p.end_date, "YYYY-MM-DD") : null;
-          const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, "day");
-          let value = "";
-          if (start && start.isValid() && end && end.isValid() && !sameDay) {
-            value = `${start.format("YYYY/MM/DD")} — ${end.format("YYYY/MM/DD")}`;
-          } else if (start && start.isValid()) {
-            value = start.format("YYYY/MM/DD");
-          }
-          return (
-            <View key={i} className="flex-row gap-2 justify-between">
-              <AppText className="text-sm text-darkgray">Амралт {i + 1}</AppText>
-              <AppText className="text-sm font-medium text-black">{value}</AppText>
-            </View>
-          );
-        })}
-        {totalDays > 0 && (
-          <View className="flex-row gap-2 justify-between">
-            <AppText className="text-sm text-darkgray">Хоног</AppText>
-            <AppText className="text-sm font-medium text-black">{totalDays} хоног</AppText>
-          </View>
-        )}
-      </View>
-    );
+    const rows: InfoRow[] = [];
+    let totalDays = 0;
+    splits.forEach((p: any, i: number) => {
+      totalDays += Number(p?.days) || 0;
+      const start = p.start_date ? dayjs(p.start_date, "YYYY-MM-DD") : null;
+      const end = p.end_date ? dayjs(p.end_date, "YYYY-MM-DD") : null;
+      const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, "day");
+      let value = "";
+      if (start && start.isValid() && end && end.isValid() && !sameDay) {
+        value = `${formatDayWeekday(start)} — ${formatDayWeekday(end)}`;
+      } else if (start && start.isValid()) {
+        value = formatDayWeekday(start);
+      }
+      rows.push({ label: `Амралт ${i + 1}`, value });
+    });
+    if (totalDays > 0) rows.push({ label: "Хоног", value: `${totalDays} хоног` });
+    return <InfoRowsView rows={rows} withColon />;
   };
 
   const employee = request?.employee;
@@ -605,7 +606,6 @@ export default function SeniorRequestDetailScreen() {
   return (
     <>
     <StyledSafeAreaView className="flex-1 bg-darkgray/7" edges={["top"]}>
-      <View className="flex-1">
         {loading ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator />
@@ -616,12 +616,22 @@ export default function SeniorRequestDetailScreen() {
           </View>
         ) : (
           <>
-            <View className="px-4 pb-5">
+            <View className="px-4">
               <AppHeader
                 backTitle="Буцах"
                 backTitleClassName="text-sm font-medium text-darkgray"
                 showBack
               />
+            </View>
+
+            <KeyboardAwareScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bottomOffset={20}
+            >
+            <View className="px-4 pb-5 bg-darkgray/7">
 
               {employee && (
                 <View className="flex-row items-center gap-3 mb-5">
@@ -647,28 +657,16 @@ export default function SeniorRequestDetailScreen() {
               <AppText className="text-base font-medium text-black mb-3" numberOfLines={1}>
                 {request.setting.name}
               </AppText>
-              <Separator className="bg-darkgray/50 mb-5" />
 
               <View className="gap-6">
                 {formType === "annualLeave"
                   ? renderAnnualLeave()
                   : formRows.length > 0
-                    ? <InfoRowsView rows={formRows} />
+                    ? <InfoRowsView rows={formRows} withColon />
                     : null}
 
                 <View className="gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <AppText className="text-sm text-darkgray">Шалтгаан</AppText>
-                    {request.attachments && request.attachments.length > 0 && (
-                      <Pressable
-                        className="flex-row items-center gap-1.5"
-                        onPress={() => setViewingAttachments(request.attachments!)}
-                      >
-                        <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={16} />
-                        <AppText className="text-sm text-blue">Хавсралттай</AppText>
-                      </Pressable>
-                    )}
-                  </View>
+                  <AppText className="text-sm text-darkgray">Шалтгаан</AppText>
                   {description ? (
                     <TruncatedText
                       text={description}
@@ -678,6 +676,7 @@ export default function SeniorRequestDetailScreen() {
                   ) : (
                     <AppText className="text-sm text-muted">-</AppText>
                   )}
+                  <AppAttachmentList attachments={request.attachments} className="mt-1.5" />
                 </View>
 
               </View>
@@ -686,18 +685,7 @@ export default function SeniorRequestDetailScreen() {
             <View className="flex-1 bg-background px-4">
             {request.review_detail?.comment && (
               <View className="pt-5 gap-1">
-                <View className="flex-row items-center justify-between">
-                  <AppText className="text-sm text-darkgray">Санал</AppText>
-                  {request.review_detail.attachments && request.review_detail.attachments.length > 0 && (
-                    <Pressable
-                      className="flex-row items-center gap-1.5"
-                      onPress={() => setViewingAttachments(request.review_detail!.attachments!)}
-                    >
-                      <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={16} />
-                      <AppText className="text-sm text-blue">Хавсралттай</AppText>
-                    </Pressable>
-                  )}
-                </View>
+                <AppText className="text-sm text-darkgray">Санал</AppText>
                 <TruncatedText
                   text={request.review_detail.comment}
                   className="text-sm"
@@ -708,22 +696,12 @@ export default function SeniorRequestDetailScreen() {
                     })
                   }
                 />
+                <AppAttachmentList attachments={request.review_detail.attachments} className="mt-1.5" />
               </View>
             )}
             {request.decision_detail?.comment && (
               <View className="pt-5 gap-1">
-                <View className="flex-row items-center justify-between">
-                  <AppText className="text-sm text-darkgray">Шийдвэр</AppText>
-                  {request.decision_detail.attachments && request.decision_detail.attachments.length > 0 && (
-                    <Pressable
-                      className="flex-row items-center gap-1.5"
-                      onPress={() => setViewingAttachments(request.decision_detail!.attachments!)}
-                    >
-                      <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={16} />
-                      <AppText className="text-sm text-blue">Хавсралттай</AppText>
-                    </Pressable>
-                  )}
-                </View>
+                <AppText className="text-sm text-darkgray">Шийдвэр</AppText>
                 <TruncatedText
                   text={request.decision_detail.comment}
                   className="text-sm"
@@ -734,6 +712,7 @@ export default function SeniorRequestDetailScreen() {
                     })
                   }
                 />
+                <AppAttachmentList attachments={request.decision_detail.attachments} className="mt-1.5" />
               </View>
             )}
             {actionMode !== "readOnly" && (
@@ -746,17 +725,19 @@ export default function SeniorRequestDetailScreen() {
                   multiline
                   numberOfLines={4}
                   className="min-h-24"
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
                 />
 
                 <Pressable
-                  className="flex-row items-center justify-end gap-2"
+                  className={`flex-row items-center justify-end gap-2 ${actionAttachments.length >= MAX_ATTACHMENTS ? "opacity-40" : ""}`}
                   onPress={handlePickAttachments}
-                  disabled={isUploading}
+                  disabled={isUploading || actionAttachments.length >= MAX_ATTACHMENTS}
                 >
                   {isUploading ? (
                     <Spinner color="#005FEE" size="sm" />
                   ) : (
-                    <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
+                    <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   )}
                   <AppText className="text-sm text-darkgray">
                     {isUploading ? "Хуулж байна..." : "Файл хавсаргах"}
@@ -766,7 +747,7 @@ export default function SeniorRequestDetailScreen() {
                 {actionAttachments.map((file, index) => (
                   <View key={index} className="flex-row items-center gap-3">
                     <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                      <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                      <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                       <AppText className="text-sm flex-1" numberOfLines={1}>
                         {file.name}
                       </AppText>
@@ -782,10 +763,13 @@ export default function SeniorRequestDetailScreen() {
               </View>
             )}
 
+            </View>
+            </KeyboardAwareScrollView>
+
             {actionMode === "decide" ? (
               <View
-                className="flex-row gap-3 mt-auto"
-                style={{ paddingBottom: insets.bottom + 10, paddingTop: 24 }}
+                className="flex-row gap-3 px-4 bg-background"
+                style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}
               >
                 <AppButton
                   label="Татгалзах"
@@ -807,7 +791,7 @@ export default function SeniorRequestDetailScreen() {
                 />
               </View>
             ) : actionMode === "review" ? (
-              <View className="mt-auto" style={{ paddingBottom: insets.bottom + 10, paddingTop: 24 }}>
+              <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>
                 <AppButton
                   label="Саналаа илгээх"
                   className="border-darkcyan/15 bg-darkcyan/10"
@@ -820,47 +804,22 @@ export default function SeniorRequestDetailScreen() {
               </View>
             ) : request?.review_by_type?.includes("Employee") && request?.status === "pending" ? (
               <View
-                className="items-center mt-auto"
-                style={{ paddingBottom: insets.bottom + 10, paddingTop: 24 }}
+                className="items-center px-4 bg-background"
+                style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}
               >
                 <AppText className="text-base font-medium text-darkcyan">Санал өгсөн</AppText>
               </View>
             ) : status ? (
               <View
-                className="items-center mt-auto"
-                style={{ paddingBottom: insets.bottom + 10, paddingTop: 24 }}
+                className="items-center px-4 bg-background"
+                style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}
               >
                 <AppText className={`text-base font-medium ${status.color}`}>{status.label}</AppText>
               </View>
             ) : null}
-            </View>
           </>
         )}
-      </View>
     </StyledSafeAreaView>
-
-    <AppDialog
-      isOpen={viewingAttachments !== null}
-      onOpenChange={(open) => !open && setViewingAttachments(null)}
-    >
-      <View className="mb-4 gap-1.5">
-        <AppDialog.Title>Хавсралт</AppDialog.Title>
-      </View>
-      <View className="gap-2">
-        {viewingAttachments?.map((file, i) => (
-          <Pressable
-            key={i}
-            className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-            onPress={() => Linking.openURL(file.url)}
-          >
-            <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
-            <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-              {file.name}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
-    </AppDialog>
 
     <AppDialog isOpen={pendingAction !== null} onOpenChange={(open) => !open && setPendingAction(null)}>
       <View className="mb-5 gap-1.5">

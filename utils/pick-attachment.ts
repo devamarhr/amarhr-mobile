@@ -41,7 +41,10 @@ async function maybeConvertImage(
   }
 }
 
-export async function pickPhotos(): Promise<PickedAsset[]> {
+// `selectionLimit` caps how many photos the system picker lets the user select
+// (0 = unlimited). Pass the number of remaining attachment slots so the picker
+// itself enforces the limit rather than silently dropping the overflow.
+export async function pickPhotos(selectionLimit = 0): Promise<PickedAsset[]> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== 'granted') {
     Alert.alert('Зөвшөөрөл хэрэгтэй', 'Зураг сонгохын тулд зөвшөөрөл өгнө үү');
@@ -50,6 +53,7 @@ export async function pickPhotos(): Promise<PickedAsset[]> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsMultipleSelection: true,
+    selectionLimit,
     quality: 0.8,
   });
   if (result.canceled) return [];
@@ -69,7 +73,7 @@ export async function pickDocuments(): Promise<PickedAsset[]> {
 }
 
 type Resolver = (assets: PickedAsset[]) => void;
-type Requester = (resolve: Resolver) => void;
+type Requester = (resolve: Resolver, selectionLimit: number) => void;
 
 let activeRequester: Requester | null = null;
 
@@ -77,13 +81,13 @@ export function registerAttachmentPickerHost(requester: Requester | null) {
   activeRequester = requester;
 }
 
-export function pickAttachments(): Promise<PickedAsset[]> {
+export function pickAttachments(selectionLimit = 0): Promise<PickedAsset[]> {
   return new Promise((resolve) => {
     if (!activeRequester) {
       console.warn('AttachmentPickerHost not mounted; pickAttachments() returning []');
       resolve([]);
       return;
     }
-    activeRequester(resolve);
+    activeRequester(resolve, selectionLimit);
   });
 }

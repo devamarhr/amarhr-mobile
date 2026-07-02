@@ -15,6 +15,7 @@ export interface DayData {
   hasOvertime?: boolean;
   isLate?: boolean;
   isLeave?: boolean;
+  isRemote?: boolean;
   isAnnualLeave?: boolean;
 }
 
@@ -143,7 +144,10 @@ function DayCell({
           <View className="w-1.5 h-1.5 rounded-full bg-red" />
         )}
         {day.isCurrentMonth && data?.isLeave && (
-          <View className="w-6 h-1.5 rounded-full bg-darkgray/30" />
+          <View className="w-6 h-1.5 rounded-full bg-yellow/30" />
+        )}
+        {day.isCurrentMonth && data?.isRemote && (
+          <View className="w-6 h-1.5 rounded-full bg-[#00B8D4]/30" />
         )}
         {day.isCurrentMonth && data?.isAnnualLeave && (
           <HugeiconsIcon icon={Sun03Icon} size={12} color="#F0B400" />
@@ -207,7 +211,7 @@ interface MiniCalendarProps {
   year: number;
   month: number; // 1-12
   dayDataMap?: Record<string, DayData>;
-  highlightRanges?: { start: string; end: string; color: 'green' | 'green/50' | 'blue' | 'cyan' }[];
+  highlightRanges?: { start: string; end: string; color: 'annual' | 'blue' | 'cyan' }[];
   hideOtherMonthDays?: boolean;
 }
 
@@ -230,8 +234,8 @@ function MiniDayCell({
   const rawHighlight = highlightRanges?.find(
     (r) => day.date >= r.start && day.date <= r.end && day.isCurrentMonth,
   );
-  // Annual leave (green/green-50) skips non-working days within the range.
-  const isAnnualLeave = rawHighlight?.color === 'green' || rawHighlight?.color === 'green/50';
+  // Annual leave (#DF9800) skips non-working days within the range.
+  const isAnnualLeave = rawHighlight?.color === 'annual';
   const highlight = rawHighlight && isAnnualLeave && isNonWorking ? undefined : rawHighlight;
 
   return (
@@ -240,8 +244,7 @@ function MiniDayCell({
         className={cn(
           'w-5 h-5 items-center justify-center rounded-full',
           day.isToday && 'bg-lightblue',
-          highlight?.color === 'green' && 'bg-green',
-          highlight?.color === 'green/50' && 'bg-green/50',
+          highlight?.color === 'annual' && 'bg-[#DF9800]',
           highlight?.color === 'blue' && 'bg-blue',
           highlight?.color === 'cyan' && 'bg-cyan',
         )}

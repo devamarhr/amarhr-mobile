@@ -28,6 +28,8 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
+const MAX_ATTACHMENTS = 3;
+
 interface HeaderInfoItem {
   label: string;
   value: string;
@@ -111,9 +113,28 @@ export default function CompensatoryRequestScreen() {
     setIsUploading(false);
   };
 
+  const notifyAttachmentLimit = () => {
+    toast.show({
+      component: (props) => (
+        <AppToast
+          {...props}
+          variant="danger"
+          description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
+          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+        />
+      ),
+    });
+  };
+
   const handlePickAttachments = async () => {
-    const assets = await pickAttachments();
-    await uploadAssets(assets);
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+    if (remaining <= 0) {
+      notifyAttachmentLimit();
+      return;
+    }
+    const assets = await pickAttachments(remaining);
+    await uploadAssets(assets.slice(0, remaining));
+    if (assets.length > remaining) notifyAttachmentLimit();
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -155,7 +176,7 @@ export default function CompensatoryRequestScreen() {
     if (!compensatoryCheck || compensatoryCheck.is_eligible) return null;
     if (compensatoryCheck.work_minutes === 0) return 'Ажлын цаг байхгүй байна';
     const requested = formatMinutesAsHHMM(compensatoryCheck.work_minutes);
-    return `Таны хүсэлт гаргасан цаг ${requested} нь хуримтлагдсан цагаас хэтэрсэн байна`;
+    return `Таны нөхөж амрах хүсэлтийн цаг ${requested} хуримтлагдсан цагаас хэтэрсэн байна`;
   }, [compensatoryCheck]);
 
   useEffect(() => {
@@ -336,7 +357,7 @@ export default function CompensatoryRequestScreen() {
                         onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
                         placeholder="00/00"
                         format="MM/DD"
-                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.start}
                         errorMessage={errors.start?.message}
                       />
@@ -357,7 +378,7 @@ export default function CompensatoryRequestScreen() {
                         placeholder="00/00"
                         format="MM/DD"
                         minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
-                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.end}
                         errorMessage={errors.end?.message}
                         isDisabled={!watchStart}
@@ -388,7 +409,7 @@ export default function CompensatoryRequestScreen() {
                           }}
                           placeholder="00/00"
                           format="MM/DD"
-                          icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                          icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                           isInvalid={!!errors.hourDate}
                           errorMessage={errors.hourDate?.message}
                         />
@@ -412,7 +433,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                          icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.start}
                           errorMessage={errors.start?.message}
                           isDisabled={!watchHourDate}
@@ -434,7 +455,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                          icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.end}
                           errorMessage={errors.end?.message}
                           isDisabled={!watchHourDate}
@@ -448,6 +469,15 @@ export default function CompensatoryRequestScreen() {
 
             {rangeError && (
               <AppText className="text-sm text-red -mt-3">{rangeError}</AppText>
+            )}
+
+            {!rangeError && compensatoryCheck?.is_eligible && compensatoryCheck.work_minutes > 0 && (
+              <View className="flex-row items-center gap-2 -mt-3">
+                <AppText className="text-sm text-darkgray">Нөхөж амрах хүсэлтийн цаг</AppText>
+                <AppText className="text-sm font-medium text-black">
+                  {formatMinutesAsHHMM(compensatoryCheck.work_minutes)}
+                </AppText>
+              </View>
             )}
 
             {!rangeError && eligibilityError && (
@@ -470,11 +500,15 @@ export default function CompensatoryRequestScreen() {
               )}
             />
 
-            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickAttachments} disabled={isUploading}>
+            <Pressable
+              className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
+              onPress={handlePickAttachments}
+              disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
+            >
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
               )}
               <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
@@ -482,7 +516,7 @@ export default function CompensatoryRequestScreen() {
             {attachments.map((file, index) => (
               <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable

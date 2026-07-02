@@ -1,22 +1,23 @@
+import { AppAttachmentList } from '@/components/app-attachment-list';
 import { AppButton } from '@/components/app-button';
 import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
+import { InfoRowsView, type InfoRow } from '@/components/info-rows';
 import { api } from '@/config/api';
 import { useRequestRefreshStore } from '@/store/request-refresh-store';
 import {
   Alert01Icon,
   ArrowLeft02Icon,
   CheckmarkCircle02Icon,
-  FileAttachmentIcon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Separator, useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -138,41 +139,6 @@ function getFormType(setting: RequestSetting | undefined, detail: Record<string,
   return 'textOnly';
 }
 
-interface InfoRow {
-  label: string;
-  value: string;
-}
-
-function InfoRowsView({ rows }: { rows: InfoRow[] }) {
-  if (rows.length === 0) return null;
-  return (
-    <View className="gap-5">
-      {rows.map((row, i) => (
-        <View key={i} className="gap-1">
-          <AppText className="text-sm text-darkgray/50">{row.label}</AppText>
-          <AppText className="text-base font-medium text-black">{row.value}</AppText>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function AttachmentButton({
-  attachments,
-  onPress,
-}: {
-  attachments?: Attachment[] | null;
-  onPress: () => void;
-}) {
-  if (!attachments || attachments.length === 0) return null;
-  return (
-    <Pressable className="flex-row items-center gap-1.5 self-start mt-1.5" onPress={onPress}>
-      <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-      <AppText className="text-base text-blue">Хавсралттай</AppText>
-    </Pressable>
-  );
-}
-
 export default function RequestDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -180,7 +146,6 @@ export default function RequestDetailScreen() {
   const { toast } = useToast();
   const [request, setRequest] = useState<EmployeeRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewingAttachments, setViewingAttachments] = useState<Attachment[] | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -511,33 +476,21 @@ export default function RequestDetailScreen() {
       (sum: number, p: any) => sum + (Number(p?.days) || 0),
       0
     );
-    return (
-      <View className="gap-5">
-        {splits.map((p: any, i: number) => {
-          const start = p.start_date ? dayjs(p.start_date, 'YYYY-MM-DD') : null;
-          const end = p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD') : null;
-          const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, 'day');
-          let value = '';
-          if (start && start.isValid() && end && end.isValid() && !sameDay) {
-            value = `${start.format('YYYY/MM/DD')} — ${end.format('YYYY/MM/DD')}`;
-          } else if (start && start.isValid()) {
-            value = start.format('YYYY/MM/DD');
-          }
-          return (
-            <View key={i} className="gap-1">
-              <AppText className="text-sm text-darkgray/50">Амралт {i + 1}</AppText>
-              <AppText className="text-base font-medium text-black">{value}</AppText>
-            </View>
-          );
-        })}
-        {totalDays > 0 && (
-          <View className="gap-1">
-            <AppText className="text-sm text-darkgray/50">Хоног</AppText>
-            <AppText className="text-base font-medium text-black">{totalDays} хоног</AppText>
-          </View>
-        )}
-      </View>
-    );
+    const rows: InfoRow[] = [];
+    splits.forEach((p: any, i: number) => {
+      const start = p.start_date ? dayjs(p.start_date, 'YYYY-MM-DD') : null;
+      const end = p.end_date ? dayjs(p.end_date, 'YYYY-MM-DD') : null;
+      const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, 'day');
+      let value = '';
+      if (start && start.isValid() && end && end.isValid() && !sameDay) {
+        value = `${start.format('YYYY/MM/DD')} — ${end.format('YYYY/MM/DD')}`;
+      } else if (start && start.isValid()) {
+        value = start.format('YYYY/MM/DD');
+      }
+      rows.push({ label: `Амралт ${i + 1}`, value });
+    });
+    if (totalDays > 0) rows.push({ label: 'Хоног', value: `${totalDays} хоног` });
+    return <InfoRowsView rows={rows} labelClassName="text-darkgray/50" valueClassName="text-base" />;
   };
 
   return (
@@ -576,7 +529,7 @@ export default function RequestDetailScreen() {
                 {formType === 'annualLeave'
                   ? renderAnnualLeave()
                   : formRows.length > 0
-                    ? <InfoRowsView rows={formRows} />
+                    ? <InfoRowsView rows={formRows} labelClassName="text-darkgray/50" valueClassName="text-base" />
                     : null}
 
                 <View className="gap-1">
@@ -584,10 +537,7 @@ export default function RequestDetailScreen() {
                   <AppText className={`text-base ${description ? 'text-black' : 'text-muted'}`}>
                     {description || '-'}
                   </AppText>
-                  <AttachmentButton
-                    attachments={request.attachments}
-                    onPress={() => setViewingAttachments(request.attachments)}
-                  />
+                  <AppAttachmentList attachments={request.attachments} className="mt-1.5" />
                 </View>
 
                 {(request.decision_detail?.comment || request.review_detail?.comment) && (
@@ -599,10 +549,7 @@ export default function RequestDetailScreen() {
                           {getReviewLabel(request.review_by_type) ?? 'Санал'}
                         </AppText>
                         <AppText className="text-sm mt-1">{request.review_detail.comment}</AppText>
-                        <AttachmentButton
-                          attachments={request.review_detail.attachments}
-                          onPress={() => setViewingAttachments(request.review_detail!.attachments!)}
-                        />
+                        <AppAttachmentList attachments={request.review_detail.attachments} className="mt-1.5" />
                       </View>
                     )}
                     {request.decision_detail?.comment && (
@@ -611,10 +558,7 @@ export default function RequestDetailScreen() {
                           {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
                         </AppText>
                         <AppText className="text-sm mt-1">{request.decision_detail.comment}</AppText>
-                        <AttachmentButton
-                          attachments={request.decision_detail.attachments}
-                          onPress={() => setViewingAttachments(request.decision_detail!.attachments!)}
-                        />
+                        <AppAttachmentList attachments={request.decision_detail.attachments} className="mt-1.5" />
                       </View>
                     )}
                   </View>
@@ -644,26 +588,6 @@ export default function RequestDetailScreen() {
           </>
         )}
       </StyledSafeAreaView>
-
-      <AppDialog isOpen={viewingAttachments !== null} onOpenChange={(o) => !o && setViewingAttachments(null)}>
-        <View className="mb-4 gap-1.5">
-          <AppDialog.Title>Хавсралт</AppDialog.Title>
-        </View>
-        <View className="gap-2">
-          {viewingAttachments?.map((file, i) => (
-            <Pressable
-              key={i}
-              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-              onPress={() => Linking.openURL(file.url)}
-            >
-              <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={20} />
-              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                {file.name}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-      </AppDialog>
 
       <AppDialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
         <View className="mb-5 gap-1.5">

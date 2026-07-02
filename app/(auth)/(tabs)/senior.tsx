@@ -1,3 +1,4 @@
+import { AppAttachmentList } from "@/components/app-attachment-list";
 import { AppButton } from "@/components/app-button";
 import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
@@ -20,25 +21,23 @@ import {
   ArrowDown01Icon,
   ArrowUp01Icon,
   CheckmarkCircle02Icon,
-  FileAttachmentIcon,
   MinusSignIcon,
-  MultiplicationSignIcon,
   PlusSignIcon,
   Search01Icon,
   SquareLock02Icon,
   SquareUnlock02Icon,
   Task01Icon,
+  Tick02Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useIsFocused } from "@react-navigation/native";
 import dayjs from "dayjs";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, Portal, PressableFeedback, Separator, useToast } from "heroui-native";
+import { Avatar, BottomSheet, cn, Portal, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -91,11 +90,6 @@ interface MonthlySummary {
   count: number;
 }
 
-const STATUS_DOT: Record<string, string> = {
-  approved: "bg-green",
-  rejected: "bg-red",
-};
-
 const FILTER_OPTIONS: SelectOption[] = [
   { value: "all", label: "Бүгд" },
   { value: "pending", label: "Хүлээгдэж байгаа" },
@@ -137,13 +131,23 @@ function nameWithInitial(emp: { first_name?: string | null; last_name?: string |
 
 const MENU_TITLES: Record<SeniorMenuKey, string> = {
   request: "Өргөдөл хүсэлт",
-  announcement: "Зарлал мэдээлэл",
+  announcement: "Зарлал, мэдээлэл",
   performance: "Гүйцэтгэл",
   schedule: "Хуваарь",
   leave: "Ээлжийн амралт",
 };
 
 // --- Senior Announcements ---
+
+// Day-of-week index (0 = Sunday) → full Mongolian weekday name. The app has no
+// dayjs Mongolian locale, so weekday names are mapped manually (cf. shift-swap).
+const WEEKDAYS_FULL = ["Ням", "Даваа", "Мягмар", "Лхагва", "Пүрэв", "Баасан", "Бямба"];
+
+function formatAnnouncementDate(iso: string | null): string {
+  if (!iso) return "";
+  const d = dayjs(iso);
+  return `${d.format("DD")} / ${WEEKDAYS_FULL[d.day()]}  ${d.format("HH:mm")}`;
+}
 
 interface AnnouncementAttachment {
   name?: string;
@@ -180,13 +184,12 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
   const currentPage = useRef(1);
   const lastPage = useRef(1);
   const isFetching = useRef(false);
-  const [viewingAttachments, setViewingAttachments] = useState<AnnouncementAttachment[] | null>(null);
 
   const monthOptions = useMemo<SelectOption[]>(
     () =>
       summaries.map((s) => ({
         value: monthKey(s.year, s.month),
-        label: s.label,
+        label: `${s.year}/${String(s.month).padStart(2, "0")}`,
       })),
     [summaries]
   );
@@ -198,6 +201,8 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
         : null,
     [summaries, selectedMonth]
   );
+
+  const month = selectedSummary?.month ?? dayjs().month() + 1;
 
   useFocusEffect(
     useCallback(() => {
@@ -223,7 +228,7 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
       const first = summaries[0];
       setSelectedMonth({
         value: monthKey(first.year, first.month),
-        label: first.label,
+        label: `${first.year}/${String(first.month).padStart(2, "0")}`,
       });
     }
   }, [summaries, selectedMonth]);
@@ -290,41 +295,24 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
   }, [fetchPage, selectedSummary, debouncedSearch]);
 
   const renderItem = useCallback(({ item }: { item: SeniorAnnouncement }) => {
-    const dateStr = item.created_at ? dayjs(item.created_at).format("MM/DD  HH:mm") : "";
-    const hasAttachments = !!item.attachments?.length;
+    const dateStr = formatAnnouncementDate(item.created_at);
     return (
       <View className="py-5">
-        <View className="flex-row items-center justify-between gap-3">
-          <AppText
-            className={`text-base font-medium flex-1 ${item.type === "warning" ? "text-red" : ""}`}
-          >
-            {item.title}
-          </AppText>
-          {dateStr && <AppText className="text-sm text-darkgray">{dateStr}</AppText>}
-        </View>
+        <AppText
+          className={`text-base font-medium ${item.type === "warning" ? "text-red" : ""}`}
+        >
+          {item.title}
+        </AppText>
         <AppText className="text-sm mt-2">{item.content}</AppText>
-        <View className="flex-row items-center justify-between mt-2 gap-3">
-          {hasAttachments ? (
-            <Pressable
-              className="flex-row items-center gap-1.5"
-              onPress={() => {
-                if (item.attachments.length === 1) {
-                  Linking.openURL(item.attachments[0].url);
-                } else {
-                  setViewingAttachments(item.attachments);
-                }
-              }}
-            >
-              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={16} />
-              <AppText className="text-sm text-blue">Хавсралттай</AppText>
-            </Pressable>
+        <View className="flex-row items-center justify-between mt-3 gap-3">
+          {dateStr ? (
+            <AppText className="text-sm text-darkgray">{dateStr}</AppText>
           ) : (
             <View />
           )}
-          <AppText className="text-sm text-blue font-medium">
-            Илгээсэн {item.employees_count}
-          </AppText>
+          <AppText className="text-sm text-blue">Илгээсэн {item.employees_count}</AppText>
         </View>
+        <AppAttachmentList attachments={item.attachments} className="mt-4" />
       </View>
     );
   }, []);
@@ -334,7 +322,7 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
       <View className="flex-row items-center gap-3 mb-3">
         <View className="flex-[2]">
           <AppTextField
-            placeholder="Хайх"
+            placeholder="Гарчгаар хайх"
             leftIcon={<HugeiconsIcon icon={Search01Icon} color="#222222" size={20} />}
             value={search}
             onChangeText={setSearch}
@@ -342,11 +330,14 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
         </View>
         <View className="flex-1">
           <AppSelect
-            title="Он сар сонгох"
+            title="Сар сонгох"
             options={monthOptions}
             value={selectedMonth ?? undefined}
             onValueChange={(opt) => opt && setSelectedMonth(opt)}
-            placeholder={dayjs().format("YYYY/MM")}
+            placeholder={`${String(month).padStart(2, "0")} сар`}
+            renderValue={(opt) => (
+              <AppText className="text-sm">{opt.value.split("-")[1]} сар</AppText>
+            )}
           />
         </View>
       </View>
@@ -383,29 +374,6 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
           }
         />
       )}
-
-      <AppDialog
-        isOpen={viewingAttachments !== null}
-        onOpenChange={(open) => !open && setViewingAttachments(null)}
-      >
-        <View className="mb-4 gap-1.5">
-          <AppDialog.Title>Хавсралт</AppDialog.Title>
-        </View>
-        <View className="gap-2">
-          {viewingAttachments?.map((file, i) => (
-            <Pressable
-              key={i}
-              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-              onPress={() => Linking.openURL(file.url)}
-            >
-              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                {file.name ?? file.path.split("/").pop()}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-      </AppDialog>
     </>
   );
 }
@@ -445,7 +413,18 @@ interface SalaryPerfResponse {
 
 const PERF_STEP = 5;
 
-function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
+interface DeadlineInfo {
+  label: string;
+  urgent: boolean;
+}
+
+function SeniorPerformance({
+  onScroll,
+  onDeadlineChange,
+}: {
+  onScroll?: ScrollHandler;
+  onDeadlineChange?: (info: DeadlineInfo | null) => void;
+}) {
   const [months, setMonths] = useState<SalaryPerfMonth[]>([]);
   const [items, setItems] = useState<SalaryPerfItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<SelectOption | null>(null);
@@ -460,7 +439,11 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
   const loadedMonth = useRef<string | null>(null);
 
   const monthOptions = useMemo<SelectOption[]>(
-    () => months.map((m) => ({ value: monthKey(m.year, m.month), label: m.label })),
+    () =>
+      months.map((m) => ({
+        value: monthKey(m.year, m.month),
+        label: `${m.year}/${String(m.month).padStart(2, "0")}`,
+      })),
     [months]
   );
 
@@ -471,6 +454,8 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
         : null,
     [months, selectedMonth]
   );
+
+  const month = selectedSummary?.month ?? dayjs().month() + 1;
 
   const isCurrentMonth = useMemo(
     () =>
@@ -484,6 +469,22 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
     () => !!salaryDate && dayjs(salaryDate).diff(dayjs().startOf("day"), "day") <= 7,
     [salaryDate]
   );
+
+  // Surface the salary-evaluation deadline to the parent so it renders in the
+  // screen header (top-right), per design — shown only for the current month.
+  useEffect(() => {
+    if (isCurrentMonth && salaryDate) {
+      onDeadlineChange?.({
+        label: `Үнэлж дуусах огноо ${dayjs(salaryDate).format("MM/DD")}`,
+        urgent: deadlineUrgent,
+      });
+    } else {
+      onDeadlineChange?.(null);
+    }
+  }, [isCurrentMonth, salaryDate, deadlineUrgent, onDeadlineChange]);
+
+  // Clear the header deadline when this section unmounts (tab switched away).
+  useEffect(() => () => onDeadlineChange?.(null), [onDeadlineChange]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -515,7 +516,7 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
             setSelectedMonth((prev) =>
               prev ?? {
                 value: monthKey(d.months[0].year, d.months[0].month),
-                label: d.months[0].label,
+                label: `${d.months[0].year}/${String(d.months[0].month).padStart(2, "0")}`,
               }
             );
           }
@@ -738,7 +739,7 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
       <View className="flex-row items-center gap-3 mb-3">
         <View className="flex-[2]">
           <AppTextField
-            placeholder="Ажилтны нэрээр хайх"
+            placeholder="Ажилтнаар хайх"
             leftIcon={<HugeiconsIcon icon={Search01Icon} color="#222222" size={20} />}
             value={search}
             onChangeText={setSearch}
@@ -746,26 +747,17 @@ function SeniorPerformance({ onScroll }: { onScroll?: ScrollHandler }) {
         </View>
         <View className="flex-1">
           <AppSelect
-            title="Он сар сонгох"
+            title="Сар сонгох"
             options={monthOptions}
             value={selectedMonth ?? undefined}
             onValueChange={(opt) => opt && setSelectedMonth(opt)}
-            placeholder={dayjs().format("YYYY/MM")}
+            placeholder={`${String(month).padStart(2, "0")} сар`}
+            renderValue={(opt) => (
+              <AppText className="text-sm">{opt.value.split("-")[1]} сар</AppText>
+            )}
           />
         </View>
       </View>
-
-      {isCurrentMonth && salaryDate && (
-        <View
-          className={`items-end mb-1 rounded-lg px-3 py-2 ${
-            deadlineUrgent ? "bg-red/15" : "bg-darkgray/5"
-          }`}
-        >
-          <AppText className={`text-sm ${deadlineUrgent ? "text-red" : "text-darkgray"}`}>
-            Үнэлж дуусах огноо {dayjs(salaryDate).format("MM/DD")}
-          </AppText>
-        </View>
-      )}
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
@@ -914,6 +906,150 @@ interface ShiftEmployee {
 
 function fmtHm(s: string | null): string {
   return s ? dayjs(s).format("HH:mm") : "—";
+}
+
+// --- Attendance summary (Хоцролт / Таслалт / Зайнаас / Ам-чөлөө) ---
+
+interface AttendanceTotals {
+  lateness_minutes: number;
+  absent_count: number;
+  remote_minutes: number;
+  leave_minutes: number;
+}
+
+interface AttendanceEmployee {
+  employee_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  profile_image_url: string | null;
+  lateness_minutes: number;
+  absent_count: number;
+  remote_minutes: number;
+  leave_minutes: number;
+}
+
+interface AttendanceSummary {
+  year: number;
+  month: number;
+  totals: AttendanceTotals;
+  employees: AttendanceEmployee[];
+}
+
+type AttendanceMetricKey = "lateness" | "absent" | "remote" | "leave";
+
+interface AttendanceMetricDef {
+  key: AttendanceMetricKey;
+  label: string;
+  // Shared field name on both `totals` and each employee row.
+  field: keyof AttendanceTotals;
+  // Таслалт is a count ("X удаа"); the rest are minutes rendered as HH:MM.
+  isCount?: boolean;
+  // Detail-sheet header (m = month number, rendered as "MM").
+  sheetTitle: (m: number) => string;
+  // Static descriptor under each name in the detail list (Зайнаас only).
+  rowSubtitle?: string;
+}
+
+const pad2 = (m: number) => String(m).padStart(2, "0");
+
+// Header cards (2×2) and the tap-through detail list, in display order.
+const ATTENDANCE_METRICS: AttendanceMetricDef[] = [
+  {
+    key: "lateness",
+    label: "Хоцролт",
+    field: "lateness_minutes",
+    sheetTitle: (m) => `${pad2(m)} сарын хоцролт`,
+  },
+  {
+    key: "absent",
+    label: "Таслалт",
+    field: "absent_count",
+    isCount: true,
+    sheetTitle: (m) => `${pad2(m)} сарын таслалт`,
+  },
+  {
+    key: "remote",
+    label: "Зайнаас",
+    field: "remote_minutes",
+    sheetTitle: (m) => `${pad2(m)} сард зайнаас ажилласан`,
+    rowSubtitle: "Онлайнаар ажиллах",
+  },
+  {
+    key: "leave",
+    label: "Ам/чөлөө",
+    field: "leave_minutes",
+    sheetTitle: (m) => `${pad2(m)} сард амралт, чөлөө авсан`,
+  },
+];
+
+function formatMinutesHHMM(minutes: number): string {
+  const total = Math.max(0, minutes);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function formatMetricValue(value: number, isCount?: boolean): string {
+  return isCount ? `${value} удаа` : formatMinutesHHMM(value);
+}
+
+function StatCard({
+  metric,
+  total,
+  onPress,
+}: {
+  metric: AttendanceMetricDef;
+  total: number;
+  onPress: () => void;
+}) {
+  // total === 0 → no employee has a non-zero value, so the detail list would be
+  // empty; leave the card non-tappable in that case.
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={total <= 0}
+      className="flex-1 h-[38px] rounded-[5px] bg-[#F2F2F2] flex-row items-center justify-between px-3"
+    >
+      <AppText className="text-sm text-darkgray">{metric.label}</AppText>
+      <AppText className="text-sm font-medium text-black">
+        {formatMetricValue(total, metric.isCount)}
+      </AppText>
+    </Pressable>
+  );
+}
+
+// One row of the metric detail list: 52px avatar, name (+ optional descriptor),
+// and the metric value right-aligned.
+function MetricRow({
+  emp,
+  valueText,
+  subtitle,
+}: {
+  emp: AttendanceEmployee;
+  valueText: string;
+  subtitle?: string | null;
+}) {
+  return (
+    <View className="flex-row items-center gap-2 h-16">
+      <Avatar alt={shortName(emp)} className="w-[52px] h-[52px]">
+        <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
+        <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
+          {avatarFallback(emp)}
+        </Avatar.Fallback>
+      </Avatar>
+      <View className="flex-1">
+        <AppText className="text-base" numberOfLines={1}>
+          {shortName(emp)}
+        </AppText>
+        {subtitle ? (
+          <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
+            {subtitle}
+          </AppText>
+        ) : null}
+      </View>
+      <AppText className="text-base font-medium text-black">{valueText}</AppText>
+    </View>
+  );
 }
 
 function ShiftRow({
@@ -1066,6 +1202,10 @@ function SeniorSchedule({
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  // Attendance summary (header cards) + the metric whose detail sheet is open.
+  const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
+  const [metricKey, setMetricKey] = useState<AttendanceMetricKey | null>(null);
+
   // Чөлөөлөх confirm
   const [releaseTarget, setReleaseTarget] = useState<ScheduleEmployee | null>(null);
   const [releasing, setReleasing] = useState(false);
@@ -1121,6 +1261,22 @@ function SeniorSchedule({
     }
   }, [year, month]);
 
+  const fetchAttendance = useCallback(async () => {
+    try {
+      const res = await api<AttendanceSummary>({
+        path: `/senior/timesheet/attendance-summary?year=${year}&month=${month}`,
+        method: "GET",
+      });
+      // 404 ("Ажилтны бүртгэл олдсонгүй") returns an error shape, not employees[].
+      setAttendance(
+        res.status === 200 && res.data && Array.isArray(res.data.employees) ? res.data : null
+      );
+    } catch (err) {
+      console.error(err);
+      setAttendance(null);
+    }
+  }, [year, month]);
+
   const fetchDetail = useCallback(
     async (isRefresh = false) => {
       if (isRefresh) setRefreshing(true);
@@ -1157,7 +1313,8 @@ function SeniorSchedule({
     useCallback(() => {
       void fetchDetail();
       void fetchSummary();
-    }, [fetchDetail, fetchSummary])
+      void fetchAttendance();
+    }, [fetchDetail, fetchSummary, fetchAttendance])
   );
 
   const summaryMap = useMemo(() => {
@@ -1165,6 +1322,21 @@ function SeniorSchedule({
     summary.forEach((s) => m.set(s.day, s));
     return m;
   }, [summary]);
+
+  const activeMetric = useMemo(
+    () => ATTENDANCE_METRICS.find((m) => m.key === metricKey) ?? null,
+    [metricKey]
+  );
+
+  // The detail list: employees with a non-zero value for the tapped metric,
+  // sorted by that value descending (the API doc serves both views in one call).
+  const metricRows = useMemo(() => {
+    if (!attendance || !activeMetric) return [];
+    return attendance.employees
+      .map((emp) => ({ emp, value: Number(emp[activeMetric.field] ?? 0) }))
+      .filter((r) => r.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [attendance, activeMetric]);
 
   const weeks = useMemo(() => {
     const start = monthStart.startOf("month");
@@ -1310,6 +1482,32 @@ function SeniorSchedule({
           <RefreshControl refreshing={refreshing} onRefresh={() => fetchDetail(true)} />
         }
       >
+        {/* Attendance summary — 2×2 stat cards; tap one to open the per-employee list. */}
+        {attendance && (
+          <View className="gap-3 mb-4">
+            <View className="flex-row gap-3">
+              {ATTENDANCE_METRICS.slice(0, 2).map((metric) => (
+                <StatCard
+                  key={metric.key}
+                  metric={metric}
+                  total={attendance.totals[metric.field] ?? 0}
+                  onPress={() => setMetricKey(metric.key)}
+                />
+              ))}
+            </View>
+            <View className="flex-row gap-3">
+              {ATTENDANCE_METRICS.slice(2, 4).map((metric) => (
+                <StatCard
+                  key={metric.key}
+                  metric={metric}
+                  total={attendance.totals[metric.field] ?? 0}
+                  onPress={() => setMetricKey(metric.key)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Calendar */}
         <View className="flex-row mb-2">
           {WEEKDAYS.map((w, i) => (
@@ -1491,9 +1689,9 @@ function SeniorSchedule({
         }}
       >
         <View className="mb-5 gap-1.5">
-          <AppDialog.Title>Чөлөөлөх</AppDialog.Title>
+          <AppDialog.Title>Хуваариас чөлөөлөх</AppDialog.Title>
           <AppDialog.Description>
-            Та {releaseTarget ? shortName(releaseTarget) : ""}-г чөлөөлөхдөө итгэлтэй байна уу?
+            Та {releaseTarget ? shortName(releaseTarget) : ""}-г хуваариас чөлөөлөхдөө итгэлтэй байна уу ?
           </AppDialog.Description>
         </View>
         <View className="flex-row gap-3">
@@ -1528,18 +1726,14 @@ function SeniorSchedule({
             handleComponent={null}
             contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
           >
-            <View className="flex-row px-4 py-5 justify-between items-center">
-              <View className="flex-1">
-                <AppText className="text-base font-medium text-center">Нэмэгдэх ажилтан</AppText>
-                {addShift && (
-                  <AppText className="text-sm text-darkgray text-center mt-0.5">
-                    {dayjs(selectedDate).format("MM/DD")}   {addShift.start} - {addShift.end}
-                  </AppText>
-                )}
-              </View>
-              <PressableFeedback onPress={() => setAddShift(null)}>
-                <HugeiconsIcon icon={MultiplicationSignIcon} color="#6A6A6A" size={24} />
-              </PressableFeedback>
+            {/* No close button per design — dismiss via overlay tap / swipe down. */}
+            <View className="py-4 items-center">
+              <AppText className="text-lg font-medium">Нэмэх ажилтнаа сонгох</AppText>
+              {addShift && (
+                <AppText className="text-sm text-darkgray mt-1">
+                  {dayjs(selectedDate).format("MM/DD")}   {addShift.start} - {addShift.end}
+                </AppText>
+              )}
             </View>
 
             <BottomSheetScrollView
@@ -1556,31 +1750,77 @@ function SeniorSchedule({
                   <AppText className="text-sm text-darkgray">Ажилтан байхгүй байна</AppText>
                 </View>
               ) : (
-                addList.map((emp, index) => (
-                  <View key={emp.id}>
+                addList.map((emp) => {
+                  const adding = addingId === emp.id;
+                  return (
                     <Pressable
-                      className="flex-row items-center py-3 gap-3"
+                      key={emp.id}
+                      className="flex-row items-center gap-3 h-16"
                       disabled={addingId !== null}
                       onPress={() => handleAddEmployee(emp.id)}
                     >
-                      <Avatar alt={shortName(emp)} className="w-10 h-10">
+                      <Avatar alt={shortName(emp)} className="w-[52px] h-[52px]">
                         <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
                         <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
                           {avatarFallback(emp)}
                         </Avatar.Fallback>
                       </Avatar>
-                      <View className="flex-1">
-                        <AppText className="text-sm">{shortName(emp)}</AppText>
-                        {emp.job_position && (
-                          <AppText className="text-sm text-darkgray mt-0.5">
-                            {emp.job_position}
-                          </AppText>
-                        )}
-                      </View>
-                      {addingId === emp.id && <ActivityIndicator size="small" />}
+                      <AppText
+                        className={cn("flex-1 text-base", adding && "font-medium")}
+                        numberOfLines={1}
+                      >
+                        {shortName(emp)}
+                      </AppText>
+                      {adding && <HugeiconsIcon icon={Tick02Icon} size={24} color="#18AA0B" />}
                     </Pressable>
-                    {index < addList.length - 1 && <Separator className="bg-darkgray/15" />}
-                  </View>
+                  );
+                })
+              )}
+            </BottomSheetScrollView>
+          </BottomSheet.Content>
+        </BottomSheet.Portal>
+      </BottomSheet>
+
+      {/* Attendance metric detail — employees ranked by the tapped metric.
+          A peek sheet (cards stay visible behind); dismiss by tapping the
+          overlay or swiping down, per design (no close button). */}
+      <BottomSheet
+        isOpen={metricKey !== null}
+        onOpenChange={(o) => {
+          if (!o) setMetricKey(null);
+        }}
+      >
+        <BottomSheet.Portal>
+          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Content
+            snapPoints={["55%", "90%"]}
+            topInset={insets.top}
+            enableOverDrag={false}
+            enableDynamicSizing={false}
+            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
+          >
+            <View className="h-[60px] items-center justify-center">
+              <AppText className="text-lg font-medium">
+                {activeMetric ? activeMetric.sheetTitle(month) : ""}
+              </AppText>
+            </View>
+
+            <BottomSheetScrollView
+              contentContainerClassName="px-4 pb-8"
+              showsVerticalScrollIndicator={false}
+            >
+              {metricRows.length === 0 ? (
+                <View className="py-6 items-center">
+                  <AppText className="text-sm text-darkgray">Мэдээлэл байхгүй байна</AppText>
+                </View>
+              ) : (
+                metricRows.map((row) => (
+                  <MetricRow
+                    key={row.emp.employee_id}
+                    emp={row.emp}
+                    valueText={formatMetricValue(row.value, activeMetric?.isCount)}
+                    subtitle={activeMetric?.rowSubtitle}
+                  />
                 ))
               )}
             </BottomSheetScrollView>
@@ -1837,7 +2077,9 @@ function SeniorLeave({
 // The floating menu pill. Rendered through a Portal (app root) so it can slide
 // down into the area the bottom tab bar vacates without being clipped by the
 // screen's scene bounds. Only shown while the senior tab is focused, since tab
-// screens stay mounted in the background.
+// screens stay mounted in the background. Targets the dedicated
+// "floating-overlay" host, which sits below the default HeroUI portal host in
+// the root layout — bottom sheets and dialogs always draw above the pill.
 function SeniorMenuOverlay({
   active,
   onChange,
@@ -1862,7 +2104,7 @@ function SeniorMenuOverlay({
   if (!isFocused) return null;
 
   return (
-    <Portal name="senior-menu-overlay">
+    <Portal name="senior-menu-overlay" hostName="floating-overlay">
       <Animated.View
         pointerEvents="box-none"
         style={[
@@ -1899,6 +2141,7 @@ export default function SeniorScreen() {
   });
   const [leaveYear, setLeaveYear] = useState(dayjs().year());
   const [leaveYears, setLeaveYears] = useState<number[]>([]);
+  const [perfDeadline, setPerfDeadline] = useState<DeadlineInfo | null>(null);
   // Hide the schedule menu unless the senior actually manages shift-roster employees.
   const [hasShiftEmployees, setHasShiftEmployees] = useState(false);
   const currentPage = useRef(1);
@@ -1909,7 +2152,7 @@ export default function SeniorScreen() {
     () =>
       summaries.map((s) => ({
         value: monthKey(s.year, s.month),
-        label: s.label,
+        label: `${s.year}/${String(s.month).padStart(2, "0")}`,
       })),
     [summaries]
   );
@@ -1943,6 +2186,10 @@ export default function SeniorScreen() {
 
   const handleLeaveYearsLoaded = useCallback((years: number[]) => {
     setLeaveYears(years);
+  }, []);
+
+  const handlePerfDeadlineChange = useCallback((info: DeadlineInfo | null) => {
+    setPerfDeadline(info);
   }, []);
 
   const scheduleYear = dayjs().year();
@@ -1993,7 +2240,7 @@ export default function SeniorScreen() {
             const first = res.data[0];
             setSelectedMonth({
               value: monthKey(first.year, first.month),
-              label: first.label,
+              label: `${first.year}/${String(first.month).padStart(2, "0")}`,
             });
           } else {
             setLoading(false);
@@ -2080,13 +2327,13 @@ export default function SeniorScreen() {
       <View className="flex-1 px-4">
         <AppHeader
           className="items-end"
-          subtitle="Ахлах"
           title={MENU_TITLES[activeMenu]}
           rightContent={
             activeMenu === "announcement" ? (
               <AppButton
                 label="Илгээх"
-                className="h-10 px-5 rounded-full"
+                className="h-10 px-5 rounded-full border-0 bg-[#F2F2F2]"
+                labelClassName="text-blue font-semibold"
                 onPress={() => router.navigate("/senior/announcement/create")}
               />
             ) : activeMenu === "schedule" ? (
@@ -2101,6 +2348,15 @@ export default function SeniorScreen() {
                   </AppText>
                 }
               />
+            ) : activeMenu === "performance" ? (
+              perfDeadline ? (
+                <AppText
+                  className={cn("text-sm", perfDeadline.urgent ? "text-red" : "text-darkgray")}
+                  numberOfLines={1}
+                >
+                  {perfDeadline.label}
+                </AppText>
+              ) : undefined
             ) : activeMenu === "leave" ? (
               leaveYearOptions.length > 0 ? (
                 <AppSelect
@@ -2138,7 +2394,10 @@ export default function SeniorScreen() {
                     options={monthOptions}
                     value={selectedMonth ?? undefined}
                     onValueChange={(opt) => opt && setSelectedMonth(opt)}
-                    placeholder={`${year}/${String(month).padStart(2, "0")}`}
+                    placeholder={`${String(month).padStart(2, "0")} сар`}
+                    renderValue={(opt) => (
+                      <AppText className="text-sm">{opt.value.split("-")[1]} сар</AppText>
+                    )}
                   />
                 </View>
               </View>
@@ -2179,8 +2438,25 @@ export default function SeniorScreen() {
                       item.status === "senior_pending" ||
                       item.status === "review_pending" ||
                       (item.status === "pending" && !isReviewed);
-                    const dotColor = STATUS_DOT[item.status];
-                    const dateStr = item.created_at ? dayjs(item.created_at).format("MM/DD") : "";
+                    let statusText = "";
+                    let statusColor = "text-darkgray";
+                    if (isReviewed) {
+                      statusText = "Санал өгсөн";
+                      statusColor = "text-black";
+                    } else if (isPending) {
+                      statusText = "Хүлээгдэж байна";
+                      statusColor = "text-yellow";
+                    } else if (item.status === "approved") {
+                      statusText = "Зөвшөөрсөн";
+                      statusColor = "text-green";
+                    } else if (item.status === "rejected") {
+                      statusText = "Татгалзсан";
+                      statusColor = "text-red";
+                    }
+                    const created = item.created_at ? dayjs(item.created_at) : null;
+                    const dateStr = created
+                      ? `${created.format("DD")} / ${WEEKDAYS_FULL[created.day()]}`
+                      : "";
                     return (
                       <Pressable
                         className="flex-row items-center py-3 gap-3"
@@ -2198,26 +2474,23 @@ export default function SeniorScreen() {
                           </Avatar.Fallback>
                         </Avatar>
                         <View className="flex-1">
-                          <View className="flex-row items-center gap-2">
-                            <AppText className="text-sm font-medium flex-1" numberOfLines={1}>
-                              {item.setting.name}
+                          <AppText className="text-sm font-medium" numberOfLines={1}>
+                            {item.setting.name}
+                          </AppText>
+                          <View className="flex-row items-center justify-between gap-2 mt-0.5">
+                            <AppText
+                              className={cn("text-sm font-medium flex-1", statusColor)}
+                              numberOfLines={1}
+                            >
+                              {statusText}
                             </AppText>
-                            {dotColor && (
-                              <View className={`w-2 h-2 rounded-full ${dotColor}`} />
+                            {dateStr && (
+                              <AppText className="text-sm text-darkgray" numberOfLines={1}>
+                                {dateStr}
+                              </AppText>
                             )}
                           </View>
-                          {isPending && (
-                            <AppText className="text-sm font-medium text-yellow mt-0.5">
-                              Хүлээгдэж байна
-                            </AppText>
-                          )}
-                          {isReviewed && (
-                            <AppText className="text-sm font-medium text-darkcyan mt-0.5">
-                              Санал өгсөн
-                            </AppText>
-                          )}
                         </View>
-                        {dateStr && <AppText className="text-sm text-darkgray">{dateStr}</AppText>}
                       </Pressable>
                     );
                   }}
@@ -2227,7 +2500,7 @@ export default function SeniorScreen() {
           ) : activeMenu === "announcement" ? (
             <SeniorAnnouncements onScroll={onScroll} />
           ) : activeMenu === "performance" ? (
-            <SeniorPerformance onScroll={onScroll} />
+            <SeniorPerformance onScroll={onScroll} onDeadlineChange={handlePerfDeadlineChange} />
           ) : activeMenu === "schedule" ? (
             <SeniorSchedule year={scheduleYear} month={scheduleMonthNum} onScroll={onScroll} />
           ) : activeMenu === "leave" ? (

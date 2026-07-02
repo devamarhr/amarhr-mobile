@@ -1,16 +1,13 @@
-import { AppButton } from "@/components/app-button";
-import { AppDialog } from "@/components/app-dialog";
+import { AppAttachmentList } from "@/components/app-attachment-list";
 import { AppHeader } from "@/components/app-header";
 import { AppText } from "@/components/app-text";
 import { api } from "@/config/api";
 import { useNotificationStore } from "@/store/notification-store";
-import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
 import { Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Linking, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -105,7 +102,6 @@ export default function AnnouncementScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [viewingAttachments, setViewingAttachments] = useState<AnnouncementAttachment[] | null>(null);
   const currentPage = useRef(1);
   const lastPage = useRef(1);
   const isFetching = useRef(false);
@@ -170,21 +166,7 @@ export default function AnnouncementScreen() {
           <AppText className={dateStyle}>{dateStr}</AppText>
         </View>
         <AppText className="text-sm mt-2">{item.content}</AppText>
-        {item.attachments.length > 0 && (
-          <AppButton
-            label="Хавсралттай"
-            leftIcon={<HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={22} />}
-            className="mt-5"
-            labelClassName="text-blue"
-            onPress={() => {
-              if (item.attachments.length === 1) {
-                Linking.openURL(item.attachments[0].url);
-              } else {
-                setViewingAttachments(item.attachments);
-              }
-            }}
-          />
-        )}
+        <AppAttachmentList attachments={item.attachments} className="mt-5" />
       </View>
     );
   }, []);
@@ -222,29 +204,6 @@ export default function AnnouncementScreen() {
           />
         )}
       </View>
-
-      <AppDialog
-        isOpen={viewingAttachments !== null}
-        onOpenChange={(open) => !open && setViewingAttachments(null)}
-      >
-        <View className="mb-4 gap-1.5">
-          <AppDialog.Title>Хавсралт</AppDialog.Title>
-        </View>
-        <View className="gap-2">
-          {viewingAttachments?.map((file, i) => (
-            <Pressable
-              key={i}
-              className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
-              onPress={() => Linking.openURL(file.url)}
-            >
-              <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={20} />
-              <AppText className="text-sm text-blue flex-1" numberOfLines={1}>
-                {file.name ?? file.path.split('/').pop()}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-      </AppDialog>
     </StyledSafeAreaView>
   );
 }

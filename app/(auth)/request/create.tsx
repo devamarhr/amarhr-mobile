@@ -31,6 +31,8 @@ import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
+const MAX_ATTACHMENTS = 3;
+
 type FormType = 'dateRange' | 'timeRange' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
 
 interface HeaderInfoItem {
@@ -56,6 +58,18 @@ function parseDateTimeToString(s?: string): string | undefined {
   if (!s) return undefined;
   const d = dayjs(s, 'YYYY-MM-DD HH:mm');
   return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : undefined;
+}
+
+// Render a header value, dimming any "--:--" placeholder (e.g. an unrecorded
+// clock-out in "09:42 - --:--") to match the design.
+function renderHeaderValue(value: string) {
+  return value.split(/(--:--)/g).map((part, i) =>
+    part === '--:--' ? (
+      <AppText key={i} className="text-darkerblue/50">{part}</AppText>
+    ) : (
+      part
+    ),
+  );
 }
 
 export default function RequestCreateScreen() {
@@ -141,9 +155,28 @@ export default function RequestCreateScreen() {
     setIsUploading(false);
   };
 
+  const notifyAttachmentLimit = () => {
+    toast.show({
+      component: (props) => (
+        <AppToast
+          {...props}
+          variant="danger"
+          description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
+          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+        />
+      ),
+    });
+  };
+
   const handlePickAttachments = async () => {
-    const assets = await pickAttachments();
-    await uploadAssets(assets);
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+    if (remaining <= 0) {
+      notifyAttachmentLimit();
+      return;
+    }
+    const assets = await pickAttachments(remaining);
+    await uploadAssets(assets.slice(0, remaining));
+    if (assets.length > remaining) notifyAttachmentLimit();
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -247,7 +280,7 @@ export default function RequestCreateScreen() {
         {headerInfo.map((item, index) => (
           <View key={index} className="flex-row gap-2">
             <AppText className={`text-sm text-darkblue ${headerInfo.length > 1 ? (type === 'timeCorrection' ? 'w-[150px]' : 'w-52') : ''}`}>{item.label}</AppText>
-            <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>{item.value}</AppText>
+            <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>{renderHeaderValue(item.value)}</AppText>
           </View>
         ))}
       </View>
@@ -255,50 +288,73 @@ export default function RequestCreateScreen() {
   };
 
   const renderDateRangeFields = () => {
-    const startDateSelected = !!watch('startDate');
+    const startDate = watch('startDate');
+    const days = watch('days');
+    const startDateSelected = !!startDate;
     const isRemote = params.settingType === 'remote';
+    // Дуусах өдөр is derived from the start date + requested days (read-only display).
+    const endDate =
+      startDate && days && days > 0
+        ? dayjs(startDate, 'YYYY-MM-DD').add(days - 1, 'day').toDate()
+        : undefined;
     return (
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="startDate"
-            rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label={isRemote ? 'Ажиллах өдөр' : 'Эхлэх өдөр'}
-                mode="date"
-                value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
-                placeholder="00/00"
-                format="MM/DD"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!errors.startDate}
-                errorMessage={errors.startDate?.message}
-              />
-            )}
-          />
+      <View className="gap-6">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="startDate"
+              rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppDatePicker
+                  label={isRemote ? 'Ажиллах өдөр' : 'Эхлэх өдөр'}
+                  mode="date"
+                  value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
+                  onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
+                  placeholder="00/00"
+                  format="MM/DD"
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  isInvalid={!!errors.startDate}
+                  errorMessage={errors.startDate?.message}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1">
+            <AppDatePicker
+              label="Дуусах өдөр"
+              mode="date"
+              value={endDate}
+              placeholder="00/00"
+              format="MM/DD"
+              icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+              isDisabled
+              triggerClassName="bg-[#f2f2f2] border-transparent disabled:opacity-100"
+            />
+          </View>
         </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name="days"
-            rules={{ required: 'Хоног сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppSelect
-                label={isRemote ? 'Ажиллах хоног' : 'Дуусах өдөр'}
-                options={dayOptions}
-                value={value != null ? dayOptions.find(o => o.value === String(value)) : undefined}
-                onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
-                placeholder="Сонгох"
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
-                isInvalid={!!errors.days}
-                errorMessage={errors.days?.message}
-                isDisabled={!startDateSelected || dayOptions.length === 0}
-              />
-            )}
-          />
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Controller
+              control={control}
+              name="days"
+              rules={{ required: 'Хоног сонгоно уу' }}
+              render={({ field: { onChange, value } }) => (
+                <AppSelect
+                  label={isRemote ? 'Ажиллах хоног' : 'Хүсэх хоног'}
+                  options={dayOptions}
+                  value={value != null ? dayOptions.find(o => o.value === String(value)) : undefined}
+                  onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
+                  placeholder="Сонгох"
+                  renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
+                  isInvalid={!!errors.days}
+                  errorMessage={errors.days?.message}
+                  isDisabled={!startDateSelected || dayOptions.length === 0}
+                />
+              )}
+            />
+          </View>
+          <View className="flex-1" />
         </View>
       </View>
     );
@@ -323,7 +379,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
                   errorMessage={errors.startDate?.message}
                 />
@@ -347,7 +403,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
                   errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
@@ -362,12 +418,11 @@ export default function RequestCreateScreen() {
               rules={{ required: 'Цаг сонгоно уу' }}
               render={({ field: { onChange, value } }) => (
                 <AppSelect
-                  label={isRemote ? 'Ажиллах цаг' : 'Дуусах цаг'}
+                  label={isRemote ? 'Ажиллах цаг' : 'Чөлөө хүсэх цаг'}
                   options={hourOptions}
                   value={value != null ? hourOptions.find(o => o.value === String(value)) : undefined}
                   onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
                   placeholder="Сонгох"
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
                   renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                   isInvalid={!!errors.hours}
                   errorMessage={errors.hours?.message}
@@ -411,7 +466,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
                   errorMessage={errors.startDate?.message}
                 />
@@ -435,7 +490,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
                   errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
@@ -462,7 +517,7 @@ export default function RequestCreateScreen() {
                   minuteInterval={30}
                   initialDate={baseDay.toDate()}
                   maximumDate={maxDurationDate}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.hours}
                   errorMessage={errors.hours?.message}
                   isDisabled={!dateSelected}
@@ -479,7 +534,6 @@ export default function RequestCreateScreen() {
     const arrivalError = errors.shift?.arrivalTime;
     const leaveError = errors.shift?.leaveTime;
     const arrivalDisabled = !initialShift.arrivalTime;
-    const leaveDisabled = !initialShift.leaveTime;
     const watchedArrival = watch('shift.arrivalTime');
     const minLeaveDate = watchedArrival
       ? dayjs(watchedArrival, 'YYYY-MM-DD HH:mm').toDate()
@@ -504,7 +558,7 @@ export default function RequestCreateScreen() {
                   format="HH:mm"
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
-                  icon={<HugeiconsIcon icon={Login03Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Login03Icon} color="#222" size={22} />}
                   isInvalid={!!arrivalError}
                   errorMessage={arrivalError?.message}
                   isDisabled={arrivalDisabled}
@@ -526,7 +580,7 @@ export default function RequestCreateScreen() {
               }}
               render={({ field: { onChange, value } }) => (
                 <AppDatePicker
-                  label="Тарсан цаг"
+                  label={crossesDay ? 'Тарсан огноо, цаг' : 'Тарсан цаг'}
                   mode={crossesDay ? 'datetime' : 'time'}
                   value={value ? dayjs(value, 'YYYY-MM-DD HH:mm').toDate() : undefined}
                   onValueChange={(date) => {
@@ -542,10 +596,9 @@ export default function RequestCreateScreen() {
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
                   minimumDate={crossesDay ? minLeaveDate : undefined}
-                  icon={<HugeiconsIcon icon={Logout03Icon} color="#005FEE" size={22} />}
+                  icon={<HugeiconsIcon icon={Logout03Icon} color="#222" size={22} />}
                   isInvalid={!!leaveError}
                   errorMessage={leaveError?.message}
-                  isDisabled={leaveDisabled}
                 />
               )}
             />
@@ -630,11 +683,15 @@ export default function RequestCreateScreen() {
               )}
             />
 
-            <Pressable className="flex-row items-center justify-end gap-2" onPress={handlePickAttachments} disabled={isUploading}>
+            <Pressable
+              className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
+              onPress={handlePickAttachments}
+              disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
+            >
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#005FEE" size={24} />
+                <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
               )}
               <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
@@ -642,7 +699,7 @@ export default function RequestCreateScreen() {
             {attachments.map((file, index) => (
               <View key={index} className="flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                  <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable

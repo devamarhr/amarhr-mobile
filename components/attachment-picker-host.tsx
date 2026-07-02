@@ -15,12 +15,14 @@ type Resolver = (assets: PickedAsset[]) => void;
 
 export function AttachmentPickerHost() {
   const resolverRef = useRef<Resolver | null>(null);
+  const limitRef = useRef(0);
   const pickingRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    registerAttachmentPickerHost((resolve) => {
+    registerAttachmentPickerHost((resolve, selectionLimit) => {
       resolverRef.current = resolve;
+      limitRef.current = selectionLimit;
       pickingRef.current = false;
       setIsOpen(true);
     });
@@ -36,7 +38,7 @@ export function AttachmentPickerHost() {
   const handlePhotos = async () => {
     pickingRef.current = true;
     setIsOpen(false);
-    const assets = await pickPhotos();
+    const assets = await pickPhotos(limitRef.current);
     resolveWith(assets);
   };
 
