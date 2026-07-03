@@ -3,6 +3,7 @@ import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
 import { api } from '@/config/api';
+import { syncAttendanceReminders } from '@/utils/attendance-reminders';
 import { Alert01Icon, CheckmarkCircle02Icon } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import * as Location from 'expo-location';
@@ -189,6 +190,7 @@ export default function AttendanceMapScreen() {
           />
         ),
       });
+      syncAttendanceReminders({ force: true });
       router.back();
     } else {
       toast.show({

@@ -6,6 +6,7 @@ import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
 import { useAuthStore, UserSettings } from '@/store/auth-store';
+import { cancelAttendanceReminders, syncAttendanceReminders } from '@/utils/attendance-reminders';
 import {
   Agreement03Icon, Alert01Icon, Building06StrokeStandard,
   Clock01Icon,
@@ -187,7 +188,14 @@ export default function ProfileScreen() {
                       description: v
                         ? 'Мэдэгдэл хүлээн авахаар тохируулах уу?'
                         : 'Мэдэгдэл хүлээн авахаа болих уу?',
-                      onConfirm: () => saveSetting({ attendance_reminder: v }),
+                      onConfirm: () => {
+                        saveSetting({ attendance_reminder: v });
+                        if (v) {
+                          syncAttendanceReminders({ force: true });
+                        } else {
+                          cancelAttendanceReminders();
+                        }
+                      },
                     })
                   }
                 />

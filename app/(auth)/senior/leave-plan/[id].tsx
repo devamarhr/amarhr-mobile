@@ -10,34 +10,49 @@ import {
   ArrowLeft02Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
-  MultiplicationSignIcon,
-  PlusSignIcon,
+  SquareLock02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useToast } from 'heroui-native';
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Control,
-  Controller,
-  FieldErrors,
-  UseFormSetValue,
-  useFieldArray,
-  useForm,
-  useWatch,
-} from 'react-hook-form';
-import { Pressable, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { BottomSheet, Spinner, useToast } from 'heroui-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-interface Availability {
-  start_date: string;
-  end_date: string;
+type SplitType = 'scheduled' | 'advance' | 'unused';
+
+interface AnnualLeaveSplit {
+  id: number;
+  decree_id: number | null;
+  type: SplitType;
+  start_date: string | null;
+  end_date: string | null;
+  days: number;
+  excluded_days: number;
+}
+
+interface AnnualLeaveData {
   available_days: number;
+  remaining_days: number;
+  cycle_start_date: string | null;
+  cycle_end_date: string | null;
+  max_splits: number;
+  splits: AnnualLeaveSplit[];
+}
+
+const SPLIT_TYPE_LABELS: Record<SplitType, string> = {
+  scheduled: 'Хуваарийн дагуух э/амралт',
+  advance: 'Урьдчилж авсан э/амралт',
+  unused: 'Биеэр эдлээгүй хоногийн олговор',
+};
+
+function formatSplitRange(start: string | null, end: string | null): string {
+  if (!start || !end) return '';
+  return `${dayjs(start, 'YYYY-MM-DD').format('YYYY/MM/DD')} - ${dayjs(end, 'YYYY-MM-DD').format('YYYY/MM/DD')}`;
 }
 
 async function calculateEndDate(startDate: string, days: number): Promise<string> {
@@ -49,153 +64,186 @@ async function calculateEndDate(startDate: string, days: number): Promise<string
   return res.data.end_date;
 }
 
-interface Split {
-  startDate?: string;
-  days?: string;
-  endDate?: string;
+interface AddSheetProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: AnnualLeaveData;
+  employeeId: string;
+  onSaved: () => void;
+  showError: (msg: string) => void;
+  showSuccess: (msg: string) => void;
 }
 
-interface PlanForm {
-  splits: Split[];
-}
+function AddSheet({
+  isOpen,
+  onOpenChange,
+  data,
+  employeeId,
+  onSaved,
+  showError,
+  showSuccess,
+}: AddSheetProps) {
+  const insets = useSafeAreaInsets();
+  const [startDate, setStartDate] = useState('');
+  const [days, setDays] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-interface SplitRowProps {
-  index: number;
-  control: Control<PlanForm>;
-  setValue: UseFormSetValue<PlanForm>;
-  errors: FieldErrors<PlanForm>;
-  availability: Availability;
-  maxDays: number;
-  onRemove: () => void;
-}
-
-function SplitRow({
-  index,
-  control,
-  setValue,
-  errors,
-  availability,
-  maxDays,
-  onRemove,
-}: SplitRowProps) {
-  const startDate = useWatch({ control, name: `splits.${index}.startDate` });
-  const days = useWatch({ control, name: `splits.${index}.days` });
-  const endDate = useWatch({ control, name: `splits.${index}.endDate` });
-  const allSplits = useWatch({ control, name: 'splits' }) ?? [];
-
-  const hasOverlap = useMemo(() => {
-    if (!startDate || !endDate) return false;
-    const s = dayjs(startDate, 'YYYY-MM-DD');
-    const e = dayjs(endDate, 'YYYY-MM-DD');
-    return allSplits.some((p, i) => {
-      if (i === index || !p?.startDate || !p?.endDate) return false;
-      const ps = dayjs(p.startDate, 'YYYY-MM-DD');
-      const pe = dayjs(p.endDate, 'YYYY-MM-DD');
-      return !s.isAfter(pe) && !ps.isAfter(e);
-    });
-  }, [startDate, endDate, allSplits, index]);
+  useEffect(() => {
+    if (isOpen) {
+      setStartDate('');
+      setDays('');
+      setEndDate('');
+      setIsSaving(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let cancelled = false;
     if (startDate && days) {
-      calculateEndDate(startDate, Number(days)).then((end) => {
-        if (!cancelled) setValue(`splits.${index}.endDate`, end);
-      });
+      calculateEndDate(startDate, Number(days))
+        .then((end) => {
+          if (!cancelled) setEndDate(end);
+        })
+        .catch(console.error);
     } else {
-      setValue(`splits.${index}.endDate`, '');
+      setEndDate('');
     }
     return () => {
       cancelled = true;
     };
-  }, [startDate, days, index, setValue]);
+  }, [startDate, days]);
 
-  const dayOptions = useMemo(() => {
-    const cap = Math.max(maxDays, days ? Number(days) : 1);
-    return Array.from({ length: cap }, (_, i) => ({ value: String(i + 1), label: `${i + 1} хоног` }));
-  }, [maxDays, days]);
+  const dayOptions = useMemo(
+    () =>
+      Array.from({ length: Math.max(1, data.remaining_days) }, (_, i) => ({
+        value: String(i + 1),
+        label: `${i + 1} хоног`,
+      })),
+    [data.remaining_days],
+  );
 
   const minDate = useMemo(
-    () => dayjs(availability.start_date, 'YYYY-MM-DD').toDate(),
-    [availability.start_date],
+    () =>
+      data.cycle_start_date ? dayjs(data.cycle_start_date, 'YYYY-MM-DD').toDate() : undefined,
+    [data.cycle_start_date],
   );
   const maxDate = useMemo(
-    () => dayjs(availability.end_date, 'YYYY-MM-DD').toDate(),
-    [availability.end_date],
+    () => (data.cycle_end_date ? dayjs(data.cycle_end_date, 'YYYY-MM-DD').toDate() : undefined),
+    [data.cycle_end_date],
   );
 
-  const rowErrors = errors?.splits?.[index];
+  const handleSave = async () => {
+    if (!startDate || !days) {
+      showError('Эхлэх өдөр, хоногоо сонгоно уу');
+      return;
+    }
+    if (!endDate) {
+      showError('Дуусах өдөр тооцоологдож дуусаагүй байна');
+      return;
+    }
+
+    // Одоо байгаа огноотой split-үүдтэй давхцаж болохгүй
+    const s = dayjs(startDate, 'YYYY-MM-DD');
+    const e = dayjs(endDate, 'YYYY-MM-DD');
+    const overlaps = data.splits.some((split) => {
+      if (!split.start_date || !split.end_date) return false;
+      const ps = dayjs(split.start_date, 'YYYY-MM-DD');
+      const pe = dayjs(split.end_date, 'YYYY-MM-DD');
+      return !s.isAfter(pe) && !ps.isAfter(e);
+    });
+    if (overlaps) {
+      showError('Өмнө төлөвлөсөн амралттай давхцаж байна');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await api({
+        path: `/senior/annual-leaves/${employeeId}`,
+        method: 'POST',
+        data: { start_date: startDate, days: Number(days) },
+      });
+      if (res.status === 200) {
+        showSuccess(res.message || 'Хадгалагдлаа');
+        onSaved();
+      } else {
+        showError(res.message || 'Алдаа гарлаа');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <View className="gap-1">
-      <View className="flex-row gap-2 items-end">
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name={`splits.${index}.startDate`}
-            rules={{ required: 'Эхлэх өдөр сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppDatePicker
-                label="Эхлэх"
-                mode="date"
-                value={value ? dayjs(value, 'YYYY-MM-DD').toDate() : undefined}
-                onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
-                placeholder="00/00"
-                format="MM/DD"
-                minimumDate={minDate}
-                maximumDate={maxDate}
-                icon={<HugeiconsIcon icon={Calendar03Icon} color="#005FEE" size={22} />}
-                isInvalid={!!rowErrors?.startDate || hasOverlap}
-              />
-            )}
-          />
-        </View>
-        <View className="flex-1">
-          <Controller
-            control={control}
-            name={`splits.${index}.days`}
-            rules={{ required: 'Хоног сонгоно уу' }}
-            render={({ field: { onChange, value } }) => (
-              <AppSelect
-                label="Хоног"
-                options={dayOptions}
-                value={dayOptions.find((o) => o.value === value)}
-                onValueChange={(opt) => onChange(opt?.value ?? '')}
-                placeholder="Сонгох"
-                isInvalid={!!rowErrors?.days || hasOverlap}
-              />
-            )}
-          />
-        </View>
-        <View className="gap-2">
-          <AppText className="text-sm font-normal text-darkgray text-center">Дуусах</AppText>
-          <View className="h-11 justify-center items-center">
-            <AppText className={`text-sm ${endDate ? '' : 'text-muted'}`}>
-              {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '--/--'}
-            </AppText>
+    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
+      {/* disableFullWindowOverlay: native date-picker modal үндсэн window-д
+          гардаг тул sheet-ийг мөн үндсэн window-д render хийнэ */}
+      <BottomSheet.Portal disableFullWindowOverlay>
+        <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+        <BottomSheet.Content enableOverDrag={false} handleComponent={null}>
+          <BottomSheet.Title className="text-center text-lg font-medium text-black pt-3 mb-6">
+            Ээлжийн амралт нэмэх
+          </BottomSheet.Title>
+          <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <AppDatePicker
+                  label="Эхлэх өдөр"
+                  mode="date"
+                  value={startDate ? dayjs(startDate, 'YYYY-MM-DD').toDate() : undefined}
+                  onValueChange={(date) => setStartDate(dayjs(date).format('YYYY-MM-DD'))}
+                  placeholder="00/00"
+                  format="MM/DD"
+                  minimumDate={minDate}
+                  maximumDate={maxDate}
+                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                />
+              </View>
+              <View className="flex-1">
+                <AppSelect
+                  label="Амрах хоног"
+                  options={dayOptions}
+                  value={dayOptions.find((o) => o.value === days)}
+                  onValueChange={(opt) => setDays(opt?.value ?? '')}
+                  placeholder="Сонгох"
+                  renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
+                />
+              </View>
+              <View className="flex-1 gap-2">
+                <AppText className="text-sm text-darkgray">Дуусах өдөр</AppText>
+                <View className="flex-row items-center gap-1.5 bg-[#F2F2F2] rounded-lg h-11 px-2.5">
+                  <HugeiconsIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
+                  <AppText className="text-base text-darkgray flex-1" numberOfLines={1}>
+                    {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '00/00'}
+                  </AppText>
+                </View>
+              </View>
+            </View>
+
+            <AppButton
+              label="Хадгалах"
+              onPress={handleSave}
+              isLoading={isSaving}
+              spinnerColor="#ffffff"
+              className="bg-blue border-0 rounded-full"
+              labelClassName="text-white text-base font-semibold"
+            />
           </View>
-        </View>
-        <Pressable onPress={onRemove} className="w-7 h-11 items-center justify-center">
-          <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
-        </Pressable>
-      </View>
-      {hasOverlap && <AppText className="text-xs text-red">Өдөр давхцаж байна</AppText>}
-    </View>
+        </BottomSheet.Content>
+      </BottomSheet.Portal>
+    </BottomSheet>
   );
 }
 
 export default function SeniorLeavePlanScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     id: string;
-    year?: string;
     firstName?: string;
     lastName?: string;
-    totalDays?: string;
-    startDate?: string;
-    endDate?: string;
-    profileImageUrl?: string;
-    maxSplits?: string;
   }>();
   const { toast } = useToast();
 
@@ -204,126 +252,72 @@ export default function SeniorLeavePlanScreen() {
     return initial ? `${initial}.${params.firstName ?? ''}` : params.firstName ?? '';
   }, [params.firstName, params.lastName]);
 
-  const availability = useMemo<Availability | null>(() => {
-    if (!params.totalDays || !params.startDate || !params.endDate) return null;
-    return {
-      start_date: params.startDate,
-      end_date: params.endDate,
-      available_days: Number(params.totalDays),
-    };
-  }, [params.totalDays, params.startDate, params.endDate]);
+  const [data, setData] = useState<AnnualLeaveData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
 
-  const maxSplits = useMemo(() => {
-    const n = Number(params.maxSplits);
-    return Number.isFinite(n) && n > 0 ? n : Infinity;
-  }, [params.maxSplits]);
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<PlanForm>({
-    defaultValues: {
-      splits: [{ startDate: '', days: '', endDate: '' }],
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({ control, name: 'splits' });
-
-  const splitsWatch = useWatch({ control, name: 'splits' }) ?? [];
-  const usedDays = splitsWatch.reduce((sum, p) => sum + (Number(p?.days) || 0), 0);
-  const remainingDays = (availability?.available_days ?? 0) - usedDays;
-
-  const showError = (msg: string) => {
-    toast.show({
-      component: (props) => (
-        <AppToast
-          {...props}
-          variant="danger"
-          description={msg}
-          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
-        />
-      ),
-    });
-  };
-
-  const handleSave = async (data: PlanForm) => {
-    if (!availability) return;
-
-    if (data.splits.some((p) => !p.endDate)) {
-      showError('Дуусах өдөр тооцоологдож дуусаагүй байна');
-      return;
-    }
-
-    const totalDays = data.splits.reduce((sum, p) => sum + (Number(p.days) || 0), 0);
-    if (totalDays > availability.available_days) {
-      showError(`Сонгосон хоног боломжит ${availability.available_days} хоногоос хэтэрсэн байна`);
-      return;
-    }
-
-    const sorted = [...data.splits].sort((a, b) =>
-      dayjs(a.startDate, 'YYYY-MM-DD').diff(dayjs(b.startDate, 'YYYY-MM-DD')),
-    );
-    for (let i = 1; i < sorted.length; i++) {
-      const prevEnd = dayjs(sorted[i - 1].endDate, 'YYYY-MM-DD');
-      const curStart = dayjs(sorted[i].startDate, 'YYYY-MM-DD');
-      if (!curStart.isAfter(prevEnd)) {
-        showError('Өдөр давхцаж байна');
-        return;
-      }
-    }
-
-    const minDate = dayjs(availability.start_date, 'YYYY-MM-DD');
-    const maxDate = dayjs(availability.end_date, 'YYYY-MM-DD');
-    for (const p of data.splits) {
-      const s = dayjs(p.startDate, 'YYYY-MM-DD');
-      const e = dayjs(p.endDate, 'YYYY-MM-DD');
-      if (s.isBefore(minDate) || e.isAfter(maxDate)) {
-        showError('Боломжит хугацааны гадна сонголт байна');
-        return;
-      }
-    }
-
-    setIsLoading(true);
-    try {
-      const body = {
-        employee_id: Number(params.id),
-        year: params.year ? Number(params.year) : undefined,
-        splits: data.splits.map((p) => ({
-          start_date: p.startDate,
-          end_date: p.endDate,
-          days: Number(p.days),
-        })),
-      };
-      const res = await api({
-        path: '/senior/annual-leave-plans',
-        method: 'POST',
-        data: body,
+  const showError = useCallback(
+    (msg: string) => {
+      toast.show({
+        component: (props) => (
+          <AppToast
+            {...props}
+            variant="danger"
+            description={msg}
+            icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+          />
+        ),
       });
-      if (res.status === 200) {
-        toast.show({
-          component: (props) => (
-            <AppToast
-              {...props}
-              variant="success"
-              description={res.message || 'Хадгалагдлаа'}
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
-            />
-          ),
-        });
-        router.back();
+    },
+    [toast],
+  );
+
+  const showSuccess = useCallback(
+    (msg: string) => {
+      toast.show({
+        component: (props) => (
+          <AppToast
+            {...props}
+            variant="success"
+            description={msg}
+            icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+          />
+        ),
+      });
+    },
+    [toast],
+  );
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await api<AnnualLeaveData>({
+        path: `/senior/annual-leaves/${params.id}`,
+        method: 'GET',
+      });
+      if (res.status === 200 && Array.isArray(res.data?.splits)) {
+        setData(res.data);
       } else {
-        showError(res.message);
+        showError(res.message || 'Алдаа гарлаа');
       }
-    } catch (error) {
-      console.error('Save error:', error);
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      console.error(e);
     }
+  }, [params.id, showError]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData().finally(() => setIsLoading(false));
+    }, [fetchData]),
+  );
+
+  const handleSaved = () => {
+    setAddOpen(false);
+    fetchData();
   };
+
+  const hasCycle = !!data?.cycle_start_date && !!data?.cycle_end_date;
+  const reachedSplitLimit = !!data && data.splits.length >= data.max_splits;
+  const canPlan = hasCycle && !reachedSplitLimit && (data?.remaining_days ?? 0) > 0;
 
   return (
     <View className="flex-1 bg-lightblue">
@@ -339,125 +333,110 @@ export default function SeniorLeavePlanScreen() {
           <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>
             Ээлжийн амралт төлөвлөх
           </AppText>
-          <View className="gap-2.5">
-            <View className="flex-row gap-2">
-              <AppText className="text-sm text-darkblue w-48">Ажилтан</AppText>
-              <AppText className="text-sm font-medium text-darkerblue">{employeeName}</AppText>
-            </View>
-            {availability && (
+          {data && (
+            <View className="gap-2.5">
               <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-48">Э/амралтын цикл</AppText>
-                <AppText className="text-sm font-medium text-darkerblue">
-                  {dayjs(availability.start_date, 'YYYY-MM-DD').format('YY/MM/DD')} -{' '}
-                  {dayjs(availability.end_date, 'YYYY-MM-DD').format('YY/MM/DD')}
+                <AppText className="text-sm text-darkblue w-[180px]">Ажилтан</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                  {employeeName}
                 </AppText>
               </View>
-            )}
-            <View className="flex-row gap-2">
-              <AppText className="text-sm text-darkblue w-48">Боломжит хоног</AppText>
-              <AppText className="text-sm font-medium text-darkerblue">
-                {availability?.available_days ?? 0} хоног
-              </AppText>
-            </View>
-            {availability && (
+              {hasCycle && (
+                <View className="flex-row gap-2">
+                  <AppText className="text-sm text-darkblue w-[180px]">Э/амралтын цикл</AppText>
+                  <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                    {dayjs(data.cycle_start_date, 'YYYY-MM-DD').format('YY/MM/DD')} -{' '}
+                    {dayjs(data.cycle_end_date, 'YYYY-MM-DD').format('YY/MM/DD')}
+                  </AppText>
+                </View>
+              )}
               <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-48">Үлдэгдэл хоног</AppText>
-                <AppText className="text-sm font-medium text-darkerblue">
-                  {Math.max(0, remainingDays)} хоног
+                <AppText className="text-sm text-darkblue w-[180px]">Хувааж авах боломж</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                  {data.max_splits} удаа
                 </AppText>
               </View>
-            )}
-          </View>
+              <View className="flex-row gap-2">
+                <AppText className="text-sm text-darkblue w-[180px]">Боломжит хоног</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                  {data.available_days} хоног
+                </AppText>
+              </View>
+              <View className="flex-row gap-2">
+                <AppText className="text-sm text-darkblue w-[180px]">Үлдэгдэл хоног</AppText>
+                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
+                  {data.remaining_days} хоног
+                </AppText>
+              </View>
+            </View>
+          )}
         </View>
 
-        <KeyboardAwareScrollView
+        <ScrollView
           style={{ flex: 1, paddingHorizontal: 16, backgroundColor: '#ffffff' }}
           showsVerticalScrollIndicator={false}
-          bottomOffset={20}
         >
-          <View className="gap-6 pb-10 pt-7.5">
-            {!availability ? (
+          <View className="gap-5 pb-10 pt-7.5">
+            {isLoading ? (
+              <View className="items-center py-10">
+                <Spinner color="#005FEE" size="sm" />
+              </View>
+            ) : !hasCycle ? (
               <AppText className="text-sm text-darkgray text-center">
                 Боломжит ээлжийн амралт байхгүй байна
               </AppText>
+            ) : !data?.splits.length ? (
+              <AppText className="text-sm text-darkgray text-center">
+                Ээлжийн амралтын хуваарь байхгүй байна
+              </AppText>
             ) : (
-              <>
-                {fields.map((field, index) => {
-                  const otherDays = splitsWatch.reduce(
-                    (sum, p, i) => (i === index ? sum : sum + (Number(p?.days) || 0)),
-                    0,
-                  );
-                  const rowMax = Math.max(1, availability.available_days - otherDays);
-                  return (
-                    <SplitRow
-                      key={field.id}
-                      index={index}
-                      control={control}
-                      setValue={setValue}
-                      errors={errors}
-                      availability={availability}
-                      maxDays={rowMax}
-                      onRemove={() => {
-                        if (fields.length > 1) {
-                          remove(index);
-                        } else {
-                          setValue(`splits.${index}.startDate`, '');
-                          setValue(`splits.${index}.days`, '');
-                          setValue(`splits.${index}.endDate`, '');
-                        }
-                      }}
-                    />
-                  );
-                })}
-
-                {(() => {
-                  const reachedMaxSplits = fields.length >= maxSplits;
-                  const addDisabled = remainingDays <= 0 || reachedMaxSplits;
-                  return (
-                    <View className="gap-2">
-                      <Pressable
-                        onPress={() => append({ startDate: '', days: '', endDate: '' })}
-                        disabled={addDisabled}
-                        className="flex-row items-center justify-center gap-2 h-11 rounded-full border border-darkgray/30 disabled:opacity-50"
-                      >
-                        <HugeiconsIcon
-                          icon={PlusSignIcon}
-                          color={addDisabled ? '#9CA3AF' : '#222222'}
-                          size={20}
-                        />
-                        <AppText
-                          className={`text-sm font-medium ${
-                            addDisabled ? 'text-darkgray/50' : 'text-black'
-                          }`}
-                        >
-                          Нэмэх
-                        </AppText>
-                      </Pressable>
-                      {reachedMaxSplits && (
-                        <AppText className="text-xs text-darkgray text-center">
-                          Дээд тал нь {maxSplits} удаа хуваах боломжтой
-                        </AppText>
-                      )}
-                    </View>
-                  );
-                })()}
-              </>
+              data.splits.map((split, index) => (
+                <View key={split.id} className="gap-2.5">
+                  <AppText className="text-sm text-darkgray">
+                    #{index + 1} {SPLIT_TYPE_LABELS[split.type]}
+                  </AppText>
+                  <View className="flex-row items-center gap-2 border border-gray/30 rounded-lg h-11 px-2.5">
+                    <HugeiconsIcon icon={Calendar03Icon} color="#222222" size={24} />
+                    <AppText
+                      className={`text-base flex-1 ${split.type === 'unused' ? 'opacity-70' : ''}`}
+                      numberOfLines={1}
+                    >
+                      {split.type === 'unused'
+                        ? `${split.days} хоног`
+                        : formatSplitRange(split.start_date, split.end_date)}
+                    </AppText>
+                    {split.decree_id != null && (
+                      <HugeiconsIcon icon={SquareLock02Icon} color="#6A6A6A" size={20} />
+                    )}
+                  </View>
+                </View>
+              ))
             )}
           </View>
-        </KeyboardAwareScrollView>
+        </ScrollView>
 
-        {availability && (
-          <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10 }}>
-            <AppButton
-              label="Хадгалах"
-              onPress={handleSubmit(handleSave)}
-              isLoading={isLoading}
-              className="bg-lightblue border-darkblue/15"
-              labelClassName="text-darkerblue text-base font-medium"
-            />
-          </View>
-        )}
+        <View className="px-4 bg-background pt-2.5" style={{ paddingBottom: insets.bottom + 10 }}>
+          <AppButton
+            label="Нэмэх"
+            onPress={() => setAddOpen(true)}
+            isDisabled={isLoading || !canPlan}
+            className="bg-white border-darkblue/15 rounded-full"
+            labelClassName="text-[#008E47] text-base font-semibold"
+          />
+        </View>
       </StyledSafeAreaView>
+
+      {data && (
+        <AddSheet
+          isOpen={addOpen}
+          onOpenChange={setAddOpen}
+          data={data}
+          employeeId={params.id}
+          onSaved={handleSaved}
+          showError={showError}
+          showSuccess={showSuccess}
+        />
+      )}
     </View>
   );
 }

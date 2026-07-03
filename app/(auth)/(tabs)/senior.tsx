@@ -134,7 +134,7 @@ const MENU_TITLES: Record<SeniorMenuKey, string> = {
   announcement: "Зарлал, мэдээлэл",
   performance: "Гүйцэтгэл",
   schedule: "Хуваарь",
-  leave: "Ээлжийн амралт",
+  leave: "Э/амралт төлөвлөлт",
 };
 
 // --- Senior Announcements ---
@@ -917,22 +917,38 @@ interface AttendanceTotals {
   leave_minutes: number;
 }
 
-interface AttendanceEmployee {
+interface AttendancePerson {
   employee_id: number;
   first_name: string | null;
   last_name: string | null;
   profile_image_url: string | null;
-  lateness_minutes: number;
-  absent_count: number;
-  remote_minutes: number;
-  leave_minutes: number;
 }
 
+interface LatenessRow extends AttendancePerson {
+  lateness_minutes: number;
+}
+
+interface AbsenceRow extends AttendancePerson {
+  absent_count: number;
+}
+
+// Зайнаас / Ам-чөлөө: нэг ажилтан хүсэлтийн төрөл тус бүрээр тусдаа мөр болно.
+interface RequestSettingRow extends AttendancePerson {
+  request_setting_id: number;
+  request_setting_name: string;
+  minutes: number;
+}
+
+// The API serves the 4 cards' totals plus each card's pre-sorted, pre-filtered
+// (non-zero rows only) detail list in one call.
 interface AttendanceSummary {
   year: number;
   month: number;
   totals: AttendanceTotals;
-  employees: AttendanceEmployee[];
+  lateness: LatenessRow[];
+  absence: AbsenceRow[];
+  remote: RequestSettingRow[];
+  leave: RequestSettingRow[];
 }
 
 type AttendanceMetricKey = "lateness" | "absent" | "remote" | "leave";
@@ -940,14 +956,12 @@ type AttendanceMetricKey = "lateness" | "absent" | "remote" | "leave";
 interface AttendanceMetricDef {
   key: AttendanceMetricKey;
   label: string;
-  // Shared field name on both `totals` and each employee row.
+  // Field name on `totals` for the card value.
   field: keyof AttendanceTotals;
   // Таслалт is a count ("X удаа"); the rest are minutes rendered as HH:MM.
   isCount?: boolean;
   // Detail-sheet header (m = month number, rendered as "MM").
   sheetTitle: (m: number) => string;
-  // Static descriptor under each name in the detail list (Зайнаас only).
-  rowSubtitle?: string;
 }
 
 const pad2 = (m: number) => String(m).padStart(2, "0");
@@ -972,7 +986,6 @@ const ATTENDANCE_METRICS: AttendanceMetricDef[] = [
     label: "Зайнаас",
     field: "remote_minutes",
     sheetTitle: (m) => `${pad2(m)} сард зайнаас ажилласан`,
-    rowSubtitle: "Онлайнаар ажиллах",
   },
   {
     key: "leave",
@@ -1018,14 +1031,14 @@ function StatCard({
   );
 }
 
-// One row of the metric detail list: 52px avatar, name (+ optional descriptor),
-// and the metric value right-aligned.
+// One row of the metric detail list: 52px avatar, name (+ optional request-type
+// descriptor), and the metric value right-aligned.
 function MetricRow({
   emp,
   valueText,
   subtitle,
 }: {
-  emp: AttendanceEmployee;
+  emp: AttendancePerson;
   valueText: string;
   subtitle?: string | null;
 }) {
@@ -1267,10 +1280,8 @@ function SeniorSchedule({
         path: `/senior/timesheet/attendance-summary?year=${year}&month=${month}`,
         method: "GET",
       });
-      // 404 ("Ажилтны бүртгэл олдсонгүй") returns an error shape, not employees[].
-      setAttendance(
-        res.status === 200 && res.data && Array.isArray(res.data.employees) ? res.data : null
-      );
+      // 404 ("Ажилтны бүртгэл олдсонгүй") returns an error shape, not totals.
+      setAttendance(res.status === 200 && res.data && res.data.totals ? res.data : null);
     } catch (err) {
       console.error(err);
       setAttendance(null);
@@ -1328,15 +1339,43 @@ function SeniorSchedule({
     [metricKey]
   );
 
-  // The detail list: employees with a non-zero value for the tapped metric,
-  // sorted by that value descending (the API doc serves both views in one call).
+  // The tapped metric's detail list, mapped to a common row shape. The API
+  // serves each list pre-sorted with zero rows already dropped; remote/leave
+  // rows carry their request-type name as the subtitle and one employee may
+  // appear once per request type.
   const metricRows = useMemo(() => {
-    if (!attendance || !activeMetric) return [];
-    return attendance.employees
-      .map((emp) => ({ emp, value: Number(emp[activeMetric.field] ?? 0) }))
-      .filter((r) => r.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [attendance, activeMetric]);
+    if (!attendance || !metricKey) return [];
+    switch (metricKey) {
+      case "lateness":
+        return (attendance.lateness ?? []).map((r) => ({
+          key: String(r.employee_id),
+          emp: r,
+          valueText: formatMinutesHHMM(r.lateness_minutes),
+          subtitle: null as string | null,
+        }));
+      case "absent":
+        return (attendance.absence ?? []).map((r) => ({
+          key: String(r.employee_id),
+          emp: r,
+          valueText: `${r.absent_count} удаа`,
+          subtitle: null as string | null,
+        }));
+      case "remote":
+        return (attendance.remote ?? []).map((r) => ({
+          key: `${r.employee_id}-${r.request_setting_id}`,
+          emp: r,
+          valueText: formatMinutesHHMM(r.minutes),
+          subtitle: r.request_setting_name,
+        }));
+      case "leave":
+        return (attendance.leave ?? []).map((r) => ({
+          key: `${r.employee_id}-${r.request_setting_id}`,
+          emp: r,
+          valueText: formatMinutesHHMM(r.minutes),
+          subtitle: r.request_setting_name,
+        }));
+    }
+  }, [attendance, metricKey]);
 
   const weeks = useMemo(() => {
     const start = monthStart.startOf("month");
@@ -1797,6 +1836,7 @@ function SeniorSchedule({
             topInset={insets.top}
             enableOverDrag={false}
             enableDynamicSizing={false}
+            handleComponent={null}
             contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
           >
             <View className="h-[60px] items-center justify-center">
@@ -1816,10 +1856,10 @@ function SeniorSchedule({
               ) : (
                 metricRows.map((row) => (
                   <MetricRow
-                    key={row.emp.employee_id}
+                    key={row.key}
                     emp={row.emp}
-                    valueText={formatMetricValue(row.value, activeMetric?.isCount)}
-                    subtitle={activeMetric?.rowSubtitle}
+                    valueText={row.valueText}
+                    subtitle={row.subtitle}
                   />
                 ))
               )}
@@ -1836,6 +1876,7 @@ function SeniorSchedule({
 interface UnplannedEmployee {
   employee_id: number;
   total_days: number;
+  used_days: number;
   start_date: string;
   end_date: string;
   first_name: string | null;
@@ -1844,6 +1885,9 @@ interface UnplannedEmployee {
 }
 
 interface LeaveSplit {
+  id: number;
+  decree_id: number | null;
+  type: 'scheduled' | 'advance' | 'unused';
   employee_id: number;
   first_name: string | null;
   last_name: string | null;
@@ -1863,7 +1907,7 @@ interface MonthlyCount {
   count: number;
 }
 
-interface AnnualLeavePlansResponse {
+interface AnnualLeavesResponse {
   max_leave_splits: number;
   years: number[];
   monthly_counts: MonthlyCount[];
@@ -1875,26 +1919,26 @@ function monthLabel(month: number): string {
   return `${String(month).padStart(2, "0")} сар`;
 }
 
-function LeaveSplitRow({ split }: { split: LeaveSplit }) {
+function LeaveSplitRow({ split, onPress }: { split: LeaveSplit; onPress: () => void }) {
   const range = `${dayjs(split.start_date).format("MM/DD")} - ${dayjs(split.end_date).format("MM/DD")}`;
   return (
-    <View className="flex-row items-center gap-3 py-3">
-      <Avatar alt={fullName(split)} className="w-10 h-10">
+    <Pressable className="flex-row items-center gap-2 h-16" onPress={onPress}>
+      <Avatar alt={fullName(split)} className="w-13 h-13">
         <Avatar.Image source={{ uri: split.profile_image_url ?? "" }} />
         <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
           {avatarFallback(split)}
         </Avatar.Fallback>
       </Avatar>
       <View className="flex-1">
-        <AppText className="text-sm font-medium" numberOfLines={1}>
-          {shortName(split)}
+        <AppText className="text-base" numberOfLines={1}>
+          {nameWithInitial(split)}
         </AppText>
         <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
           {range}
         </AppText>
       </View>
-      <AppText className="text-sm text-darkgray">{split.days} хоног</AppText>
-    </View>
+      <AppText className="text-sm text-darkgray self-end pb-2.5">{split.days} хоног</AppText>
+    </Pressable>
   );
 }
 
@@ -1908,7 +1952,7 @@ function SeniorLeave({
   onScroll?: ScrollHandler;
 }) {
   const router = useRouter();
-  const [data, setData] = useState<AnnualLeavePlansResponse | null>(null);
+  const [data, setData] = useState<AnnualLeavesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1925,8 +1969,8 @@ function SeniorLeave({
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       try {
-        const res = await api<AnnualLeavePlansResponse>({
-          path: `/senior/annual-leave-plans?year=${year}`,
+        const res = await api<AnnualLeavesResponse>({
+          path: `/senior/annual-leaves?year=${year}`,
           method: "GET",
         });
         if (res.status === 200) {
@@ -1985,13 +2029,15 @@ function SeniorLeave({
             return (
               <View
                 key={m}
-                className={`flex-1 h-[52px] items-center pt-2 border-darkgray/12 ${
+                className={`flex-1 h-[57px] items-center pt-2 border-darkgray/12 ${
                   ci < row.length - 1 ? "border-r" : ""
                 } ${ri < monthRows.length - 1 ? "border-b" : ""}`}
               >
-                <AppText className="text-sm text-black">{String(m).padStart(2, "0")}</AppText>
+                <AppText className="text-sm font-medium text-darkgray">
+                  {String(m).padStart(2, "0")}
+                </AppText>
                 {!!count && (
-                  <AppText className="text-xs text-orange mt-0.5">{count}</AppText>
+                  <AppText className="text-sm font-semibold text-orange mt-0.5">{count}</AppText>
                 )}
               </View>
             );
@@ -2007,65 +2053,63 @@ function SeniorLeave({
 
       {/* Unplanned employees */}
       {unplanned.length > 0 && (
-        <View className="mt-1">
-          {unplanned.map((emp, i) => (
-            <View key={emp.employee_id}>
-              <Pressable
-                className="flex-row items-center gap-3 py-3"
-                onPress={() =>
-                  router.navigate({
-                    pathname: "/senior/leave-plan/[id]",
-                    params: {
-                      id: String(emp.employee_id),
-                      year: String(year),
-                      firstName: emp.first_name ?? "",
-                      lastName: emp.last_name ?? "",
-                      totalDays: String(emp.total_days),
-                      startDate: emp.start_date,
-                      endDate: emp.end_date,
-                      profileImageUrl: emp.profile_image_url ?? "",
-                      maxSplits: String(data?.max_leave_splits ?? ""),
-                    },
-                  })
-                }
-              >
-                <Avatar alt={fullName(emp)} className="w-10 h-10">
-                  <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
-                  <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
-                    {avatarFallback(emp)}
-                  </Avatar.Fallback>
-                </Avatar>
-                <View className="flex-1">
-                  <AppText className="text-sm font-medium" numberOfLines={1}>
-                    {shortName(emp)}
-                  </AppText>
-                  <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
-                    Боломжит хоног {emp.total_days}
-                  </AppText>
-                </View>
-                <View className="flex-row items-center gap-1.5">
-                  <HugeiconsIcon icon={Alert01Icon} color="#BC1818" size={16} />
-                  <AppText className="text-sm text-red">Төлөвлөөгүй байна</AppText>
-                </View>
-              </Pressable>
-              {i < unplanned.length - 1 && <Separator className="bg-darkgray/12" />}
-            </View>
+        <View className="mt-2.5">
+          {unplanned.map((emp) => (
+            <Pressable
+              key={emp.employee_id}
+              className="flex-row items-center gap-2 h-16"
+              onPress={() =>
+                router.navigate({
+                  pathname: "/senior/leave-plan/[id]",
+                  params: {
+                    id: String(emp.employee_id),
+                    firstName: emp.first_name ?? "",
+                    lastName: emp.last_name ?? "",
+                  },
+                })
+              }
+            >
+              <Avatar alt={fullName(emp)} className="w-13 h-13">
+                <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
+                <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
+                  {avatarFallback(emp)}
+                </Avatar.Fallback>
+              </Avatar>
+              <View className="flex-1">
+                <AppText className="text-base" numberOfLines={1}>
+                  {nameWithInitial(emp)}
+                </AppText>
+                <AppText className="text-sm text-red/60 mt-0.5" numberOfLines={1}>
+                  Төлөвлөөгүй байна
+                </AppText>
+              </View>
+            </Pressable>
           ))}
         </View>
       )}
 
       {/* Planned leave by month */}
-      <View className="mt-1">
+      <View>
         {months.map((section) => (
           <View key={section.month}>
-            <View className="bg-lightblue rounded-md px-3 py-1.5 mt-2">
+            <View className="bg-lightblue py-2 px-4 -mx-4 mt-2.5">
               <AppText className="text-sm text-darkblue">{monthLabel(section.month)}</AppText>
             </View>
-            {section.splits.map((split, i) => (
-              <View key={`${split.employee_id}-${split.start_date}`}>
-                <LeaveSplitRow split={split} />
-                {i < section.splits.length - 1 && <Separator className="bg-darkgray/12" />}
-              </View>
+            {section.splits.map((split) => (
+              <LeaveSplitRow
+                key={split.id}
+                split={split}
+                onPress={() =>
+                  router.navigate({
+                    pathname: "/senior/leave-plan/[id]",
+                    params: {
+                      id: String(split.employee_id),
+                      firstName: split.first_name ?? "",
+                      lastName: split.last_name ?? "",
+                    },
+                  })
+                }
+              />
             ))}
           </View>
         ))}

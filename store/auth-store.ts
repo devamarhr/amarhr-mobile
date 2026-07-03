@@ -205,6 +205,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // static import үүсгэвэл api.ts-ээр дамжсан require cycle үүсэх тул dynamic import ашиглана
+        import('@/utils/attendance-reminders')
+          .then((m) => m.cancelAttendanceReminders())
+          .catch(() => {});
         set({
           token: null,
           phone: null,

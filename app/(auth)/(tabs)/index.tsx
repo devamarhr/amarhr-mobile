@@ -5,6 +5,7 @@ import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
 import { ProfileData, useAuthStore } from "@/store/auth-store";
 import { processNotificationData } from "@/store/notification-store";
+import { syncAttendanceReminders } from "@/utils/attendance-reminders";
 import { registerForPushNotificationsAsync } from "@/utils/register-for-push-notifications";
 import {
   Alert01Icon,
@@ -145,6 +146,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchTimesheet();
+      syncAttendanceReminders();
     }, [fetchTimesheet])
   );
 
@@ -236,6 +238,7 @@ export default function HomeScreen() {
           ),
         });
         fetchTimesheet();
+        syncAttendanceReminders({ force: true });
       } else {
         toast.show({
           component: (props) => (
@@ -283,7 +286,10 @@ export default function HomeScreen() {
           }).catch(console.error);
         }
       })
-      .catch((error: any) => console.log(error));
+      .catch((error: any) => console.log(error))
+      .finally(() => {
+        syncAttendanceReminders();
+      });
 
     Notifications.getPresentedNotificationsAsync()
       .then((items) => {
