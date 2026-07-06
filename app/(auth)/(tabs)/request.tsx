@@ -334,15 +334,32 @@ export default function RequestScreen() {
     }
   }, [activeTab, fetchRequests]);
 
-  // Refetch the list when returning after a request was cancelled on the detail screen.
+  // Load fresh data every time the screen regains focus. The mount effects above
+  // cover the very first entry, so the first focus is skipped; later re-entries
+  // silently refetch the settings and (when on the list tab) the request list in
+  // the background. A pending refresh flag from the detail screen (e.g. after a
+  // request was cancelled) forces the list tab and a visible refresh instead.
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const skipFirstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
       if (useRequestRefreshStore.getState().shouldRefresh) {
         useRequestRefreshStore.getState().clearRefresh();
         setActiveTab(1);
-        fetchRequests(1, true);
+        // Silent (page-1, non-refresh) so the list updates without a
+        // programmatic RefreshControl spinner, which can stick on iOS when
+        // returning from the detail screen and the list isn't at the top.
+        fetchRequests(1);
+        return;
       }
-    }, [fetchRequests])
+      if (skipFirstFocus.current) {
+        skipFirstFocus.current = false;
+        return;
+      }
+      fetchSettings();
+      if (activeTabRef.current === 1) fetchRequests(1);
+    }, [fetchRequests, fetchSettings])
   );
 
   const handleEndReached = useCallback(() => {

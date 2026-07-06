@@ -15,9 +15,9 @@ import {
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { cn, Separator } from 'heroui-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
@@ -322,7 +322,7 @@ function TimesheetListRow({
               <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
             </View>
           </View>
-          <View className="flex-1 items-center">
+          <View className="flex-1 items-center justify-center">
             <HugeiconsIcon icon={Sun03StrokeStandard} size={24} color="#F0B400" />
           </View>
           <View className="flex-1 items-center" />
@@ -474,6 +474,24 @@ function MonthView({
     };
   }, [fetchData]);
 
+  // Refetch fresh data whenever the tab regains focus. The effect above already
+  // covers the initial mount and month changes (with the spinner), so the first
+  // focus is skipped and re-entries refresh silently in the background — no
+  // full-screen blank. Reads the latest fetchData via a ref so switching months
+  // doesn't re-trigger this focus effect.
+  const fetchDataRef = useRef(fetchData);
+  fetchDataRef.current = fetchData;
+  const skipFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (skipFirstFocus.current) {
+        skipFirstFocus.current = false;
+        return;
+      }
+      fetchDataRef.current();
+    }, [])
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchData();
@@ -550,6 +568,21 @@ function YearView({
       cancelled = true;
     };
   }, [fetchData]);
+
+  // Silently refetch on tab re-focus; the mount/year-change load above keeps the
+  // spinner. See MonthView for the ref/skip-first-focus rationale.
+  const fetchDataRef = useRef(fetchData);
+  fetchDataRef.current = fetchData;
+  const skipFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (skipFirstFocus.current) {
+        skipFirstFocus.current = false;
+        return;
+      }
+      fetchDataRef.current();
+    }, [])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

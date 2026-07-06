@@ -17,7 +17,7 @@
         "com.apple.developer.networking.wifi-info": true
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyBcgHS3fAT6W_p79_QQZXm9SxKLRCu4uU4"
+        "googleMapsApiKey": "AIzaSyCKRsiy2yWnuM7XJhSJPNXe-pXAVFRYn9Y"
       },
       "appleTeamId": "2FQYWVB4D9"
     },
@@ -42,7 +42,7 @@
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDLpCv5-KXGhpED2b-uPrM9M76r4d12QSs"
+          "apiKey": "AIzaSyCKRsiy2yWnuM7XJhSJPNXe-pXAVFRYn9Y"
         }
       }
     },

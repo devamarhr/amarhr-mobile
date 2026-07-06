@@ -55,11 +55,17 @@ function formatSplitRange(start: string | null, end: string | null): string {
   return `${dayjs(start, 'YYYY-MM-DD').format('YYYY/MM/DD')} - ${dayjs(end, 'YYYY-MM-DD').format('YYYY/MM/DD')}`;
 }
 
-async function calculateEndDate(startDate: string, days: number): Promise<string> {
+// Ахлах доод ажилтныхаа э/амралтын дуусах огноог урьдчилан тооцно (read-only).
+// Ажилтны timesheet-ийн ажлын өдрөөр (is_work_day) тооцогддог тул employee_id-г
+// заавал дамжуулна — өөрийн /employee-request endpoint ашиглаж болохгүй.
+async function calculateEndDate(
+  employeeId: string,
+  startDate: string,
+  days: number,
+): Promise<string> {
   const res = await api<{ end_date: string }>({
-    path: '/employee-request/calculate-end-date',
-    method: 'POST',
-    data: { start_date: startDate, days },
+    path: `/senior/annual-leaves/${employeeId}/end-date?start_date=${startDate}&days=${days}`,
+    method: 'GET',
   });
   return res.data.end_date;
 }
@@ -101,7 +107,7 @@ function AddSheet({
   useEffect(() => {
     let cancelled = false;
     if (startDate && days) {
-      calculateEndDate(startDate, Number(days))
+      calculateEndDate(employeeId, startDate, Number(days))
         .then((end) => {
           if (!cancelled) setEndDate(end);
         })
@@ -112,7 +118,7 @@ function AddSheet({
     return () => {
       cancelled = true;
     };
-  }, [startDate, days]);
+  }, [employeeId, startDate, days]);
 
   const dayOptions = useMemo(
     () =>

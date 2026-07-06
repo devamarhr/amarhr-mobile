@@ -10,7 +10,7 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useToast } from 'heroui-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
@@ -23,6 +23,15 @@ interface Workplace {
   longitude: number;
   radius: number; // meters
 }
+
+// Fallback region (Ulaanbaatar) so the map can render before the current
+// location is available; the camera animates to the user once it's obtained.
+const DEFAULT_REGION = {
+  latitude: 47.9184676,
+  longitude: 106.9177016,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
 
 function getDistanceMeters(
   lat1: number,
@@ -213,7 +222,7 @@ export default function AttendanceMapScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       }
-    : null;
+    : DEFAULT_REGION;
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -227,37 +236,31 @@ export default function AttendanceMapScreen() {
         </View>
       ) : (
         <View className="flex-1">
-          {initialRegion ? (
-            <MapView
-              ref={mapRef}
-              provider={PROVIDER_GOOGLE}
-              style={StyleSheet.absoluteFill}
-              initialRegion={initialRegion}
-              showsUserLocation
-              showsMyLocationButton
-              followsUserLocation
-            >
-              {workplaces.map((wp, index) => (
-                <React.Fragment key={index}>
-                  <Circle
-                    center={{ latitude: wp.latitude, longitude: wp.longitude }}
-                    radius={wp.radius}
-                    fillColor="rgba(0, 95, 238, 0.1)"
-                    strokeColor="rgba(0, 95, 238, 0.4)"
-                    strokeWidth={2}
-                  />
-                  <Marker
-                    coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
-                    title={wp.branch_name}
-                  />
-                </React.Fragment>
-              ))}
-            </MapView>
-          ) : (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color="#005FEE" />
-            </View>
-          )}
+          <MapView
+            ref={mapRef}
+            provider={PROVIDER_GOOGLE}
+            style={StyleSheet.absoluteFill}
+            initialRegion={initialRegion}
+            showsUserLocation
+            showsMyLocationButton
+            followsUserLocation
+          >
+            {workplaces.map((wp, index) => (
+              <React.Fragment key={index}>
+                <Circle
+                  center={{ latitude: wp.latitude, longitude: wp.longitude }}
+                  radius={wp.radius}
+                  fillColor="rgba(0, 95, 238, 0.1)"
+                  strokeColor="rgba(0, 95, 238, 0.4)"
+                  strokeWidth={2}
+                />
+                <Marker
+                  coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
+                  title={wp.branch_name}
+                />
+              </React.Fragment>
+            ))}
+          </MapView>
 
           <View
             className="absolute bottom-0 left-0 right-0 p-4"

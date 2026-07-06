@@ -2,7 +2,6 @@ import { TugrugIcon } from '@/components/app-icon';
 import { TAB_BAR_BASE_HEIGHT, tabBarHidden } from '@/hooks/use-hide-tab-bar';
 import { useAuthStore } from '@/store/auth-store';
 import { useNotificationStore } from '@/store/notification-store';
-import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import {
   ClockCheckIcon
 } from '@hugeicons-pro/core-stroke-rounded';
@@ -13,10 +12,24 @@ import {
   UserGroupIcon
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from "@hugeicons/react-native";
+import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Bottom padding for the tab bar, derived from the device's safe-area inset.
+// iOS trims most of the large home-indicator inset (~34px) so the tabs sit near
+// the bottom edge instead of leaving a big empty gap. Android keeps its system
+// nav-bar inset, but with an 8px floor so that on 3-button-nav devices (where
+// the inset is 0) the labels still have breathing room and don't look clipped
+// against the navigation bar.
+function getTabBarPaddingBottom(bottomInset: number) {
+  return Platform.OS === 'ios'
+    ? Math.max(bottomInset - 10, 8)
+    : Math.max(bottomInset, 8);
+}
 
 // Wraps the default tab bar so screens can slide it off the bottom edge on
 // scroll via the shared `tabBarHidden` value. Kept in normal layout flow, so
@@ -24,7 +37,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // unchanged.
 function AnimatedTabBar(props: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const fullHeight = TAB_BAR_BASE_HEIGHT + insets.bottom;
+  const fullHeight = TAB_BAR_BASE_HEIGHT + getTabBarPaddingBottom(insets.bottom);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: tabBarHidden.value * fullHeight }],
   }));
@@ -42,6 +55,22 @@ export default function TabLayout() {
   const hasEmployeeRequest = useNotificationStore((s) => s.employee_request.length > 0);
   const hasAssignedRequest = useNotificationStore((s) => s.employee_request_assigned.length > 0);
 
+  // Shared visual style for the bottom bar. The senior screen overrides this to
+  // `position: absolute` so its scene draws full-height (content flows behind the
+  // bar); the floating senior menu then sits over real content instead of the
+  // white gap the bar leaves when it hides on scroll.
+  const tabBarPaddingBottom = getTabBarPaddingBottom(insets.bottom);
+
+  const tabBarBaseStyle = {
+    height: TAB_BAR_BASE_HEIGHT + tabBarPaddingBottom,
+    paddingTop: 8,
+    paddingBottom: tabBarPaddingBottom,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(106,106,106,0.2)',
+  } as const;
+
   return (
     <Tabs
       tabBar={(props) => <AnimatedTabBar {...props} />}
@@ -55,14 +84,7 @@ export default function TabLayout() {
           fontFamily: 'Inter_500Medium',
           marginTop: 2,
         },
-        tabBarStyle: {
-          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
-          paddingTop: 8,
-          paddingHorizontal: 16,
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(106,106,106,0.2)',
-        },
+        tabBarStyle: tabBarBaseStyle,
         tabBarBadgeStyle: {
           backgroundColor: '#EE5700',
           minWidth: 8,
@@ -117,6 +139,9 @@ export default function TabLayout() {
           tabBarLabel: 'Ахлах',
           tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={24} color={color} />,
           tabBarBadge: hasAssignedRequest ? '' : undefined,
+          // Float the bar so the senior scene fills full height; the list scrolls
+          // behind it and the floating menu never exposes the bar's white gap.
+          tabBarStyle: [tabBarBaseStyle, { position: 'absolute', left: 0, right: 0, bottom: 0 }],
         }}
       />
     </Tabs>

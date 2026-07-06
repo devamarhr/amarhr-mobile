@@ -49,6 +49,15 @@ import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
+// Bottom padding for the senior tab's scroll surfaces. The senior scene draws
+// full-height (its bottom tab bar is `position: absolute`), so content must
+// clear both the bar and the floating senior menu hovering above it. The 88 is
+// the gap that used to sit above the menu when the scene was inset by the bar.
+function useSeniorContentPad() {
+  const insets = useSafeAreaInsets();
+  return 88 + TAB_BAR_BASE_HEIGHT + insets.bottom;
+}
+
 type ReviewerType = string | null;
 
 interface ReviewDetail {
@@ -89,6 +98,10 @@ interface MonthlySummary {
   label: string;
   count: number;
 }
+
+// Per-menu pending counts served by GET /senior/menu-badges; count > 0 lights
+// the menu item's dot. Keys mirror SeniorMenuKey.
+type MenuBadges = Record<SeniorMenuKey, number>;
 
 const FILTER_OPTIONS: SelectOption[] = [
   { value: "all", label: "Бүгд" },
@@ -173,6 +186,7 @@ interface AnnouncementsResponse {
 }
 
 function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
+  const contentPad = useSeniorContentPad();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [summaries, setSummaries] = useState<MonthlySummary[]>([]);
@@ -358,7 +372,7 @@ function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) {
           onEndReachedThreshold={0.3}
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          contentContainerStyle={{ paddingBottom: 88 }}
+          contentContainerStyle={{ paddingBottom: contentPad }}
           ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
           ListEmptyComponent={
             <View className="items-center justify-center py-20">
@@ -425,6 +439,7 @@ function SeniorPerformance({
   onScroll?: ScrollHandler;
   onDeadlineChange?: (info: DeadlineInfo | null) => void;
 }) {
+  const contentPad = useSeniorContentPad();
   const [months, setMonths] = useState<SalaryPerfMonth[]>([]);
   const [items, setItems] = useState<SalaryPerfItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<SelectOption | null>(null);
@@ -492,10 +507,14 @@ function SeniorPerformance({
     return items.filter((it) => fullName(it).toLowerCase().includes(q));
   }, [items, search]);
 
-  const fetchData = useCallback((month?: SalaryPerfMonth | null, isRefresh = false) => {
+  const fetchData = useCallback((month?: SalaryPerfMonth | null, isRefresh = false, silent = false) => {
     if (isFetching.current) return;
     isFetching.current = true;
-    if (isRefresh) setRefreshing(true);
+    // silent → refetch in the background (e.g. after saving a note) without a
+    // programmatic RefreshControl spinner, which can stick on iOS off the top.
+    if (silent) {
+      // no indicator
+    } else if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     const path =
@@ -616,7 +635,7 @@ function SeniorPerformance({
       .then((res) => {
         if (res.status >= 200 && res.status < 300) {
           setNoteFor(null);
-          fetchData(selectedSummaryRef.current, true);
+          fetchData(selectedSummaryRef.current, false, true);
         }
       })
       .catch(console.error)
@@ -771,7 +790,7 @@ function SeniorPerformance({
           showsVerticalScrollIndicator={false}
           onScroll={onScroll}
           scrollEventThrottle={16}
-          contentContainerStyle={{ paddingBottom: 88 }}
+          contentContainerStyle={{ paddingBottom: contentPad }}
           ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
           refreshing={refreshing}
           onRefresh={() => fetchData(selectedSummary, true)}
@@ -1197,6 +1216,7 @@ function SeniorSchedule({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const contentPad = useSeniorContentPad();
   const { toast } = useToast();
   const today = dayjs();
   const monthStart = useMemo(
@@ -1516,7 +1536,7 @@ function SeniorSchedule({
         // normal content via contentContainer padding while bands use -mx-4 to
         // reach the screen edges.
         style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 88 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: contentPad }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => fetchDetail(true)} />
         }
@@ -1933,11 +1953,13 @@ function LeaveSplitRow({ split, onPress }: { split: LeaveSplit; onPress: () => v
         <AppText className="text-base" numberOfLines={1}>
           {nameWithInitial(split)}
         </AppText>
-        <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
-          {range}
-        </AppText>
+        <View className="flex-row items-center justify-between gap-2 mt-0.5">
+          <AppText className="text-sm text-darkgray" numberOfLines={1}>
+            {range}
+          </AppText>
+          <AppText className="text-sm text-darkgray">{split.days} хоног</AppText>
+        </View>
       </View>
-      <AppText className="text-sm text-darkgray self-end pb-2.5">{split.days} хоног</AppText>
     </Pressable>
   );
 }
@@ -1951,6 +1973,7 @@ function SeniorLeave({
   onYearsLoaded: (years: number[]) => void;
   onScroll?: ScrollHandler;
 }) {
+  const contentPad = useSeniorContentPad();
   const router = useRouter();
   const [data, setData] = useState<AnnualLeavesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -2016,7 +2039,11 @@ function SeniorLeave({
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
       scrollEventThrottle={16}
-      contentContainerStyle={{ paddingBottom: 88 }}
+      // Cancel the parent's px-4 so the scroll view spans full width; re-inset
+      // normal content via contentContainer padding while the month band uses
+      // -mx-4 to reach the screen edges.
+      style={{ marginHorizontal: -16 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: contentPad }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={() => fetchPlans(true)} />
       }
@@ -2169,9 +2196,11 @@ function SeniorMenuOverlay({
 }
 
 export default function SeniorScreen() {
+  const contentPad = useSeniorContentPad();
   const router = useRouter();
   const { onScroll, reset: resetTabBar } = useHideTabBarOnScroll();
   const [activeMenu, setActiveMenu] = useState<SeniorMenuKey>("request");
+  const [badgeKeys, setBadgeKeys] = useState<SeniorMenuKey[]>([]);
   const [requests, setRequests] = useState<AssignedRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -2245,6 +2274,23 @@ export default function SeniorScreen() {
     }, [])
   );
 
+  // Menu badge dots — refetch the per-section pending counts on every focus so
+  // they stay current after the senior acts on requests/evaluations/leaves.
+  useFocusEffect(
+    useCallback(() => {
+      api<MenuBadges>({ path: "/senior/menu-badges", method: "GET" })
+        .then((res) => {
+          if (res.status === 200 && res.data) {
+            const d = res.data;
+            setBadgeKeys(
+              (Object.keys(d) as SeniorMenuKey[]).filter((k) => (d[k] ?? 0) > 0)
+            );
+          }
+        })
+        .catch(console.error);
+    }, [])
+  );
+
   // Reveal the bottom tab bar whenever the active section changes, and restore
   // it when the screen loses focus so the other tabs never inherit a hidden bar.
   useEffect(() => {
@@ -2295,13 +2341,26 @@ export default function SeniorScreen() {
   }, []);
 
   const fetchPage = useCallback(
-    (page: number, y: number, m: number, statuses: string[], isRefresh = false) => {
+    (
+      page: number,
+      y: number,
+      m: number,
+      statuses: string[],
+      isRefresh = false,
+      // Background refetch (e.g. returning from a detail screen) — updates the
+      // list without toggling any spinner. A programmatic RefreshControl spinner
+      // can stick on iOS when the list isn't scrolled to the top, so re-focus
+      // refreshes run silently and only the user's pull-to-refresh shows it.
+      silent = false
+    ) => {
       if (isFetching.current) return;
       isFetching.current = true;
       currentPage.current = page;
 
       const isFirstPage = page === 1;
-      if (isRefresh) setRefreshing(true);
+      if (silent) {
+        // no indicator
+      } else if (isRefresh) setRefreshing(true);
       else if (isFirstPage) setLoading(true);
       else setLoadingMore(true);
 
@@ -2320,7 +2379,9 @@ export default function SeniorScreen() {
         .catch(console.error)
         .finally(() => {
           isFetching.current = false;
-          if (isRefresh) setRefreshing(false);
+          if (silent) {
+            // nothing was set
+          } else if (isRefresh) setRefreshing(false);
           else if (isFirstPage) setLoading(false);
           else setLoadingMore(false);
         });
@@ -2361,7 +2422,9 @@ export default function SeniorScreen() {
       }
       const a = refreshArgsRef.current;
       if (a.selectedSummary) {
-        fetchPage(1, a.year, a.month, a.statuses, true);
+        // silent = true → refresh in the background without the RefreshControl
+        // spinner, which can otherwise stick on iOS when returning here.
+        fetchPage(1, a.year, a.month, a.statuses, false, true);
       }
     }, [fetchPage])
   );
@@ -2461,7 +2524,7 @@ export default function SeniorScreen() {
                   onEndReachedThreshold={0.3}
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  contentContainerStyle={{ paddingBottom: 88 }}
+                  contentContainerStyle={{ paddingBottom: contentPad }}
                   ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
                   ListEmptyComponent={
                     <View className="items-center justify-center py-20">
@@ -2564,9 +2627,7 @@ export default function SeniorScreen() {
           active={activeMenu}
           onChange={setActiveMenu}
           hiddenKeys={hasShiftEmployees ? [] : ["schedule"]}
-          // TODO: badge-ийг бодит өгөгдөлд холбох (Хүсэлт ← assigned-request,
-          // Гүйцэтгэл ← үнэлгээний төлөв). Одоохондоо дизайны дагуу default-аар асаалттай.
-          badges={["request", "performance"]}
+          badges={badgeKeys}
         />
       </View>
     </StyledSafeAreaView>
