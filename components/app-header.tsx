@@ -46,7 +46,7 @@ export function AppHeader({ title, subtitle, showBack, backHref, backIcon, backT
       {(title || (subtitle && !(showBack || backHref))) && (
         <View className="flex-1">
           {subtitle && <AppText className={cn('text-sm text-darkgray', subtitleClassName)}>{subtitle}</AppText>}
-          {title && <AppText className={cn('text-xl font-medium', titleClassName)}>{title}</AppText>}
+          {title && <AppText numberOfLines={1} className={cn('text-xl font-medium', titleClassName)}>{title}</AppText>}
         </View>
       )}
       {rightContent}

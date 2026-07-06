@@ -9,6 +9,7 @@ import { AppToast } from "@/components/app-toast";
 import { SeniorMenuBar, SeniorMenuKey } from "@/components/senior-menu-bar";
 import { api } from "@/config/api";
 import {
+  getTabBarPaddingBottom,
   ScrollHandler,
   TAB_BAR_BASE_HEIGHT,
   tabBarHidden,
@@ -2164,8 +2165,10 @@ function SeniorMenuOverlay({
 }) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
-  // Resting position: 16px above the bottom tab bar.
-  const restBottom = TAB_BAR_BASE_HEIGHT + insets.bottom + 16;
+  // Resting position: 10px above the bottom tab bar's real top edge. Uses the
+  // bar's actual padding (not the raw safe-area inset) so the gap stays tight
+  // and consistent regardless of platform.
+  const restBottom = TAB_BAR_BASE_HEIGHT + getTabBarPaddingBottom(insets.bottom) + 10;
   const animatedStyle = useAnimatedStyle(() => ({
     // When hidden, drop the pill so it rests flush against the bottom safe-area
     // inset (restBottom → insets.bottom), filling the space the tab bar vacates.
@@ -2433,7 +2436,7 @@ export default function SeniorScreen() {
     <StyledSafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="flex-1 px-4">
         <AppHeader
-          className="items-end"
+          className="items-center h-10"
           title={MENU_TITLES[activeMenu]}
           rightContent={
             activeMenu === "announcement" ? (

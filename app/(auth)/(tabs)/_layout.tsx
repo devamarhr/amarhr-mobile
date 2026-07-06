@@ -1,5 +1,5 @@
 import { TugrugIcon } from '@/components/app-icon';
-import { TAB_BAR_BASE_HEIGHT, tabBarHidden } from '@/hooks/use-hide-tab-bar';
+import { getTabBarPaddingBottom, TAB_BAR_BASE_HEIGHT, tabBarHidden } from '@/hooks/use-hide-tab-bar';
 import { useAuthStore } from '@/store/auth-store';
 import { useNotificationStore } from '@/store/notification-store';
 import {
@@ -15,21 +15,8 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Bottom padding for the tab bar, derived from the device's safe-area inset.
-// iOS trims most of the large home-indicator inset (~34px) so the tabs sit near
-// the bottom edge instead of leaving a big empty gap. Android keeps its system
-// nav-bar inset, but with an 8px floor so that on 3-button-nav devices (where
-// the inset is 0) the labels still have breathing room and don't look clipped
-// against the navigation bar.
-function getTabBarPaddingBottom(bottomInset: number) {
-  return Platform.OS === 'ios'
-    ? Math.max(bottomInset - 10, 8)
-    : Math.max(bottomInset, 8);
-}
 
 // Wraps the default tab bar so screens can slide it off the bottom edge on
 // scroll via the shared `tabBarHidden` value. Kept in normal layout flow, so
@@ -63,7 +50,7 @@ export default function TabLayout() {
 
   const tabBarBaseStyle = {
     height: TAB_BAR_BASE_HEIGHT + tabBarPaddingBottom,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: tabBarPaddingBottom,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',

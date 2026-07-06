@@ -631,7 +631,7 @@ export default function SeniorRequestDetailScreen() {
               keyboardShouldPersistTaps="handled"
               bottomOffset={20}
             >
-            <View className="px-4 pb-5 bg-darkgray/7">
+            <View className="px-4 pb-5">
 
               {employee && (
                 <View className="flex-row items-center gap-3 mb-5">

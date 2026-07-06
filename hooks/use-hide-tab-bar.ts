@@ -1,13 +1,28 @@
 import { useCallback, useRef } from "react";
+import { Platform } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { makeMutable, withTiming } from "react-native-reanimated";
 
 export type ScrollHandler = (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 
 // Base height of the bottom tab bar, excluding the device's bottom safe-area
-// inset. Mirrors `tabBarStyle.height` in app/(auth)/(tabs)/_layout.tsx (tall
-// enough to fit the icon + label).
-export const TAB_BAR_BASE_HEIGHT = 56;
+// inset. Mirrors `tabBarStyle.height` in app/(auth)/(tabs)/_layout.tsx. React
+// Navigation centers each icon+label within this region, so extra height shows
+// up as empty space above/below the icons — but too little clips the label.
+// 50 keeps the icons close to the top border without cutting off the labels.
+export const TAB_BAR_BASE_HEIGHT = 50;
+
+// Bottom padding for the tab bar, derived from the device's safe-area inset.
+// iOS trims most of the large home-indicator inset (~34px) so the tabs sit near
+// the bottom edge instead of leaving a big empty gap. Android keeps its system
+// nav-bar inset, but with an 8px floor so 3-button-nav labels aren't clipped.
+// Shared by the tabs layout (for the bar's own height/padding) and the senior
+// floating menu (so it can rest just above the bar's real top edge).
+export function getTabBarPaddingBottom(bottomInset: number) {
+  return Platform.OS === "ios"
+    ? Math.max(bottomInset - 10, 8)
+    : Math.max(bottomInset, 8);
+}
 
 // 0 = tab bar fully visible, 1 = fully hidden (slid off the bottom edge).
 // A module-level shared value lets a screen's scroll handler and the custom tab

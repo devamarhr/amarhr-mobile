@@ -8,7 +8,7 @@ import {
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Avatar, cn } from "heroui-native";
+import { Avatar } from "heroui-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, LayoutChangeEvent, Linking, Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -86,24 +86,8 @@ function ContactCard({ contact, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  // show the divider only once the expand animation has fully settled;
-  // hide it immediately on collapse
-  const [showBorder, setShowBorder] = useState(false);
-
-  useEffect(() => {
-    if (!isExpanded) {
-      setShowBorder(false);
-      return;
-    }
-    const timer = setTimeout(() => setShowBorder(true), 220);
-    return () => clearTimeout(timer);
-  }, [isExpanded]);
-
   return (
-    <Animated.View
-      layout={LinearTransition.duration(220)}
-      className={cn(showBorder && 'border-b border-darkgray/30')}
-    >
+    <Animated.View layout={LinearTransition.duration(220)}>
       <Pressable onPress={onToggle} className="flex-row items-center gap-2.5 h-16 py-1.5">
         <Avatar alt={contact.name} className="w-13 h-13">
           {contact.avatar ? (
@@ -204,6 +188,10 @@ export default function ContactScreen() {
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1">
+        {/* Opaque, elevated top section so the scroll list (whose expand/collapse
+            layout animation can momentarily overflow the ScrollView's top edge)
+            never bleeds over the header/tabs. */}
+        <View className="bg-background z-10">
         <AppHeader backTitle="Холбоо барих жагсаалт" showBack className="px-4" />
         <View className="px-4 mb-5">
           <AppTextField
@@ -237,6 +225,7 @@ export default function ContactScreen() {
             />
           </View>
         </View>
+        </View>
 
         {loading ? (
           <View className="flex-1 items-center justify-center">
@@ -245,7 +234,7 @@ export default function ContactScreen() {
         ) : (
           <ScrollView className="flex-1 mt-2" showsVerticalScrollIndicator={false}>
             {filteredEmployees.map((dept) => (
-              <View key={dept.name} className="mb-5">
+              <Animated.View key={dept.name} className="mb-5" layout={LinearTransition.duration(220)}>
                 <View className="bg-lightblue px-4 py-2">
                   <AppText className="text-sm text-darkblue text-right">{dept.name}</AppText>
                 </View>
@@ -260,7 +249,7 @@ export default function ContactScreen() {
                     />
                   ))}
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </ScrollView>
         )}
