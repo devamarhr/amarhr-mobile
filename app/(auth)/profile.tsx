@@ -6,7 +6,7 @@ import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
 import { useAuthStore, UserSettings } from '@/store/auth-store';
-import { cancelAttendanceReminders, syncAttendanceReminders } from '@/utils/attendance-reminders';
+import { cancelAttendanceReminders, REMINDER_OFFSET_MINUTES, syncAttendanceReminders } from '@/utils/attendance-reminders';
 import {
   Agreement03Icon, Alert01Icon, Building06StrokeStandard,
   Clock01Icon,
@@ -45,21 +45,21 @@ function MenuItem({ icon, label, labelClassName, subtitle, info, onInfoPress, on
       className="flex-row items-center h-12.5"
     >
       <View className="w-7.5 h-7.5 justify-center items-center">
-        <HugeiconsIcon icon={icon} color="#222222" size={20} />
+        <HugeiconsIcon icon={icon} color="#222222" size={20} strokeWidth={1.5} absoluteStrokeWidth />
       </View>
       <View className="flex-1 ml-3">
         <View className="flex-row items-center">
           <AppText className={cn(
-            'text-sm font-medium',
+            'text-base font-medium',
             labelClassName
           )}>{label}</AppText>
           {info && (
             <Pressable
               onPress={onInfoPress}
               hitSlop={8}
-              className="w-7.5 h-7.5 ml-3 justify-center items-center"
+              className="ml-2.5"
             >
-              <HugeiconsIcon icon={InformationCircleIcon} color="#6a6a6a" size={20} />
+              <HugeiconsIcon icon={InformationCircleIcon} color="#6a6a6a" size={22} strokeWidth={1.5} absoluteStrokeWidth />
             </Pressable>
           )}
         </View>
@@ -139,7 +139,7 @@ export default function ProfileScreen() {
               {(lastName?.[0] ?? '') + (firstName?.[0] ?? '')}
             </Avatar.Fallback>
           </Avatar>
-          <AppText className="text-base font-medium mt-1">{fullName}</AppText>
+          <AppText className="text-base font-semibold mt-1">{fullName}</AppText>
           <AppText className="text-sm text-darkgray">{jobPosition}</AppText>
         </View>
         <View className="flex-1">
@@ -176,7 +176,7 @@ export default function ProfileScreen() {
                 setInfoDialog({
                   title: 'Мэдэгдэл',
                   description:
-                    'Энэ тохиргоог идэвхжүүлснээр ажилдаа ирэх, тарах цаг ойртоход цаг бүртгүүлэхийг сануулсан мэдэгдэл хүлээн авна.',
+                    `Тохиргоог идэвхжүүлснээр, ажил эхлэх, тарах цагаас ${REMINDER_OFFSET_MINUTES} минутын өмнө цагаа бүртгүүлэх сануулга тогтмол хүлээн авч байна.`,
                 })
               }
               trailing={
@@ -208,7 +208,6 @@ export default function ProfileScreen() {
               trailing={
                 <AppSelect
                   title="Цаг бүртгэлийн арга"
-                  snapPoints={['50%']}
                   options={attendanceMethodOptions}
                   value={selectedAttendanceMethod}
                   onValueChange={(option) => {
@@ -232,7 +231,7 @@ export default function ProfileScreen() {
                 setInfoDialog({
                   title: 'Дугаараа нууцлах',
                   description:
-                    'Энэ тохиргоог идэвхжүүлснээр таны утасны дугаар бусад албаны ажилтнуудад харагдахгүй болно.',
+                    'Тохиргоог идэвхжүүлснээр, таны утасны дугаарыг бусад алба, хэлтсийн ажилтнуудаас нууцална.',
                 })
               }
               trailing={
@@ -256,12 +255,10 @@ export default function ProfileScreen() {
             <MenuItem
               icon={InformationCircleIcon}
               label="Ашиглах заавар"
-              labelClassName="font-normal"
             />
             <MenuItem
               icon={Logout05Icon}
               label="Апп-с гарах"
-              labelClassName="font-normal"
               onPress={() => setLogoutDialogOpen(true)}
             />
           </View>
@@ -269,16 +266,9 @@ export default function ProfileScreen() {
       </View>
 
       <AppDialog isOpen={infoDialog !== null} onOpenChange={(open) => !open && setInfoDialog(null)}>
-        <View className="mb-5 gap-1.5">
+        <View className="gap-1.5">
           <AppDialog.Title>{infoDialog?.title}</AppDialog.Title>
           <AppDialog.Description>{infoDialog?.description}</AppDialog.Description>
-        </View>
-        <View className="flex-row justify-end">
-          <AppDialog.Button
-            label="Ойлголоо"
-            className="w-[145px]"
-            onPress={() => setInfoDialog(null)}
-          />
         </View>
       </AppDialog>
 

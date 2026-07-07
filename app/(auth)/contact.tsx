@@ -8,12 +8,12 @@ import {
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Avatar, ScrollShadow } from "heroui-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Avatar, ScrollShadow } from "heroui-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, LayoutChangeEvent, Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
@@ -141,6 +141,7 @@ export default function ContactScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [tabLayouts, setTabLayouts] = useState<{ x: number; width: number }[]>([]);
   const indicatorProgress = useSharedValue(0);
+  const insets = useSafeAreaInsets();
 
   const handleTabLayout = (index: number, e: LayoutChangeEvent) => {
     const { x, width } = e.nativeEvent.layout;
@@ -196,7 +197,7 @@ export default function ContactScreen() {
   })).filter((dept) => dept.contacts.length > 0);
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1">
         {/* Opaque, elevated top section so the scroll list (whose expand/collapse
             layout animation can momentarily overflow the ScrollView's top edge)
@@ -246,6 +247,7 @@ export default function ContactScreen() {
             <ScrollView
               className="flex-1"
               showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: insets.bottom }}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={() => fetchContacts(true)} />
               }

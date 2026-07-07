@@ -6,7 +6,7 @@ import * as Notifications from 'expo-notifications';
 export const ATTENDANCE_REMINDER_TYPE = 'attendance_reminder';
 
 const DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
-const START_REMINDER_OFFSET_MINUTES = 5;
+export const REMINDER_OFFSET_MINUTES = 5;
 const SYNC_INTERVAL_MS = 60 * 60 * 1000;
 
 type UpcomingShift = {
@@ -69,7 +69,7 @@ export async function syncAttendanceReminders(opts?: { force?: boolean }): Promi
       const plannedStart = dayjs(shift.planned_start, DATETIME_FORMAT);
       const plannedEnd = dayjs(shift.planned_end, DATETIME_FORMAT);
 
-      const startAt = plannedStart.subtract(START_REMINDER_OFFSET_MINUTES, 'minute');
+      const startAt = plannedStart.subtract(REMINDER_OFFSET_MINUTES, 'minute');
       if (!shift.actual_start && startAt.isAfter(now)) {
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -85,16 +85,17 @@ export async function syncAttendanceReminders(opts?: { force?: boolean }): Promi
         });
       }
 
-      if (!shift.actual_end && plannedEnd.isAfter(now)) {
+      const endAt = plannedEnd.subtract(REMINDER_OFFSET_MINUTES, 'minute');
+      if (!shift.actual_end && endAt.isAfter(now)) {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: 'Цаг бүртгэл',
-            body: 'Таны ээлж дууслаа. «Тарлаа» цагаа бүртгүүлэхээ мартуузай.',
+            body: `Таны ээлж ${plannedEnd.format('HH:mm')} цагт дуусна. «Тарлаа» цагаа бүртгүүлэхээ мартуузай.`,
             data: { type: ATTENDANCE_REMINDER_TYPE },
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: plannedEnd.toDate(),
+            date: endAt.toDate(),
             channelId: 'default',
           },
         });

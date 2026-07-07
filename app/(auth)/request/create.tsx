@@ -65,7 +65,7 @@ function parseDateTimeToString(s?: string): string | undefined {
 function renderHeaderValue(value: string) {
   return value.split(/(--:--)/g).map((part, i) =>
     part === '--:--' ? (
-      <AppText key={i} className="text-darkerblue/50">{part}</AppText>
+      <AppText key={i} className="text-sm text-darkerblue/50">{part}</AppText>
     ) : (
       part
     ),

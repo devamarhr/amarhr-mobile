@@ -1,11 +1,11 @@
 import { AppText } from '@/components/app-text';
 import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { MultiplicationSignIcon, Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
+import { Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SelectOption = {
@@ -152,7 +152,7 @@ export function AppSelect({
   isInvalid = false,
   errorMessage,
   errorMessageClassName,
-  snapPoints = ['50%'],
+  snapPoints,
   className,
   labelClassName,
   triggerClassName,
@@ -170,6 +170,9 @@ export function AppSelect({
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<BottomSheetScrollViewMethods>(null);
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  // No explicit snapPoints → size the sheet to its content, capped at 80% of screen height.
+  const isDynamic = !snapPoints?.length;
   const displayTitle = title || label || 'Select';
 
   const handleOpenChange = useCallback((open: boolean) => {
@@ -243,12 +246,16 @@ export function AppSelect({
           <Select.Overlay className="bg-[#6C719F]/40" />
           <Select.Content
             presentation="bottom-sheet"
-            snapPoints={snapPoints}
+            snapPoints={isDynamic ? undefined : snapPoints}
             topInset={insets.top}
             enableOverDrag={false}
-            enableDynamicSizing={false}
+            enableDynamicSizing={isDynamic}
+            maxDynamicContentSize={isDynamic ? height * 0.8 : undefined}
             handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
+            contentContainerClassName={cn(
+              'p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden',
+              !isDynamic && 'h-full'
+            )}
             contentContainerProps={{
               style: {
                 borderCurve: 'continuous',
@@ -257,16 +264,10 @@ export function AppSelect({
           >
             <View className="flex-row px-4 py-5 justify-between">
               <View className="flex-1">
-                <AppText className="text-base font-medium text-center">
+                <AppText className="text-lg font-medium text-center">
                   {displayTitle}
                 </AppText>
               </View>
-              <PressableFeedback
-                className=""
-                onPress={() => handleOpenChange(false)}
-              >
-                <HugeiconsIcon icon={MultiplicationSignIcon} color="#6A6A6A" size={24} />
-              </PressableFeedback>
             </View>
 
             <BottomSheetScrollView
@@ -291,6 +292,7 @@ export function AppSelect({
                               icon={Tick02Icon}
                               size={indicatorIconSize}
                               color={indicatorIconColor}
+                              strokeWidth={2}
                             />
                           </Select.ItemIndicator>
                         </>
@@ -307,6 +309,7 @@ export function AppSelect({
                               icon={Tick02Icon}
                               size={indicatorIconSize}
                               color={indicatorIconColor}
+                              strokeWidth={2}
                             />
                           </Select.ItemIndicator>
                         </>
