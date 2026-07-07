@@ -4,7 +4,7 @@ import type { TextProps } from 'react-native';
 
 export const AppText = React.forwardRef<React.ElementRef<typeof Typography>, TextProps>(
   ({ className, ...props }, ref) => (
-    <Typography ref={ref} className={cn('text-foreground', className)} {...props} />
+    <Typography ref={ref} className={cn('text-base text-foreground', className)} {...props} />
   ),
 );
 

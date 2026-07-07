@@ -8,9 +8,10 @@ import {
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Avatar } from "heroui-native";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, LayoutChangeEvent, Linking, Pressable, ScrollView, View } from 'react-native';
+import { Avatar, ScrollShadow } from "heroui-native";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, LayoutChangeEvent, Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
@@ -98,7 +99,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
           </Avatar.Fallback>
         </Avatar>
         <View className="flex-1">
-          <AppText className="text-sm">{contact.name}</AppText>
+          <AppText className={isExpanded ? 'font-medium' : undefined}>{contact.name}</AppText>
           <AppText className="text-sm text-darkgray">{contact.position}</AppText>
         </View>
       </Pressable>
@@ -115,7 +116,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
             <View className="w-13 items-center justify-center">
               <HugeiconsIcon icon={SmartPhone01Icon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className={`text-sm font-medium ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
+            <AppText className={`font-medium ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
               {contact.phone ?? '********'}
             </AppText>
           </Pressable>
@@ -123,7 +124,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
             <View className="w-13 items-center justify-center">
               <HugeiconsIcon icon={AtIcon} color="#6A6A6A" size={20} />
             </View>
-            <AppText className="text-sm font-medium">{contact.email ?? '-'}</AppText>
+            <AppText className="font-medium">{contact.email ?? '-'}</AppText>
           </View>
         </Animated.View>
       )}
@@ -137,6 +138,7 @@ export default function ContactScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [contacts, setContacts] = useState<ContactApi[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [tabLayouts, setTabLayouts] = useState<{ x: number; width: number }[]>([]);
   const indicatorProgress = useSharedValue(0);
 
@@ -166,16 +168,24 @@ export default function ContactScreen() {
     };
   });
 
-  useEffect(() => {
-    api<ContactApi[]>({ path: '/contacts', method: 'GET' })
+  const fetchContacts = useCallback((isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    return api<ContactApi[]>({ path: '/contacts', method: 'GET' })
       .then((res) => {
         if (res.status === 200) {
           setContacts(res.data);
         }
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (isRefresh) setRefreshing(false);
+        else setLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
 
   const grouped = activeTab === 0 ? groupByDepartment(contacts) : groupByBranch(contacts);
   const filteredEmployees = grouped.map((dept) => ({
@@ -212,15 +222,15 @@ export default function ContactScreen() {
                 key={tab}
                 onPress={() => setActiveTab(index)}
                 onLayout={(e) => handleTabLayout(index, e)}
-                className="mr-6"
+                className="mr-2.5"
               >
-                <AppText className={`text-sm ${activeTab === index ? 'font-medium text-black' : 'text-darkgray'}`}>
+                <AppText className={activeTab === index ? 'font-medium text-black' : 'text-darkgray'}>
                   {tab}
                 </AppText>
               </Pressable>
             ))}
             <Animated.View
-              className="absolute bottom-0 h-0.5 rounded-full bg-blue"
+              className="absolute bottom-0 h-[3px] rounded-full bg-blue"
               style={indicatorStyle}
             />
           </View>
@@ -232,7 +242,14 @@ export default function ContactScreen() {
             <ActivityIndicator />
           </View>
         ) : (
-          <ScrollView className="flex-1 mt-2" showsVerticalScrollIndicator={false}>
+          <ScrollShadow className="flex-1 mt-2" LinearGradientComponent={LinearGradient}>
+            <ScrollView
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={() => fetchContacts(true)} />
+              }
+            >
             {filteredEmployees.map((dept) => (
               <Animated.View key={dept.name} className="mb-5" layout={LinearTransition.duration(220)}>
                 <View className="bg-lightblue px-4 py-2">
@@ -251,7 +268,8 @@ export default function ContactScreen() {
                 </View>
               </Animated.View>
             ))}
-          </ScrollView>
+            </ScrollView>
+          </ScrollShadow>
         )}
       </View>
     </StyledSafeAreaView>
