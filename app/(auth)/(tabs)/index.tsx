@@ -1,5 +1,6 @@
 import { AppButton } from "@/components/app-button";
 import { AppCheckbox } from "@/components/app-checkbox";
+import { AppDialog } from "@/components/app-dialog";
 import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
@@ -63,7 +64,7 @@ const actionLabel = (action: PunchAction): string => {
 };
 
 const formatTime = (datetime: string | null): string => {
-  if (!datetime) return '—';
+  if (!datetime) return '00:00';
   return dayjs(datetime).format('HH:mm');
 };
 
@@ -84,18 +85,67 @@ type UpcomingEvent = {
 };
 
 const formatEventDate = (start: string, end: string): string => {
-  const s = dayjs(start);
-  const e = dayjs(end);
-  const sStr = `${s.month() + 1}/${s.date()}`;
+  const sStr = dayjs(start).format('MM/DD');
   if (start === end) return sStr;
-  const eStr = `${e.month() + 1}/${e.date()}`;
+  const eStr = dayjs(end).format('MM/DD');
   return `${sStr} - ${eStr}`;
 };
 
-const eventColors = (type: string): { bg: string; text: string } => {
-  if (type === 'medical_examination') return { bg: 'bg-lightcyan', text: 'text-darkcyan' };
-  return { bg: 'bg-lightblue', text: 'text-blue' };
+const eventColors = (type: string): { bg: string; text: string; nameText: string } => {
+  if (type === 'annual_leave') return { bg: 'bg-amber', text: 'text-white', nameText: 'text-white' };
+  if (type === 'medical_examination') return { bg: 'bg-lightcyan', text: 'text-darkcyan', nameText: 'text-black' };
+  return { bg: 'bg-lightblue', text: 'text-blue', nameText: 'text-black' };
 };
+
+// Нэг event chip. Нэр нэг мөрөнд багтахгүй (таслагдсан) эсэхийг нуугдмал
+// хэмжигчийн бүтэн өргөнийг container-ийн өргөнтэй харьцуулж илрүүлнэ.
+// annual_leave → хуудас руу үсэрнэ; бусад төрөл таслагдсан бол dialog-оор бүтнээр харуулна.
+function EventChip({
+  item,
+  onNavigate,
+  onShowFull,
+}: {
+  item: UpcomingEvent;
+  onNavigate: () => void;
+  onShowFull: (item: UpcomingEvent) => void;
+}) {
+  const colors = eventColors(item.type);
+  const isAnnualLeave = item.type === 'annual_leave';
+  const [truncated, setTruncated] = useState(false);
+
+  const handlePress = () => {
+    if (isAnnualLeave) onNavigate();
+    else if (truncated) onShowFull(item);
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      className={`${colors.bg} rounded-lg flex-row items-center px-4`}
+      style={{ height: 46 }}
+    >
+      <AppText className={`text-sm ${colors.text} font-medium mr-3`}>
+        {formatEventDate(item.start_date, item.end_date)}
+      </AppText>
+      <View className="flex-1">
+        <AppText className={`text-sm ${colors.nameText}`} numberOfLines={1}>{item.name}</AppText>
+        {/* Далд хэмжигч — container өргөнд (left/right:0) хязгаарлаж, мөр 1-ээс их
+            болбол (харагдах хэсэгт таслагдсан гэсэн үг) truncated=true. */}
+        {!truncated && (
+          <AppText
+            className={`text-sm ${colors.nameText}`}
+            style={{ position: 'absolute', left: 0, right: 0, opacity: 0 }}
+            onTextLayout={(e) => {
+              if (e.nativeEvent.lines.length > 1) setTruncated(true);
+            }}
+          >
+            {item.name}
+          </AppText>
+        )}
+      </View>
+    </Pressable>
+  );
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -122,6 +172,11 @@ export default function HomeScreen() {
   const [warning, setWarning] = useState<string | null>(null);
   const [activeShiftIndex, setActiveShiftIndex] = useState(0);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
+  // Таслагдсан holiday/medical event дээр дарахад бүтэн текстийг харуулах dialog.
+  const [eventDialog, setEventDialog] = useState<UpcomingEvent | null>(null);
+  // PagerView өөрөө өндрөө агуулгаараа тааруулж чаддаггүй тул нэг баганы
+  // агуулгыг onLayout-оор хэмжиж, түүгээр pager-ийн өндрийг жолооддог.
+  const [shiftRowHeight, setShiftRowHeight] = useState(58);
 
   const toastRef = useRef(toast);
   toastRef.current = toast;
@@ -323,7 +378,7 @@ export default function HomeScreen() {
           <View className="flex-1">
             <AppText className="text-xl font-medium">{companyName}</AppText>
           </View>
-          <View className="flex-row gap-4 items-center">
+          <View className="flex-row gap-[5px] items-center">
             <Pressable
               onPress={() => router.navigate('/contact')}
               className="w-10 h-10 rounded-full bg-lightblue items-center justify-center"
@@ -360,21 +415,14 @@ export default function HomeScreen() {
               pageMargin={12}
               onPageSelected={(e) => setActiveAnnouncementIndex(e.nativeEvent.position)}
             >
-              {events.map((item, index) => {
-                const colors = eventColors(item.type);
-                return (
-                  <View
-                    key={index}
-                    className={`${colors.bg} rounded-xl flex-row items-center px-4`}
-                    style={{ height: 46 }}
-                  >
-                    <AppText className={`text-sm ${colors.text} font-medium mr-3`}>
-                      {formatEventDate(item.start_date, item.end_date)}
-                    </AppText>
-                    <AppText className="text-sm text-black flex-1" numberOfLines={1}>{item.name}</AppText>
-                  </View>
-                );
-              })}
+              {events.map((item, index) => (
+                <EventChip
+                  key={index}
+                  item={item}
+                  onNavigate={() => router.navigate('/request/annual-leave')}
+                  onShowFull={setEventDialog}
+                />
+              ))}
             </PagerView>
             {events.length > 1 && (
               <View className="flex-row justify-center gap-1.5 mt-2">
@@ -396,23 +444,28 @@ export default function HomeScreen() {
         {shifts.length > 0 && (
           <View className="mb-[30px]">
             <PagerView
-              style={{ height: 70 }}
+              style={{ height: shiftRowHeight }}
               initialPage={0}
               onPageSelected={(e) => setActiveShiftIndex(e.nativeEvent.position)}
             >
               {shifts.map((shift, index) => {
                 const overtime = isOvertimeShift(shift);
                 return (
-                  <View key={index} className="flex-row justify-around px-4">
-                    <View className="items-center">
-                      <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
-                      <AppText
-                        className={`text-xl mt-2 ${shift.actual_start ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
+                  <View key={index} className="flex-row px-11">
+                    <View className="flex-1 items-center">
+                      <View
+                        className="items-center"
+                        onLayout={index === 0 ? (e) => setShiftRowHeight(e.nativeEvent.layout.height) : undefined}
                       >
-                        {formatTime(shift.actual_start ?? shift.planned_start)}
-                      </AppText>
+                        <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
+                        <AppText
+                          className={`text-xl mt-2 ${shift.actual_start ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
+                        >
+                          {formatTime(shift.actual_start ?? shift.planned_start)}
+                        </AppText>
+                      </View>
                     </View>
-                    <View className="items-center">
+                    <View className="flex-1 items-center">
                       <HugeiconsIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
                       <AppText
                         className={`text-xl mt-2 ${shift.actual_end ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
@@ -420,9 +473,9 @@ export default function HomeScreen() {
                         {formatTime(shift.actual_end ?? shift.planned_end)}
                       </AppText>
                     </View>
-                    <View className="items-center">
+                    <View className="flex-1 items-center">
                       <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
-                      <AppText className={`text-xl mt-2 ${overtime ? (shift.worked_duration_minutes ? 'text-green' : 'text-green/50') : ''}`}>
+                      <AppText className={`text-xl mt-2 ${overtime ? (shift.worked_duration_minutes ? 'text-green' : 'text-green/50') : (shift.worked_duration_minutes ? '' : 'text-darkgray/50')}`}>
                         {formatDuration(shift.worked_duration_minutes)}
                       </AppText>
                     </View>
@@ -447,7 +500,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View className="items-center pb-[60px]">
+        <View className="items-center pb-[40px]">
           <Pressable
             onPress={() => {
               if (action === 'none') {
@@ -484,13 +537,14 @@ export default function HomeScreen() {
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: action === 'none' ? 0.15 : 0.25,
                 shadowRadius: 4,
-                elevation: 8,
+                elevation: 4,
               }}
             >
               <AppText
-                className="text-[28px] leading-9 text-center"
+                className="text-[28px] leading-9 text-center w-full px-3"
                 style={{ color: action === 'none' ? 'rgba(180,180,180,0.5)' : '#090B42' }}
                 numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {actionLabel(action)}
               </AppText>
@@ -543,6 +597,15 @@ export default function HomeScreen() {
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>
+
+      <AppDialog isOpen={eventDialog !== null} onOpenChange={(open) => !open && setEventDialog(null)}>
+        <View className="gap-1.5">
+          <AppDialog.Title>
+            {eventDialog ? formatEventDate(eventDialog.start_date, eventDialog.end_date) : ''}
+          </AppDialog.Title>
+          <AppDialog.Description>{eventDialog?.name}</AppDialog.Description>
+        </View>
+      </AppDialog>
     </StyledSafeAreaView>
   );
 }

@@ -19,7 +19,7 @@ import {
 } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import dayjs from 'dayjs';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import {
   BottomSheet,
   Spinner,
@@ -568,12 +568,8 @@ function UnusedSheet({
 
 export default function AnnualLeaveRequestScreen() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{
-    id: string;
-    title: string;
-  }>();
   const { toast } = useToast();
-  const title = params.title ?? '';
+  const title = 'Ээлжийн амралт';
 
   const [data, setData] = useState<AnnualLeaveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

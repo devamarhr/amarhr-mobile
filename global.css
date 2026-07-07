@@ -17,13 +17,13 @@
   --snow: oklch(0.9911 0 0);
   --eclipse: oklch(0.252 0 89.876);
 
-  --text-2xs: calc(5px + 1.58vw); /* ~11.2px @390 */
-  --text-xs: calc(6px + 1.89vw); /* ~13.4px @390 */
-  --text-sm: calc(7px + 2.2vw); /* ~15.6px @390 */
-  --text-base: calc(8px + 2.51vw); /* ~17.8px @390 */
-  --text-lg: calc(9px + 2.83vw); /* ~20px @390 */
-  --text-xl: calc(10px + 3.14vw); /* ~22.2px @390 */
-  --text-2xl: calc(12px + 3.77vw); /* ~26.7px @390 */
+  --text-2xs: calc(5px + 1.58vw); /* for 10px ~11.2px @390 */
+  --text-xs: calc(6px + 1.89vw); /* for 12px ~13.4px @390 */
+  --text-sm: calc(7px + 2.2vw); /* for 14px ~15.6px @390 */
+  --text-base: calc(8px + 2.51vw); /* for 16px ~17.8px @390 */
+  --text-lg: calc(9px + 2.83vw); /* for 18px ~20px @390 */
+  --text-xl: calc(10px + 3.14vw); /* for 20px ~22.2px @390 */
+  --text-2xl: calc(12px + 3.77vw); /* for 24px ~26.7px @390 */
 
   /* Base radius */
   --radius: 0.5rem;
@@ -44,6 +44,7 @@
   --color-blue: var(--color-blue);
   --color-lightblue: var(--color-lightblue);
   --color-yellow: var(--color-yellow);
+  --color-amber: var(--color-amber);
   --color-orange: var(--color-orange);
   --color-darkercyan: var(--color-darkercyan);
   --color-darkcyan: var(--color-darkcyan);
@@ -116,6 +117,7 @@
       --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
       --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
       --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
+      --color-amber: oklch(0.7465 0.1613 70.4); /* #DF9800 */
       --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
       --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
       --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
@@ -186,6 +188,7 @@
       --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
       --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
       --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
+      --color-amber: oklch(0.7465 0.1613 70.4); /* #DF9800 */
       --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
       --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
       --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */

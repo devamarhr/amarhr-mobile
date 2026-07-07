@@ -52,7 +52,7 @@ export default function TabLayout() {
     height: TAB_BAR_BASE_HEIGHT + tabBarPaddingBottom,
     paddingTop: 0,
     paddingBottom: tabBarPaddingBottom,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: 'rgba(106,106,106,0.2)',
@@ -67,7 +67,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 9,
           fontFamily: 'Inter_500Medium',
           marginTop: 2,
         },
@@ -86,21 +86,21 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarLabel: 'Бүртгэл',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={ClockCheckIcon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={ClockCheckIcon} size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen
         name="timesheet"
         options={{
           tabBarLabel: 'Хуваарь',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Calendar03Icon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Calendar03Icon} size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen
         name="request"
         options={{
           tabBarLabel: 'Хүсэлт',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasEmployeeRequest ? '' : undefined,
         }}
       />
@@ -115,7 +115,7 @@ export default function TabLayout() {
         name="announcement"
         options={{
           tabBarLabel: 'Мэдээлэл',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasAnnouncement ? '' : undefined,
         }}
       />
@@ -124,7 +124,7 @@ export default function TabLayout() {
         options={{
           href: isSenior ? '/(auth)/(tabs)/senior' : null,
           tabBarLabel: 'Ахлах',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasAssignedRequest ? '' : undefined,
           // Float the bar so the senior scene fills full height; the list scrolls
           // behind it and the floating menu never exposes the bar's white gap.
