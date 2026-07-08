@@ -2,6 +2,7 @@ import { View, ScrollView } from 'react-native';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
+import { cn } from 'heroui-native';
 import { AppText } from '@/components/app-text';
 import { AppHeader } from '@/components/app-header';
 import { AppSelect, SelectOption } from '@/components/app-select';
@@ -22,6 +23,12 @@ interface SalaryLine {
   label: string;
   amount: string;
   detail?: string;
+}
+
+interface DeductionLine {
+  label: string;
+  amount: string;
+  negative?: boolean;
 }
 
 const SALARY_ITEMS: SalaryLine[] = [
@@ -50,25 +57,25 @@ const SALARY_ITEMS: SalaryLine[] = [
   { label: 'Цалинтай чөлөө 1', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Цалинтай чөлөө 2', amount: '5,500,000.00', detail: '168:00 × 32,453.00' },
   { label: 'Нэмэг/шагн/урамшуулал', amount: '5,500,000.00' },
-  { label: 'Тэтгэмж', amount: '5,500,000.00' },
+  { label: 'Тэтгэмж', amount: '500,000.00', detail: 'Тогтмол дүн' },
 ];
 
-const DEDUCTION_ITEMS: SalaryLine[] = [
+const DEDUCTION_ITEMS: DeductionLine[] = [
   { label: 'НДШ', amount: '5,500,000.00' },
   { label: 'ХХОАТ', amount: '5,500,000.00' },
   { label: 'Урьдчилгаа цалин', amount: '5,500,000.00' },
-  { label: 'Хооролтын суутгал', amount: '5,500,000.00' },
-  { label: 'Суутгал', amount: '5,500,000.00' },
-  { label: 'Т/хөнгөлөлтийн тэгшитгэл', amount: '5,500,000.00' },
+  { label: 'Хоцролтын суутгал', amount: '5,500,000.00', negative: true },
+  { label: 'Суутгал', amount: '5,500,000.00', negative: true },
+  { label: 'Татвар тохируулга', amount: '5,500,000.00' },
 ];
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row items-center">
-      <AppText numberOfLines={1} className="text-sm text-white/70 w-24">
+    <View className="flex-row items-center justify-between">
+      <AppText numberOfLines={1} className="text-base text-white/80">
         {label}
       </AppText>
-      <AppText className="text-base font-semibold text-white">{value}</AppText>
+      <AppText className="text-base font-medium text-white">{value}</AppText>
     </View>
   );
 }
@@ -76,13 +83,22 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 function SalaryRow({ item }: { item: SalaryLine }) {
   return (
     <View className="px-4 py-2.5">
-      <AppText className="text-sm text-darkgray">{item.label}</AppText>
-      <View className="flex-row items-center justify-between mt-0.5">
-        <AppText className="text-base font-medium">{item.amount}</AppText>
+      <AppText className="text-sm text-darkgray/50">{item.label}</AppText>
+      <View className="flex-row items-center">
         {item.detail && (
-          <AppText className="text-sm text-darkgray">{item.detail}</AppText>
+          <AppText className="text-base text-darkgray">{item.detail}</AppText>
         )}
+        <AppText className="text-base ml-auto">{item.amount}</AppText>
       </View>
+    </View>
+  );
+}
+
+function DeductionRow({ item }: { item: DeductionLine }) {
+  return (
+    <View className="flex-row items-center justify-between py-2">
+      <AppText className="text-base text-darkgray">{item.label}</AppText>
+      <AppText className={cn('text-base', item.negative && 'text-red')}>{item.amount}</AppText>
     </View>
   );
 }
@@ -103,7 +119,7 @@ export default function SalaryScreen() {
         <AppHeader
           title="Цалин тооцоолол"
           className="px-4 mb-3"
-          titleClassName="text-white"
+          titleClassName="text-white/80"
           rightContent={
             <AppSelect
               title="Цалингийн задаргаа"
@@ -118,7 +134,7 @@ export default function SalaryScreen() {
           }
         />
 
-        <View className="px-4 pb-4 gap-1.5">
+        <View className="px-4 pb-4 gap-2.5">
           <SummaryRow label="Нийт цалин" value="5,500,000.00" />
           <SummaryRow label="Гарт олгох" value="5,500,000.00" />
         </View>
@@ -129,11 +145,13 @@ export default function SalaryScreen() {
               <SalaryRow key={`earning-${index}`} item={item} />
             ))}
 
-            <View className="h-4" />
+            <View className="h-px bg-darkgreen mx-4 my-5" />
 
-            {DEDUCTION_ITEMS.map((item, index) => (
-              <SalaryRow key={`deduction-${index}`} item={item} />
-            ))}
+            <View className="px-4">
+              {DEDUCTION_ITEMS.map((item, index) => (
+                <DeductionRow key={`deduction-${index}`} item={item} />
+              ))}
+            </View>
           </View>
         </ScrollView>
       </StyledSafeAreaView>
