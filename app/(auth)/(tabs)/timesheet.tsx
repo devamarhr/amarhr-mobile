@@ -267,20 +267,20 @@ function ShiftRow({
 
   return (
     <View className={cn('flex-row', !isFirst && 'border-t border-darkgray/5')}>
-      <View className={cn('w-[120px] px-[15px] py-[13px]', isToday && isFirst && 'bg-lightblue')}>
+      <View className={cn('w-[103px] px-[15px] py-[13px]', isToday && isFirst && 'bg-lightblue')}>
         <View className={cn('flex-row items-baseline gap-2.5', !isFirst && 'opacity-0')}>
-          <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
+          <AppText className={cn('text-base font-medium', dayColor)}>{dayStr}</AppText>
           <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
         </View>
       </View>
       <View className="flex-1 items-center justify-center">
-        <AppText className={cn('text-sm', arrivedColor)}>{arrivedDisplay}</AppText>
+        <AppText className={cn('text-base', arrivedColor)}>{arrivedDisplay}</AppText>
       </View>
       <View className="flex-1 items-center justify-center">
-        <AppText className={cn('text-sm', leftColor)}>{leftDisplay}</AppText>
+        <AppText className={cn('text-base', leftColor)}>{leftDisplay}</AppText>
       </View>
       <View className="flex-1 items-center justify-center">
-        <AppText className={cn('text-sm', workHourColor)}>{workHourDisplay}</AppText>
+        <AppText className={cn('text-base', workHourColor)}>{workHourDisplay}</AppText>
       </View>
     </View>
   );
@@ -304,21 +304,23 @@ function TimesheetListRow({
   const isPlanned = hasPlannedShift(day);
   const isNonWorkingDay = !isPlanned;
 
-  // Day number color
-  const dayColor = day.annual || day.leave
-    ? 'text-darkgray'
-    : !isPlanned
-      ? 'text-blue'
-      : '';
+  // Day number color: today -> #222, weekend/non-working -> blue, else darkgray
+  const dayColor = isToday
+    ? ''
+    : day.annual || day.leave
+      ? 'text-darkgray'
+      : !isPlanned
+        ? 'text-blue'
+        : 'text-darkgray';
 
   // Annual leave: special row, no shift breakdown
   if (day.annual) {
     return (
       <View className="border-b border-darkgray/10 bg-yellow/10">
         <View className="flex-row">
-          <View className="w-[120px] px-[15px] py-[13px]">
+          <View className="w-[103px] px-[15px] py-[13px]">
             <View className="flex-row items-baseline gap-2.5">
-              <AppText className={cn('text-lg', dayColor)}>{dayStr}</AppText>
+              <AppText className={cn('text-base font-medium', dayColor)}>{dayStr}</AppText>
               <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
             </View>
           </View>
@@ -410,7 +412,7 @@ function TimesheetList({
     <View className="pb-20">
       {/* Header */}
       <View className="flex-row">
-        <View className="w-[120px]" />
+        <View className="w-[103px]" />
         <View className="flex-1 items-center">
           <HugeiconsIcon icon={Login03Icon} size={22} color="#6A6A6A80" />
         </View>
@@ -666,59 +668,59 @@ function YearView({
     >
       {/* Тайлант жил */}
       <View className="flex-row justify-between">
-        <AppText className="text-sm text-darkgray">Тайлант жил</AppText>
-        <View className="items-end">
-          <AppText className="text-sm">{stats?.total_work_days ?? 0} хоног</AppText>
-          <AppText className="text-sm">{formatMinutesHHMM(stats?.total_planned_minutes ?? 0)} цаг</AppText>
+        <AppText className="text-base text-darkgray leading-6">Тайлант жил</AppText>
+        <View className="items-end gap-2.5">
+          <AppText className="text-base text-darkgray leading-6">{stats?.total_work_days ?? 0} хоног</AppText>
+          <AppText className="text-base text-darkgray leading-6">{formatMinutesHHMM(stats?.total_planned_minutes ?? 0)} цаг</AppText>
         </View>
       </View>
 
-      <Separator className="bg-darkgray/15 my-5" />
+      <Separator className="bg-darkgray/30 my-5 h-px" />
 
       {/* Work-hour stats */}
-      <View className="gap-3">
+      <View className="gap-2.5">
         {workHourRows.map((item) => (
           <View key={item.label} className="flex-row justify-between">
-            <AppText className="text-sm text-darkgray">{item.label}</AppText>
-            <AppText className="text-sm">{item.value}</AppText>
+            <AppText className="text-base text-darkgray leading-6">{item.label}</AppText>
+            <AppText className="text-base leading-6">{item.value}</AppText>
           </View>
         ))}
       </View>
 
-      <Separator className="bg-darkgray/15 my-5" />
+      <Separator className="bg-darkgray/30 my-5 h-px" />
 
       {/* Extra stats */}
-      <View className="gap-3">
+      <View className="gap-2.5">
         <View className="flex-row justify-between">
-          <AppText className="text-sm text-darkgray">Э/амралтын хоног</AppText>
-          <AppText className="text-sm">{extra?.annual_leave_available_days ?? 0} хоног</AppText>
+          <AppText className="text-base text-darkgray leading-6">Э/амралтын хоног</AppText>
+          <AppText className="text-base leading-6">{extra?.annual_leave_available_days ?? 0} хоног</AppText>
         </View>
 
         <View className="flex-row justify-between">
-          <AppText className="text-sm text-darkgray">Э/а төлөвлөсөн хуваарь</AppText>
+          <AppText className="text-base text-darkgray leading-6">Э/а төлөвлөсөн хуваарь</AppText>
           {hasSplits ? (
-            <View className="items-end gap-1">
+            <View className="items-end gap-2.5">
               {splitFormattedList.map((s, i) => (
-                <AppText key={`s-${i}`} className="text-sm text-[#DF9800]">{s}</AppText>
+                <AppText key={`s-${i}`} className="text-base text-[#DF9800] leading-6">{s}</AppText>
               ))}
             </View>
           ) : (
-            <AppText className="text-sm text-red">Төлөвлөөгүй</AppText>
+            <AppText className="text-base text-red leading-6">Төлөвлөөгүй</AppText>
           )}
         </View>
 
         <View className="flex-row justify-between">
-          <AppText className="text-sm text-darkgray">Эрүүл мэндийн үзлэг</AppText>
-          <AppText className={cn('text-sm', hasMedical ? 'text-darkcyan' : 'text-black')}>
+          <AppText className="text-base text-darkgray leading-6">Эрүүл мэндийн үзлэг</AppText>
+          <AppText className={cn('text-base leading-6', hasMedical ? 'text-darkcyan' : 'text-black')}>
             {medicalFormatted}
           </AppText>
         </View>
 
         <View className="flex-row justify-between mb-7.5">
-          <AppText className="text-sm text-darkgray">Баярын өдөр</AppText>
+          <AppText className="text-base text-darkgray leading-6">Баярын өдөр</AppText>
           <Pressable className="flex-row gap-1 items-center" onPress={() => setShowHoliday(!showHoliday)}>
             <HugeiconsIcon icon={showHoliday ? ArrowUp01Icon : ArrowDown01Icon} />
-            <AppText className="text-sm font-medium text-blue">{totalHolidayDays} хоног</AppText>
+            <AppText className="text-base font-medium text-blue leading-6">{totalHolidayDays} хоног</AppText>
           </Pressable>
         </View>
       </View>
@@ -729,8 +731,8 @@ function YearView({
           <View className="gap-4 mb-7.5">
             {holidays.map((h) => (
               <View key={h.key} className="gap-1">
-                <AppText className="text-sm text-blue">{formatHolidayDates(h.dates)}</AppText>
-                <AppText className="text-sm">{h.name}</AppText>
+                <AppText className="text-base text-blue leading-6">{formatHolidayDates(h.dates)}</AppText>
+                <AppText className="text-base leading-6">{h.name}</AppText>
               </View>
             ))}
           </View>
