@@ -17,13 +17,14 @@ import React, { useState } from "react";
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 export default function PersonalInfoEditScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { lastName, firstName, gender, nationality, familyName, phone, registerNumber, birthDate, email, emergencyContact, emergencyRelation, address, children, bankAccount, bank } = useAuthStore();
   const setProfileData = useAuthStore((state) => state.setProfileData);
   const { toast } = useToast();
@@ -107,13 +108,14 @@ export default function PersonalInfoEditScreen() {
   };
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <AppHeader backTitle="Мэдээлэл засах" showBack />
         <KeyboardAwareScrollView
           style={{flex:1}}
           showsVerticalScrollIndicator={false}
           bottomOffset={20}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
         >
           <View className="gap-6 pb-10">
             <Controller

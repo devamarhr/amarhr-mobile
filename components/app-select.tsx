@@ -171,8 +171,17 @@ export function AppSelect({
   const scrollRef = useRef<BottomSheetScrollViewMethods>(null);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  // No explicit snapPoints → size the sheet to its content, capped at 80% of screen height.
-  const isDynamic = !snapPoints?.length;
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
+  // No explicit snapPoints → size the sheet to its MEASURED content height (fixed
+  // title + list), capped at 80%. We measure (onLayout + onContentSizeChange) instead
+  // of gorhom's enableDynamicSizing, which breaks BottomSheetScrollView scrolling on
+  // Android. A fixed snap point + h-full keeps the list reliably scrollable at the cap.
+  const maxSheetHeight = height * 0.8;
+  const measuredHeight = headerHeight + listHeight;
+  const resolvedSnapPoints = snapPoints?.length
+    ? snapPoints
+    : [Math.min(measuredHeight || maxSheetHeight, maxSheetHeight)];
   const displayTitle = title || label || 'Select';
 
   const handleOpenChange = useCallback((open: boolean) => {
@@ -230,7 +239,7 @@ export function AppSelect({
                   renderValue(fullValue)
                 ) : (
                   <AppText className={cn(
-                    'text-sm',
+                    'text-base',
                     !fullValue && 'text-muted'
                   )}>
                     {fullValue?.label ?? placeholder}
@@ -246,34 +255,32 @@ export function AppSelect({
           <Select.Overlay className="bg-[#6C719F]/40" />
           <Select.Content
             presentation="bottom-sheet"
-            snapPoints={isDynamic ? undefined : snapPoints}
+            snapPoints={resolvedSnapPoints}
             topInset={insets.top}
             enableOverDrag={false}
-            enableDynamicSizing={isDynamic}
-            maxDynamicContentSize={isDynamic ? height * 0.8 : undefined}
+            enableDynamicSizing={false}
             handleComponent={null}
-            contentContainerClassName={cn(
-              'p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden',
-              !isDynamic && 'h-full'
-            )}
+            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
             contentContainerProps={{
               style: {
                 borderCurve: 'continuous',
               },
             }}
           >
-            <View className="flex-row px-4 py-5 justify-between">
-              <View className="flex-1">
-                <AppText className="text-lg font-medium text-center">
-                  {displayTitle}
-                </AppText>
-              </View>
+            <View
+              className="px-4 py-5"
+              onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+            >
+              <AppText className="text-lg font-medium text-center">
+                {displayTitle}
+              </AppText>
             </View>
 
             <BottomSheetScrollView
               ref={scrollRef}
-              contentContainerClassName="pt-2 px-4 pb-4"
+              contentContainerClassName="px-4 pb-10"
               showsVerticalScrollIndicator={false}
+              onContentSizeChange={(_w, h) => setListHeight(h)}
             >
               {options.map((option, index) => (
                 <View key={option.value}>

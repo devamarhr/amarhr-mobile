@@ -1,6 +1,6 @@
 import { View, Pressable, ScrollView } from 'react-native';
 import { withUniwind } from "uniwind";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
 import React from "react";
@@ -15,8 +15,8 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 function InfoField({ label, value }: { label: string; value?: string | null }) {
   return (
     <View className="pb-5">
-      <AppText className="text-sm text-darkgray">{label}</AppText>
-      <AppText className="text-sm mt-1">{value || '-'}</AppText>
+      <AppText className="text-sm text-darkgray/50">{label}</AppText>
+      <AppText className="text-base mt-1">{value || '-'}</AppText>
     </View>
   );
 }
@@ -28,6 +28,7 @@ function findLabel(options: { value: string; label: string }[], value: string | 
 
 export default function PersonalInfoScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const store = useAuthStore();
   const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
 
@@ -46,7 +47,7 @@ export default function PersonalInfoScreen() {
   const salaryDisplay = store.bankAccount ? `${store.bankAccount} /${bankLabel}/` : null;
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <AppHeader
           backTitle="Хувийн мэдээлэл"
@@ -57,7 +58,11 @@ export default function PersonalInfoScreen() {
             </Pressable>
           }
         />
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
+        >
           <InfoField label="Овог Нэр" value={fullName} />
           <InfoField label="Хүйс" value={genderDisplay} />
           <InfoField label="Регистрийн дугаар" value={store.registerNumber} />

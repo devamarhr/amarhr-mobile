@@ -79,7 +79,7 @@ export function AppButton({
     if (label) {
       return (
         <Button.Label className={cn(
-          'text-black text-sm font-medium disabled:text-white',
+          'text-black text-base font-medium disabled:text-white',
           labelClassName
         )}>
           {label}

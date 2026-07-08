@@ -176,7 +176,7 @@ export function AppDatePicker({
         )}
       >
         {renderIcon()}
-        <AppText className={cn('text-sm', !value && (placeholderClassName ?? 'text-muted'))}>
+        <AppText className={cn('text-base', !value && (placeholderClassName ?? 'text-muted'))}>
           {value ? formatValue(value) : getDefaultPlaceholder()}
         </AppText>
       </PressableFeedback>
