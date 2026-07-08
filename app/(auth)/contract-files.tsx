@@ -1,13 +1,10 @@
 import { View, Pressable, ScrollView } from 'react-native';
 import { useRouter } from "expo-router";
-import { Separator } from "heroui-native";
 import { withUniwind } from "uniwind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
 import React, { useEffect, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { FileAttachmentIcon } from "@hugeicons-pro/core-stroke-standard";
 import { api } from "@/config/api";
 
 interface ContractFile {
@@ -32,12 +29,9 @@ function DocumentItem({ label, disabled, onPress }: DocumentItemProps) {
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className="flex-row items-center h-12.5"
+      className="h-12.5 justify-center border-b border-darkgray/12"
     >
-      <View className="w-7.5 h-7.5 bg-darkgray/7 rounded-lg justify-center items-center">
-        <HugeiconsIcon icon={FileAttachmentIcon} color="#959595" size={20} />
-      </View>
-      <AppText className={`text-sm font-medium ml-3 flex-1 ${disabled ? 'text-darkgray/50' : ''}`}>
+      <AppText className={`text-base font-medium ${disabled ? 'text-darkgray/50' : ''}`}>
         {label}
       </AppText>
     </Pressable>
@@ -65,17 +59,15 @@ export default function ContractsRulesScreen() {
         <AppHeader backTitle="Гэрээ & дүрэм журам" showBack />
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {files.map((file, index) => (
-            <React.Fragment key={index}>
-              <DocumentItem
-                label={file.name}
-                disabled={!file.path}
-                onPress={file.path ? () => router.navigate({
-                  pathname: '/pdf-view',
-                  params: { title: file.name, url: file.path },
-                }) : undefined}
-              />
-              {index < files.length - 1 && <Separator className="bg-darkgray/12" />}
-            </React.Fragment>
+            <DocumentItem
+              key={index}
+              label={file.name}
+              disabled={!file.path}
+              onPress={file.path ? () => router.navigate({
+                pathname: '/pdf-view',
+                params: { title: file.name, url: file.path },
+              }) : undefined}
+            />
           ))}
         </ScrollView>
       </View>

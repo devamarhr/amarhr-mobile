@@ -4,7 +4,7 @@ import { api } from "@/config/api";
 import { cn } from "heroui-native";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
 interface SalarySetting {
@@ -67,22 +67,23 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 function InfoField({ label, value, className, valueClassName }: { label: string; value?: string | null; className?: string | null; valueClassName?: string }) {
   return (
-    <View className={cn('mb-4', className)}>
-      <AppText className="text-sm text-darkgray">{label}</AppText>
-      <AppText className={cn('text-sm mt-1', valueClassName)}>{value || '-'}</AppText>
+    <View className={cn('mb-5', className)}>
+      <AppText className="text-sm text-darkgray/50">{label}</AppText>
+      <AppText className={cn('text-base', valueClassName)}>{value || '-'}</AppText>
     </View>
   );
 }
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <View className="bg-lightblue px-4 py-2 my-6">
+    <View className="bg-lightblue px-4 py-2 my-[30px]">
       <AppText className="text-sm text-darkblue text-right">{title}</AppText>
     </View>
   );
 }
 
 export default function ContractInfoScreen() {
+  const insets = useSafeAreaInsets();
   const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null);
 
   useEffect(() => {
@@ -100,10 +101,14 @@ export default function ContractInfoScreen() {
   const adjustments = contractInfo?.adjustments ?? [];
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1">
         <AppHeader backTitle="Гэрээ & Цалин" showBack className="px-4" />
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
+        >
           <View className="px-4">
             <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} valueClassName="text-blue" />
             <InfoField
@@ -149,10 +154,10 @@ export default function ContractInfoScreen() {
 
           <View className="px-4">
             {adjustments.map((adj) => (
-              <View key={adj.id} className="mb-4">
+              <View key={adj.id} className="mb-5">
                 <AppText className="text-sm text-darkgray">{adj.name}</AppText>
                 {adj.detail.map((d, di) => (
-                  <AppText key={di} className="text-sm mt-1">
+                  <AppText key={di} className="text-base mt-1">
                     {d.amount_type === 'fixed' ? `${d.amount.toLocaleString()} ₮` : `${d.amount} %`}
                     {adj.category === 'yearly' && d.start_year != null && d.end_year != null
                       ? ` / ${d.start_year}-${d.end_year} жилийн хооронд`

@@ -1,6 +1,6 @@
 import { View, ScrollView } from 'react-native';
 import { withUniwind } from "uniwind";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
 import React, { useEffect, useState } from "react";
@@ -24,14 +24,15 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 function InfoField({ label, value, className }: { label: string; value?: string | null; className?: string | null  }) {
   return (
-    <View className={cn('mb-4', className)}>
-      <AppText className="text-sm text-darkgray">{label}</AppText>
-      <AppText className="text-sm mt-1">{value || '-'}</AppText>
+    <View className={cn('mb-5', className)}>
+      <AppText className="text-sm text-darkgray/50">{label}</AppText>
+      <AppText className="text-base">{value || '-'}</AppText>
     </View>
   );
 }
 
 export default function WorkInfoScreen() {
+  const insets = useSafeAreaInsets();
   const [workInfo, setWorkInfo] = useState<WorkInfo | null>(null);
 
   useEffect(() => {
@@ -46,10 +47,14 @@ export default function WorkInfoScreen() {
   }, []);
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1">
         <AppHeader backTitle="Ажлын байрны мэдээлэл" showBack className="px-4" />
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
+        >
           <View className="px-4">
             <InfoField label="Алба, хэлтэс" value={workInfo?.department} />
             <InfoField label="Албан тушаал" value={workInfo?.jobPosition} />
@@ -60,7 +65,7 @@ export default function WorkInfoScreen() {
             <InfoField label="Үндсэн салбар" value={workInfo?.branch?.name || null} className="mb-0" />
           </View>
 
-          <View className="bg-lightblue px-4 py-2 my-6">
+          <View className="bg-lightblue px-4 py-2 my-[30px]">
             <AppText className="text-sm text-darkblue text-right">Цагийн хуваарь</AppText>
           </View>
 
