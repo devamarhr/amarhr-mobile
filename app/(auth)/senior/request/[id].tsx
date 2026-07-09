@@ -13,7 +13,7 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { Avatar, Spinner, useToast } from "heroui-native";
@@ -222,7 +222,7 @@ export default function SeniorRequestDetailScreen() {
                 {...props}
                 variant="danger"
                 description={res.message || "Алдаа гарлаа"}
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
               />
             ),
           });
@@ -241,7 +241,7 @@ export default function SeniorRequestDetailScreen() {
           {...props}
           variant="danger"
           description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
-          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+          icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
         />
       ),
     });
@@ -305,7 +305,7 @@ export default function SeniorRequestDetailScreen() {
               {...props}
               variant="danger"
               description={res.message || "Алдаа гарлаа"}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -394,6 +394,18 @@ export default function SeniorRequestDetailScreen() {
       if (shiftDate && shiftDate.isValid()) {
         rows.push({ label: "Огноо", value: formatDayWeekday(shiftDate) });
       }
+      const timeTypeLabels: Record<string, string> = {
+        overtime: "Илүү цаг",
+        compensatory: "Нөхөн олговорт цаг",
+        accumulated: "Хуримтлуулсан цаг",
+        compensatory_rest: "Нөхөн амралт",
+      };
+      rows.push({
+        label: "Цагийн төрөл",
+        value: detail.overtime_category
+          ? timeTypeLabels[detail.overtime_category] ?? detail.overtime_category
+          : detail.leave ?? "Энгийн цаг",
+      });
       shifts.forEach((s, idx) => {
         const arrival = parseDt(s.arrivalTime);
         const leave = parseDt(s.leaveTime);
@@ -598,7 +610,7 @@ export default function SeniorRequestDetailScreen() {
       rows.push({ label: `Амралт ${i + 1}`, value });
     });
     if (totalDays > 0) rows.push({ label: "Хоног", value: `${totalDays} хоног` });
-    return <InfoRowsView rows={rows} withColon />;
+    return <InfoRowsView rows={rows} withColon labelClassName="text-base" valueClassName="text-base font-normal" />;
   };
 
   const employee = request?.employee;
@@ -654,27 +666,27 @@ export default function SeniorRequestDetailScreen() {
                 </View>
               )}
 
-              <AppText className="text-base font-medium text-black mb-3" numberOfLines={1}>
+              <AppText className="text-base font-semibold text-black mb-3" numberOfLines={1}>
                 {request.setting.name}
               </AppText>
 
-              <View className="gap-6">
+              <View className="gap-2">
                 {formType === "annualLeave"
                   ? renderAnnualLeave()
                   : formRows.length > 0
-                    ? <InfoRowsView rows={formRows} withColon />
+                    ? <InfoRowsView rows={formRows} withColon labelClassName="text-base" valueClassName="text-base font-normal" />
                     : null}
 
                 <View className="gap-2">
-                  <AppText className="text-sm text-darkgray">Шалтгаан</AppText>
+                  <AppText className="text-base text-darkgray">Шалтгаан</AppText>
                   {description ? (
                     <TruncatedText
                       text={description}
-                      className="text-sm text-black"
+                      className="text-base text-black"
                       onExpand={() => setExpandedText({ title: "Шалтгаан", text: description })}
                     />
                   ) : (
-                    <AppText className="text-sm text-muted">-</AppText>
+                    <AppText className="text-base text-muted">-</AppText>
                   )}
                   <AppAttachmentList attachments={request.attachments} className="mt-1.5" />
                 </View>
@@ -688,7 +700,7 @@ export default function SeniorRequestDetailScreen() {
                 <AppText className="text-sm text-darkgray">Санал</AppText>
                 <TruncatedText
                   text={request.review_detail.comment}
-                  className="text-sm"
+                  className="text-base"
                   onExpand={() =>
                     setExpandedText({
                       title: "Санал",
@@ -704,7 +716,7 @@ export default function SeniorRequestDetailScreen() {
                 <AppText className="text-sm text-darkgray">Шийдвэр</AppText>
                 <TruncatedText
                   text={request.decision_detail.comment}
-                  className="text-sm"
+                  className="text-base"
                   onExpand={() =>
                     setExpandedText({
                       title: "Шийдвэр",
@@ -737,9 +749,9 @@ export default function SeniorRequestDetailScreen() {
                   {isUploading ? (
                     <Spinner color="#005FEE" size="sm" />
                   ) : (
-                    <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                    <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   )}
-                  <AppText className="text-sm text-darkgray">
+                  <AppText className="text-base text-darkgray">
                     {isUploading ? "Хуулж байна..." : "Файл хавсаргах"}
                   </AppText>
                 </Pressable>
@@ -747,8 +759,8 @@ export default function SeniorRequestDetailScreen() {
                 {actionAttachments.map((file, index) => (
                   <View key={index} className="flex-row items-center gap-3">
                     <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                      <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
-                      <AppText className="text-sm flex-1" numberOfLines={1}>
+                      <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                      <AppText className="text-base flex-1" numberOfLines={1}>
                         {file.name}
                       </AppText>
                     </View>
@@ -756,7 +768,7 @@ export default function SeniorRequestDetailScreen() {
                       onPress={() => handleRemoveAttachment(index)}
                       className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                     >
-                      <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+                      <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                     </Pressable>
                   </View>
                 ))}

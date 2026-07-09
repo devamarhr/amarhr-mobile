@@ -18,7 +18,7 @@ import {
   UserMultipleIcon,
   Wifi01Icon,
 } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
 import * as Notifications from "expo-notifications";
@@ -227,7 +227,7 @@ export default function HomeScreen() {
                 {...props}
                 variant="danger"
                 description={res.message || 'Алдаа гарлаа'}
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
               />
             ),
           });
@@ -247,7 +247,7 @@ export default function HomeScreen() {
               {...props}
               variant="danger"
               description="WiFi мэдээлэл авахын тулд байршлын зөвшөөрөл шаардлагатай."
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -265,7 +265,7 @@ export default function HomeScreen() {
               {...props}
               variant="danger"
               description="WiFi сүлжээнд холбогдсон байх шаардлагатай."
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -287,7 +287,7 @@ export default function HomeScreen() {
               {...props}
               variant="success"
               description="Амжилттай цагаа бүртгүүллээ"
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
               iconContainerClassName="justify-center"
             />
           ),
@@ -301,7 +301,7 @@ export default function HomeScreen() {
               {...props}
               variant="danger"
               description={res.message || 'Цаг бүртгэх үед алдаа гарлаа.'}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -383,7 +383,7 @@ export default function HomeScreen() {
               onPress={() => router.navigate('/contact')}
               className="w-10 h-10 rounded-full bg-lightblue items-center justify-center"
             >
-              <HugeiconsIcon icon={UserMultipleIcon} color="#222222" size={24} />
+              <AppIcon icon={UserMultipleIcon} color="#222222" size={24} />
             </Pressable>
             <Pressable onPress={() => router.navigate('/profile')}>
               <Avatar alt="Profile" className="w-10 h-10">
@@ -457,7 +457,7 @@ export default function HomeScreen() {
                         className="items-center"
                         onLayout={index === 0 ? (e) => setShiftRowHeight(e.nativeEvent.layout.height) : undefined}
                       >
-                        <HugeiconsIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
+                        <AppIcon icon={Login03Icon} color="#6A6A6A80" size={22} />
                         <AppText
                           className={`text-xl mt-2 ${shift.actual_start ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
                         >
@@ -466,7 +466,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
                     <View className="flex-1 items-center">
-                      <HugeiconsIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
+                      <AppIcon icon={Logout03Icon} color="#6A6A6A80" size={22} />
                       <AppText
                         className={`text-xl mt-2 ${shift.actual_end ? (overtime ? 'text-green' : '') : (overtime ? 'text-green/50' : 'text-darkgray/50')}`}
                       >
@@ -474,7 +474,7 @@ export default function HomeScreen() {
                       </AppText>
                     </View>
                     <View className="flex-1 items-center">
-                      <HugeiconsIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
+                      <AppIcon icon={Clock01Icon} color="#6A6A6A80" size={22} />
                       <AppText className={`text-xl mt-2 ${overtime ? (shift.worked_duration_minutes ? 'text-green' : 'text-green/50') : (shift.worked_duration_minutes ? '' : 'text-darkgray/50')}`}>
                         {formatDuration(shift.worked_duration_minutes)}
                       </AppText>
@@ -511,7 +511,7 @@ export default function HomeScreen() {
                         {...props}
                         variant="danger"
                         description={warning}
-                        icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                        icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
                       />
                     ),
                   });
@@ -571,7 +571,7 @@ export default function HomeScreen() {
                   <AppButton
                     isIconOnly
                     leftIcon={
-                      <HugeiconsIcon
+                      <AppIcon
                         icon={methodIcons[method]}
                         color="#222222"
                         size={28}

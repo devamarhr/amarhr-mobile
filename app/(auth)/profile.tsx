@@ -17,7 +17,8 @@ import {
   SmartPhone01Icon,
   UserIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react-native";
+import { IconSvgElement } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import { useRouter } from "expo-router";
 import { Avatar, cn, Separator, useToast } from "heroui-native";
 import React, { useState } from "react";
@@ -45,7 +46,7 @@ function MenuItem({ icon, label, labelClassName, subtitle, info, onInfoPress, on
       className="flex-row items-center h-12.5"
     >
       <View className="w-7.5 h-7.5 justify-center items-center">
-        <HugeiconsIcon icon={icon} color="#222222" size={20} strokeWidth={1.5} absoluteStrokeWidth />
+        <AppIcon icon={icon} color="#222222" size={20} strokeWidth={1.5} absoluteStrokeWidth />
       </View>
       <View className="flex-1 ml-3">
         <View className="flex-row items-center">
@@ -59,7 +60,7 @@ function MenuItem({ icon, label, labelClassName, subtitle, info, onInfoPress, on
               hitSlop={8}
               className="ml-2.5"
             >
-              <HugeiconsIcon icon={InformationCircleIcon} color="#6a6a6a" size={22} strokeWidth={1.5} absoluteStrokeWidth />
+              <AppIcon icon={InformationCircleIcon} color="#6a6a6a" size={22} strokeWidth={1.5} absoluteStrokeWidth />
             </Pressable>
           )}
         </View>
@@ -98,7 +99,7 @@ export default function ProfileScreen() {
               {...props}
               variant="danger"
               description={res.message || 'Алдаа гарлаа'}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });

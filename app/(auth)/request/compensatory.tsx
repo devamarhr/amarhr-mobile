@@ -4,6 +4,7 @@ import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
+import { RequestHeaderInfo, type HeaderInfoItem } from '@/components/request-header-info';
 import { api, uploadFile } from '@/config/api';
 import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import {
@@ -15,7 +16,7 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { cn, Spinner, useToast } from 'heroui-native';
@@ -29,11 +30,6 @@ import { withUniwind } from 'uniwind';
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 const MAX_ATTACHMENTS = 3;
-
-interface HeaderInfoItem {
-  label: string;
-  value: string;
-}
 
 type CompensatoryMode = 'day' | 'hour';
 
@@ -101,7 +97,7 @@ export default function CompensatoryRequestScreen() {
                 {...props}
                 variant="danger"
                 description={res.message || 'Алдаа гарлаа'}
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
               />
             ),
           });
@@ -120,7 +116,7 @@ export default function CompensatoryRequestScreen() {
           {...props}
           variant="danger"
           description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
-          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+          icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
         />
       ),
     });
@@ -248,7 +244,7 @@ export default function CompensatoryRequestScreen() {
               {...props}
               variant="success"
               description={res.message}
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
             />
           ),
         });
@@ -260,7 +256,7 @@ export default function CompensatoryRequestScreen() {
               {...props}
               variant="danger"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -272,20 +268,6 @@ export default function CompensatoryRequestScreen() {
     }
   };
 
-  const renderHeaderInfo = () => {
-    if (headerInfo.length === 0) return null;
-    return (
-      <View className="gap-2.5">
-        {headerInfo.map((item, index) => (
-          <View key={index} className="flex-row gap-2">
-            <AppText className={`text-sm text-darkblue ${headerInfo.length > 1 ? 'w-48' : ''}`}>{item.label}</AppText>
-            <AppText className="text-sm font-medium text-darkerblue">{item.value}</AppText>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
   return (
     <View className="flex-1 bg-lightblue">
       <StyledSafeAreaView className="flex-1" edges={['top']}>
@@ -294,11 +276,11 @@ export default function CompensatoryRequestScreen() {
           backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
+          backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
         <View className="px-4 pb-7.5 gap-5">
           <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
-          {renderHeaderInfo()}
+          <RequestHeaderInfo rows={headerInfo} />
         </View>
 
         <KeyboardAwareScrollView
@@ -306,7 +288,7 @@ export default function CompensatoryRequestScreen() {
           showsVerticalScrollIndicator={false}
           bottomOffset={20}
         >
-          <View className="gap-6 pb-10 pt-7.5">
+          <View className="gap-[30px] pb-10 pt-7.5">
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => handleModeChange('day')}
@@ -357,7 +339,7 @@ export default function CompensatoryRequestScreen() {
                         onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
                         placeholder="00/00"
                         format="MM/DD"
-                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                        icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.start}
                         errorMessage={errors.start?.message}
                       />
@@ -378,7 +360,7 @@ export default function CompensatoryRequestScreen() {
                         placeholder="00/00"
                         format="MM/DD"
                         minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
-                        icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                        icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.end}
                         errorMessage={errors.end?.message}
                         isDisabled={!watchStart}
@@ -409,7 +391,7 @@ export default function CompensatoryRequestScreen() {
                           }}
                           placeholder="00/00"
                           format="MM/DD"
-                          icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                          icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                           isInvalid={!!errors.hourDate}
                           errorMessage={errors.hourDate?.message}
                         />
@@ -433,7 +415,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
+                          icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.start}
                           errorMessage={errors.start?.message}
                           isDisabled={!watchHourDate}
@@ -455,7 +437,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
+                          icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.end}
                           errorMessage={errors.end?.message}
                           isDisabled={!watchHourDate}
@@ -468,11 +450,11 @@ export default function CompensatoryRequestScreen() {
             )}
 
             {rangeError && (
-              <AppText className="text-sm text-red -mt-3">{rangeError}</AppText>
+              <AppText className="text-sm text-red">{rangeError}</AppText>
             )}
 
             {!rangeError && compensatoryCheck?.is_eligible && compensatoryCheck.work_minutes > 0 && (
-              <View className="flex-row items-center gap-2 -mt-3">
+              <View className="flex-row items-center gap-2">
                 <AppText className="text-sm text-darkgray">Нөхөж амрах хүсэлтийн цаг</AppText>
                 <AppText className="text-sm font-medium text-black">
                   {formatMinutesAsHHMM(compensatoryCheck.work_minutes)}
@@ -481,7 +463,7 @@ export default function CompensatoryRequestScreen() {
             )}
 
             {!rangeError && eligibilityError && (
-              <AppText className="text-sm text-red -mt-3">{eligibilityError}</AppText>
+              <AppText className="text-sm text-red">{eligibilityError}</AppText>
             )}
 
             <Controller
@@ -501,29 +483,29 @@ export default function CompensatoryRequestScreen() {
             />
 
             <Pressable
-              className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
+              className={`-mt-[15px] flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
               onPress={handlePickAttachments}
               disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
             >
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
               )}
-              <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
+              <AppText className="text-base text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-3">
+              <View key={index} className="-mt-[15px] flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                  <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+                  <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

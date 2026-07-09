@@ -6,6 +6,7 @@ import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
+import { RequestHeaderInfo, type HeaderInfoItem } from '@/components/request-header-info';
 import { api, uploadFile } from '@/config/api';
 import { pickAttachments, type PickedAsset } from '@/utils/pick-attachment';
 import { Login03Icon, Logout03Icon } from '@hugeicons-pro/core-stroke-rounded';
@@ -18,7 +19,7 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spinner, useToast } from 'heroui-native';
@@ -34,11 +35,6 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 const MAX_ATTACHMENTS = 3;
 
 type FormType = 'dateRange' | 'timeRange' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
-
-interface HeaderInfoItem {
-  label: string;
-  value: string;
-}
 
 interface ShiftEntry {
   arrivalTime?: string;
@@ -58,18 +54,6 @@ function parseDateTimeToString(s?: string): string | undefined {
   if (!s) return undefined;
   const d = dayjs(s, 'YYYY-MM-DD HH:mm');
   return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : undefined;
-}
-
-// Render a header value, dimming any "--:--" placeholder (e.g. an unrecorded
-// clock-out in "09:42 - --:--") to match the design.
-function renderHeaderValue(value: string) {
-  return value.split(/(--:--)/g).map((part, i) =>
-    part === '--:--' ? (
-      <AppText key={i} className="text-sm text-darkerblue/50">{part}</AppText>
-    ) : (
-      part
-    ),
-  );
 }
 
 export default function RequestCreateScreen() {
@@ -143,7 +127,7 @@ export default function RequestCreateScreen() {
                 {...props}
                 variant="danger"
                 description={res.message || 'Алдаа гарлаа'}
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
               />
             ),
           });
@@ -162,7 +146,7 @@ export default function RequestCreateScreen() {
           {...props}
           variant="danger"
           description={`Нэг хүсэлтэд дээд тал нь ${MAX_ATTACHMENTS} хавсралт хавсаргах боломжтой`}
-          icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+          icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
         />
       ),
     });
@@ -248,7 +232,7 @@ export default function RequestCreateScreen() {
               {...props}
               variant="success"
               description={res.message}
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
             />
           ),
         });
@@ -261,7 +245,7 @@ export default function RequestCreateScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -271,20 +255,6 @@ export default function RequestCreateScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const renderHeaderInfo = () => {
-    if (headerInfo.length === 0) return null;
-    return (
-      <View className="gap-2.5">
-        {headerInfo.map((item, index) => (
-          <View key={index} className="flex-row gap-2">
-            <AppText className={`text-sm text-darkblue ${headerInfo.length > 1 ? (type === 'timeCorrection' ? 'w-[150px]' : 'w-52') : ''}`}>{item.label}</AppText>
-            <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>{renderHeaderValue(item.value)}</AppText>
-          </View>
-        ))}
-      </View>
-    );
   };
 
   const renderDateRangeFields = () => {
@@ -313,7 +283,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
                   errorMessage={errors.startDate?.message}
                 />
@@ -327,7 +297,7 @@ export default function RequestCreateScreen() {
               value={endDate}
               placeholder="00/00"
               format="MM/DD"
-              icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+              icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
               isDisabled
               triggerClassName="bg-[#f2f2f2] border-transparent disabled:opacity-100"
             />
@@ -379,7 +349,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
                   errorMessage={errors.startDate?.message}
                 />
@@ -403,7 +373,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
                   errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
@@ -466,7 +436,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
                   errorMessage={errors.startDate?.message}
                 />
@@ -490,7 +460,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
                   errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
@@ -517,7 +487,7 @@ export default function RequestCreateScreen() {
                   minuteInterval={30}
                   initialDate={baseDay.toDate()}
                   maximumDate={maxDurationDate}
-                  icon={<HugeiconsIcon icon={Clock01Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.hours}
                   errorMessage={errors.hours?.message}
                   isDisabled={!dateSelected}
@@ -539,7 +509,7 @@ export default function RequestCreateScreen() {
       ? dayjs(watchedArrival, 'YYYY-MM-DD HH:mm').toDate()
       : undefined;
     return (
-      <View className="gap-2.5">
+      <View className="gap-[15px]">
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Controller
@@ -558,7 +528,7 @@ export default function RequestCreateScreen() {
                   format="HH:mm"
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
-                  icon={<HugeiconsIcon icon={Login03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Login03Icon} color="#222" size={22} />}
                   isInvalid={!!arrivalError}
                   errorMessage={arrivalError?.message}
                   isDisabled={arrivalDisabled}
@@ -596,7 +566,7 @@ export default function RequestCreateScreen() {
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
                   minimumDate={crossesDay ? minLeaveDate : undefined}
-                  icon={<HugeiconsIcon icon={Logout03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Logout03Icon} color="#222" size={22} />}
                   isInvalid={!!leaveError}
                   errorMessage={leaveError?.message}
                 />
@@ -632,6 +602,8 @@ export default function RequestCreateScreen() {
     }
   };
 
+  const formFields = renderFormFields();
+
   return (
     <View className="flex-1 bg-lightblue">
       <StyledSafeAreaView className="flex-1" edges={['top']}>
@@ -640,26 +612,28 @@ export default function RequestCreateScreen() {
           backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
+          backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
         <View className="px-4 pb-7.5 gap-5">
           <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
-          {renderHeaderInfo()}
+          <RequestHeaderInfo rows={headerInfo} />
         </View>
 
         <KeyboardAwareScrollView
           style={{flex:1,paddingHorizontal: 16,backgroundColor: "#ffffff"}}
           showsVerticalScrollIndicator={false}
-          bottomOffset={20}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={40}
         >
-          <View className="gap-6 pb-10 pt-7.5">
-            {renderFormFields()}
+          <View className="pb-10 pt-7.5">
+            {formFields}
 
             <Controller
               control={control}
               name="description"
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
+                  textFieldClassName={formFields ? 'mt-5' : ''}
                   label={
                     params.settingKey === 'feedback'
                       ? 'Санал, хүсэлт'
@@ -684,29 +658,29 @@ export default function RequestCreateScreen() {
             />
 
             <Pressable
-              className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
+              className={`mt-[15px] flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
               onPress={handlePickAttachments}
               disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
             >
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
               )}
-              <AppText className="text-sm text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
+              <AppText className="text-base text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
 
             {attachments.map((file, index) => (
-              <View key={index} className="flex-row items-center gap-3">
+              <View key={index} className="mt-[15px] flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                  <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable
                   onPress={() => handleRemoveAttachment(index)}
                   className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
                 >
-                  <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+                  <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                 </Pressable>
               </View>
             ))}

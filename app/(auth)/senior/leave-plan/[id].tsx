@@ -12,7 +12,7 @@ import {
   CheckmarkCircle02Icon,
   SquareLock02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { BottomSheet, Spinner, useToast } from 'heroui-native';
@@ -189,8 +189,8 @@ function AddSheet({
           гардаг тул sheet-ийг мөн үндсэн window-д render хийнэ */}
       <BottomSheet.Portal disableFullWindowOverlay>
         <BottomSheet.Overlay className="bg-[#6C719F]/40" />
-        <BottomSheet.Content enableOverDrag={false} handleComponent={null}>
-          <BottomSheet.Title className="text-center text-lg font-medium text-black pt-3 mb-6">
+        <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
+          <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Ээлжийн амралт нэмэх
           </BottomSheet.Title>
           <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
@@ -205,7 +205,7 @@ function AddSheet({
                   format="MM/DD"
                   minimumDate={minDate}
                   maximumDate={maxDate}
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                 />
               </View>
               <View className="flex-1">
@@ -221,7 +221,7 @@ function AddSheet({
               <View className="flex-1 gap-2">
                 <AppText className="text-sm text-darkgray">Дуусах өдөр</AppText>
                 <View className="flex-row items-center gap-1.5 bg-[#F2F2F2] rounded-lg h-11 px-2.5">
-                  <HugeiconsIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
+                  <AppIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
                   <AppText className="text-base text-darkgray flex-1" numberOfLines={1}>
                     {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '00/00'}
                   </AppText>
@@ -234,7 +234,7 @@ function AddSheet({
               onPress={handleSave}
               isLoading={isSaving}
               spinnerColor="#ffffff"
-              className="bg-blue border-0 rounded-full"
+              className="mt-[10px] bg-blue border-0 rounded-full"
               labelClassName="text-white text-base font-semibold"
             />
           </View>
@@ -270,7 +270,7 @@ export default function SeniorLeavePlanScreen() {
             {...props}
             variant="danger"
             description={msg}
-            icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
           />
         ),
       });
@@ -286,7 +286,7 @@ export default function SeniorLeavePlanScreen() {
             {...props}
             variant="success"
             description={msg}
-            icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
           />
         ),
       });
@@ -333,10 +333,10 @@ export default function SeniorLeavePlanScreen() {
           backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
+          backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
         <View className="px-4 pb-7.5 gap-5">
-          <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>
+          <AppText className="text-base font-semibold text-darkerblue" numberOfLines={1}>
             Ээлжийн амралт төлөвлөх
           </AppText>
           {data && (
@@ -402,7 +402,7 @@ export default function SeniorLeavePlanScreen() {
                     #{index + 1} {SPLIT_TYPE_LABELS[split.type]}
                   </AppText>
                   <View className="flex-row items-center gap-2 border border-gray/30 rounded-lg h-11 px-2.5">
-                    <HugeiconsIcon icon={Calendar03Icon} color="#222222" size={24} />
+                    <AppIcon icon={Calendar03Icon} color="#222222" size={24} />
                     <AppText
                       className={`text-base flex-1 ${split.type === 'unused' ? 'opacity-70' : ''}`}
                       numberOfLines={1}
@@ -412,7 +412,7 @@ export default function SeniorLeavePlanScreen() {
                         : formatSplitRange(split.start_date, split.end_date)}
                     </AppText>
                     {split.decree_id != null && (
-                      <HugeiconsIcon icon={SquareLock02Icon} color="#6A6A6A" size={20} />
+                      <AppIcon icon={SquareLock02Icon} color="#6A6A6A" size={20} />
                     )}
                   </View>
                 </View>

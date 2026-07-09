@@ -2,7 +2,7 @@ import { AppText } from '@/components/app-text';
 import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
@@ -45,13 +45,32 @@ interface AppSelectProps {
    */
   options: SelectOption[];
   /**
-   * Currently selected value
+   * Selection mode. `'multiple'` lets several options be selected; the sheet stays
+   * open on tap and selection is driven by `values`/`onValuesChange`.
+   * @default 'single'
+   */
+  selectionMode?: 'single' | 'multiple';
+  /**
+   * Currently selected value (single mode)
    */
   value?: SelectOption;
   /**
-   * Callback when value changes
+   * Callback when value changes (single mode)
    */
   onValueChange?: (option: SelectOption | undefined) => void;
+  /**
+   * Currently selected values (multiple mode)
+   */
+  values?: SelectOption[];
+  /**
+   * Callback when the selected values change (multiple mode)
+   */
+  onValuesChange?: (options: SelectOption[]) => void;
+  /**
+   * Optional element rendered at the very top of the options list — e.g. a
+   * "select all" row. Scrolls with the list and is counted in the measured height.
+   */
+  listHeader?: React.ReactNode;
   /**
    * Whether the select is disabled
    * @default false
@@ -146,8 +165,12 @@ export function AppSelect({
   placeholder = 'Сонгох',
   title,
   options,
+  selectionMode = 'single',
   value,
   onValueChange,
+  values,
+  onValuesChange,
+  listHeader,
   isDisabled = false,
   isInvalid = false,
   errorMessage,
@@ -191,15 +214,30 @@ export function AppSelect({
     }
   }, []);
 
-  // Handle type conversion for heroui-native Select
-  const handleValueChange = (option: any) => {
-    // Look up the full option from the options array to preserve custom fields
-    const fullOption = options.find(opt => opt.value === option?.value);
-    onValueChange?.(fullOption);
+  const isMultiple = selectionMode === 'multiple';
+
+  // Handle type conversion for heroui-native Select. Multiple mode receives the
+  // full array of currently-selected options; single mode receives one option.
+  const handleValueChange = (next: any) => {
+    if (isMultiple) {
+      const arr = ((next as SelectOption[]) ?? []).map(
+        (o) => options.find((opt) => opt.value === o?.value) || o
+      );
+      onValuesChange?.(arr);
+    } else {
+      const fullOption = options.find((opt) => opt.value === next?.value);
+      onValueChange?.(fullOption);
+    }
   };
 
-  // Get the full option data for rendering
-  const fullValue = value ? options.find(opt => opt.value === value.value) || value : undefined;
+  // Value handed to heroui Select (array in multiple mode).
+  const selectValue = isMultiple ? values ?? [] : value;
+
+  // Full option data for the default single-mode trigger display.
+  const fullValue =
+    !isMultiple && value
+      ? options.find((opt) => opt.value === value.value) || value
+      : undefined;
 
   return (
     <View className={cn('gap-2', className)}>
@@ -213,10 +251,11 @@ export function AppSelect({
 
       <Select
         presentation="bottom-sheet"
+        selectionMode={selectionMode as any}
         isOpen={isOpen}
         onOpenChange={handleOpenChange}
-        value={value as any}
-        onValueChange={handleValueChange}
+        value={selectValue as any}
+        onValueChange={handleValueChange as any}
         isDisabled={isDisabled}
       >
         <Select.Trigger variant="unstyled" asChild className="">
@@ -246,7 +285,7 @@ export function AppSelect({
                   </AppText>
                 )}
               </View>
-              <HugeiconsIcon icon={UnfoldMoreIcon} size={20} color={arrowIconColor} />
+              <AppIcon icon={UnfoldMoreIcon} size={20} color={arrowIconColor} />
             </PressableFeedback>
           )}
         </Select.Trigger>
@@ -282,6 +321,7 @@ export function AppSelect({
               showsVerticalScrollIndicator={false}
               onContentSizeChange={(_w, h) => setListHeight(h)}
             >
+              {listHeader}
               {options.map((option, index) => (
                 <View key={option.value}>
                   <Select.Item
@@ -295,7 +335,7 @@ export function AppSelect({
                         <>
                           {renderItem({ option, isSelected, isDisabled })}
                           <Select.ItemIndicator>
-                            <HugeiconsIcon
+                            <AppIcon
                               icon={Tick02Icon}
                               size={indicatorIconSize}
                               color={indicatorIconColor}
@@ -312,7 +352,7 @@ export function AppSelect({
                             <Select.ItemLabel className={isSelected ? 'font-medium' : 'font-normal'} />
                           </View>
                           <Select.ItemIndicator>
-                            <HugeiconsIcon
+                            <AppIcon
                               icon={Tick02Icon}
                               size={indicatorIconSize}
                               color={indicatorIconColor}

@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { AppText } from "@/components/app-text";
 import { AppHeader } from "@/components/app-header";
 import React from "react";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import { PencilEdit02Icon } from "@hugeicons-pro/core-stroke-standard";
 import { useAuthStore } from '@/store/auth-store';
 import { useRouter } from 'expo-router';
@@ -54,7 +54,7 @@ export default function PersonalInfoScreen() {
           showBack
           rightContent={
             <Pressable onPress={() => router.navigate('/personal-info/edit')}>
-              <HugeiconsIcon icon={PencilEdit02Icon} color="#005FEE" size={24} />
+              <AppIcon icon={PencilEdit02Icon} color="#005FEE" size={24} />
             </Pressable>
           }
         />

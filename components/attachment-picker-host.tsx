@@ -7,7 +7,7 @@ import {
   type PickedAsset,
 } from '@/utils/pick-attachment';
 import { File02Icon, Image02Icon } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -66,14 +66,14 @@ export function AttachmentPickerHost() {
           className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
           onPress={handlePhotos}
         >
-          <HugeiconsIcon icon={Image02Icon} color="#005FEE" size={20} />
+          <AppIcon icon={Image02Icon} color="#005FEE" size={20} />
           <AppText className="text-sm flex-1">Зураг сонгох</AppText>
         </Pressable>
         <Pressable
           className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
           onPress={handleDocuments}
         >
-          <HugeiconsIcon icon={File02Icon} color="#005FEE" size={20} />
+          <AppIcon icon={File02Icon} color="#005FEE" size={20} />
           <AppText className="text-sm flex-1">Файл сонгох</AppText>
         </Pressable>
       </View>

@@ -6,7 +6,7 @@ import {
   PercentIcon,
   Sun03Icon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import React from "react";
 import { Pressable, View } from "react-native";
 
@@ -46,7 +46,7 @@ export function SeniorMenuBar({ active, onChange, hiddenKeys, badges }: Props) {
               isActive ? "bg-darkblue" : ""
             }`}
           >
-            <HugeiconsIcon icon={item.icon} size={24} color={isActive ? "#FFFFFF" : "#A3ACC1"} />
+            <AppIcon icon={item.icon} size={24} color={isActive ? "#FFFFFF" : "#A3ACC1"} />
             <AppText
               className={`text-[10px] font-medium mt-1 ${isActive ? "text-white" : "text-[#A3ACC1]"}`}
             >

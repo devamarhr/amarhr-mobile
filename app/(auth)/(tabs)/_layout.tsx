@@ -11,7 +11,7 @@ import {
   Notification02Icon,
   UserGroupIcon
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
@@ -86,21 +86,21 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarLabel: 'Бүртгэл',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={ClockCheckIcon} size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={ClockCheckIcon} size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen
         name="timesheet"
         options={{
           tabBarLabel: 'Хуваарь',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Calendar03Icon} size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={Calendar03Icon} size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen
         name="request"
         options={{
           tabBarLabel: 'Хүсэлт',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={MailSend01Icon} size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={MailSend01Icon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasEmployeeRequest ? '' : undefined,
         }}
       />
@@ -108,14 +108,14 @@ export default function TabLayout() {
         name="salary"
         options={{
           tabBarLabel: 'Цалин',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={TugrugIcon} size={24} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={TugrugIcon} size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="announcement"
         options={{
           tabBarLabel: 'Мэдээлэл',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={Notification02Icon} size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={Notification02Icon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasAnnouncement ? '' : undefined,
         }}
       />
@@ -124,7 +124,7 @@ export default function TabLayout() {
         options={{
           href: isSenior ? '/(auth)/(tabs)/senior' : null,
           tabBarLabel: 'Ахлах',
-          tabBarIcon: ({ color }) => <HugeiconsIcon icon={UserGroupIcon} size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => <AppIcon icon={UserGroupIcon} size={24} color={color} strokeWidth={1.5} />,
           tabBarBadge: hasAssignedRequest ? '' : undefined,
           // Float the bar so the senior scene fills full height; the list scrolls
           // behind it and the floating menu never exposes the bar's white gap.

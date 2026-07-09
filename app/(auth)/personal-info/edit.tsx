@@ -9,7 +9,7 @@ import { api } from "@/config/api";
 import { useSelectOptions } from '@/hooks/use-select-options';
 import { ProfileData, useAuthStore, type ProfileFormData } from '@/store/auth-store';
 import { Alert01Icon, CheckmarkCircle02Icon, MinusSignIcon, PlusSignIcon } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import dayjs from "dayjs";
 import { useRouter } from 'expo-router';
 import { cn, Label, useToast } from 'heroui-native';
@@ -82,7 +82,7 @@ export default function PersonalInfoEditScreen() {
               variant="success"
               // title="Амжилттай"
               description={res.message}
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
             />
           ),
         });
@@ -95,7 +95,7 @@ export default function PersonalInfoEditScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -438,7 +438,7 @@ export default function PersonalInfoEditScreen() {
                 <AppButton
                   className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                   isIconOnly
-                  leftIcon={<HugeiconsIcon icon={MinusSignIcon} color="#222222" size={20} />}
+                  leftIcon={<AppIcon icon={MinusSignIcon} color="#222222" size={20} />}
                   onPress={() => fields.length > 0 && remove(fields.length - 1)}
                   isDisabled={fields.length === 0}
                 />
@@ -451,7 +451,7 @@ export default function PersonalInfoEditScreen() {
                 <AppButton
                   className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                   isIconOnly
-                  leftIcon={<HugeiconsIcon icon={PlusSignIcon} color="#222222" size={20} />}
+                  leftIcon={<AppIcon icon={PlusSignIcon} color="#222222" size={20} />}
                   onPress={() => append({ gender: 'female', birthDate: '' })}
                 />
               </View>

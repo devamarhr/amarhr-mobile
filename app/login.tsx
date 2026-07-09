@@ -6,7 +6,7 @@ import { AppToast } from '@/components/app-toast';
 import { api } from "@/config/api";
 import { ProfileData, useAuthStore } from '@/store/auth-store';
 import { Alert01Icon, SmartPhone01Icon } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import { Image } from "expo-image";
 import { Redirect, useRouter } from 'expo-router';
 import { FieldError, InputOTP, useToast } from 'heroui-native';
@@ -93,7 +93,7 @@ export default function LoginScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -128,7 +128,7 @@ export default function LoginScreen() {
                 variant="danger"
                 // title="Алдаа"
                 description="Нэвтрэхэд алдаа гарлаа"
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
               />
             ),
           });
@@ -144,7 +144,7 @@ export default function LoginScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -173,7 +173,7 @@ export default function LoginScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -221,7 +221,7 @@ export default function LoginScreen() {
                   isInvalid={!!errors.phone || !!error}
                   errorMessage={errors.phone?.message || error}
                   leftIcon={
-                    <HugeiconsIcon icon={SmartPhone01Icon} size={22} />
+                    <AppIcon icon={SmartPhone01Icon} size={22} />
                   }
                 />
               )}

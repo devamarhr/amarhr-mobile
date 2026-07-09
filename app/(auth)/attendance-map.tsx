@@ -5,7 +5,7 @@ import { AppToast } from '@/components/app-toast';
 import { api } from '@/config/api';
 import { syncAttendanceReminders } from '@/utils/attendance-reminders';
 import { Alert01Icon, CheckmarkCircle02Icon } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useToast } from 'heroui-native';
@@ -194,7 +194,7 @@ export default function AttendanceMapScreen() {
             {...props}
             variant="success"
             description="Амжилттай цагаа бүртгүүллээ"
-            icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
             iconContainerClassName="justify-center"
           />
         ),
@@ -208,7 +208,7 @@ export default function AttendanceMapScreen() {
             {...props}
             variant="danger"
             description={res.message || 'Цаг бүртгэх үед алдаа гарлаа.'}
-            icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
           />
         ),
       });

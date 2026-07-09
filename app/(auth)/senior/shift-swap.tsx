@@ -10,14 +10,13 @@ import {
   ArrowLeft02Icon,
   ArrowRight01Icon,
   CheckmarkCircle02Icon,
-  MultiplicationSignIcon,
   Tick02Icon,
   UserSwitchIcon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, PressableFeedback, Separator, useToast } from "heroui-native";
+import { Avatar, BottomSheet, cn, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -73,7 +72,7 @@ function DateLabel({ date }: { date: string }) {
   return (
     <AppText className="text-base text-darkgray">
       {dayjs(date).format("MM/DD")}{" "}
-      <AppText className="text-2xs text-darkgray">{WEEKDAYS_FULL[dayjs(date).day()]}</AppText>
+      <AppText className="text-xs text-darkgray">{WEEKDAYS_FULL[dayjs(date).day()]}</AppText>
     </AppText>
   );
 }
@@ -135,7 +134,7 @@ export default function SeniorShiftSwapScreen() {
             variant={ok ? "success" : "danger"}
             description={message}
             icon={
-              <HugeiconsIcon
+              <AppIcon
                 icon={ok ? CheckmarkCircle02Icon : Alert01Icon}
                 color={ok ? "#18AA0B" : "#BC1818"}
               />
@@ -301,7 +300,7 @@ export default function SeniorShiftSwapScreen() {
           <AppHeader
             backTitle="Хуваарь солих"
             showBack
-            backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />}
+            backIcon={<AppIcon icon={ArrowLeft02Icon} color="#222222" size={24} />}
           />
         </View>
 
@@ -310,9 +309,9 @@ export default function SeniorShiftSwapScreen() {
           contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="px-4 gap-4">
+          <View className="px-4 gap-[30px]">
             {/* Source card (fixed) */}
-            <View className="flex-row items-center gap-3 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
+            <View className="flex-row items-center gap-2 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
               <Avatar alt={shortName(sourcePerson)} className="w-[52px] h-[52px]">
                 <Avatar.Image source={{ uri: params.profileImageUrl ?? "" }} />
                 <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
@@ -324,7 +323,7 @@ export default function SeniorShiftSwapScreen() {
                   {shortName(sourcePerson)}
                 </AppText>
                 {/* time (left) + date (right) share one row, per design */}
-                <View className="flex-row items-center justify-between gap-2 mt-0.5">
+                <View className="flex-row items-center justify-between gap-2">
                   <AppText className="text-base text-darkgray shrink" numberOfLines={1}>
                     {params.shiftStart} - {params.shiftEnd}
                   </AppText>
@@ -336,7 +335,7 @@ export default function SeniorShiftSwapScreen() {
             {!targetEmployee ? (
               <Pressable
                 onPress={openPicker}
-                className="h-12 rounded-full bg-blue/10 border border-blue/10 items-center justify-center"
+                className="h-11 rounded-full bg-blue/10 border border-blue/10 items-center justify-center"
               >
                 <AppText className="text-base font-semibold text-blue">
                   Хуваарь солих ажилтнаа сонгоно уу
@@ -344,16 +343,15 @@ export default function SeniorShiftSwapScreen() {
               </Pressable>
             ) : (
               <>
-                <View className="items-center">
-                  <HugeiconsIcon icon={UserSwitchIcon} color="#005FEE" size={22} />
-                </View>
-
-                {/* Target card — same filled layout as the source card once a
-                    shift is chosen: name + time on the left, date on the right. */}
-                <View className="flex-row items-center gap-3 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
+                {/* Target card — the swap icon floats centered in the 30px gap
+                    above it (per design), so it adds no vertical space. */}
+                <View className="relative flex-row items-center gap-2 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
+                  <View className="absolute -top-[26px] left-0 right-0 items-center">
+                    <AppIcon icon={UserSwitchIcon} color="#005FEE" size={22} />
+                  </View>
                   <Pressable
                     onPress={openPicker}
-                    className="flex-1 flex-row items-center gap-3"
+                    className="flex-1 flex-row items-center gap-2"
                   >
                     <Avatar alt={shortName(targetEmployee)} className="w-[52px] h-[52px]">
                       <Avatar.Image source={{ uri: targetEmployee.profile_image_url ?? "" }} />
@@ -368,7 +366,7 @@ export default function SeniorShiftSwapScreen() {
                       {targetShift ? (
                         // time (left) + date (right) on one row, per design. The
                         // date stays separately tappable (re-opens the calendar).
-                        <View className="flex-row items-center justify-between gap-2 mt-0.5">
+                        <View className="flex-row items-center justify-between gap-2">
                           <AppText className="text-base text-darkgray shrink" numberOfLines={1}>
                             {targetShift.start} - {targetShift.end}
                           </AppText>
@@ -377,7 +375,7 @@ export default function SeniorShiftSwapScreen() {
                           </Pressable>
                         </View>
                       ) : (
-                        <AppText className="text-sm text-red/60 mt-0.5" numberOfLines={1}>
+                        <AppText className="text-sm text-red/60" numberOfLines={1}>
                           Солих хуваарь сонгогдоогүй байна
                         </AppText>
                       )}
@@ -388,7 +386,7 @@ export default function SeniorShiftSwapScreen() {
                 {!targetShift && (
                   <Pressable
                     onPress={openCalendar}
-                    className="h-12 rounded-full bg-blue/10 border border-blue/10 items-center justify-center"
+                    className="h-11 rounded-full bg-blue/10 border border-blue/10 items-center justify-center"
                   >
                     <AppText className="text-base font-semibold text-blue">
                       Солих хуваариа сонгоно уу
@@ -429,13 +427,8 @@ export default function SeniorShiftSwapScreen() {
             handleComponent={null}
             contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
           >
-            <View className="flex-row px-4 py-5 justify-between items-center">
-              <View className="flex-1">
-                <AppText className="text-base font-medium text-center">Солигдох ажилтан</AppText>
-              </View>
-              <PressableFeedback onPress={() => setPickerOpen(false)}>
-                <HugeiconsIcon icon={MultiplicationSignIcon} color="#6A6A6A" size={24} />
-              </PressableFeedback>
+            <View className="h-[60px] items-center justify-center">
+              <AppText className="text-lg font-medium text-center">Солигдох ажилтан</AppText>
             </View>
 
             <BottomSheetScrollView
@@ -452,37 +445,36 @@ export default function SeniorShiftSwapScreen() {
                   <AppText className="text-sm text-darkgray">Ажилтан олдсонгүй</AppText>
                 </View>
               ) : (
-                employees.map((emp, index) => {
+                employees.map((emp) => {
                   const isSelected = targetEmployee?.id === emp.id;
                   return (
                     <View key={emp.id}>
                       <Pressable
-                        className="flex-row items-center py-3 gap-3"
+                        className="flex-row items-center py-1.5 gap-2"
                         onPress={() => handleSelectEmployee(emp)}
                       >
-                        <Avatar alt={shortName(emp)} className="w-10 h-10">
+                        <Avatar alt={shortName(emp)} className="w-[52px] h-[52px]">
                           <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
                           <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
                             {avatarFallback(emp)}
                           </Avatar.Fallback>
                         </Avatar>
                         <View className="flex-1">
-                          <AppText className={cn("text-sm", isSelected && "font-medium")}>
+                          <AppText className={cn("text-base", isSelected && "font-medium")}>
                             {shortName(emp)}
                           </AppText>
                           {emp.job_position && (
-                            <AppText className="text-sm text-darkgray mt-0.5">
+                            <AppText className="text-sm text-darkgray">
                               {emp.job_position}
                             </AppText>
                           )}
                         </View>
                         <View className="w-6 h-6 items-center justify-center">
                           {isSelected && (
-                            <HugeiconsIcon icon={Tick02Icon} size={24} color="#18AA0B" />
+                            <AppIcon icon={Tick02Icon} size={24} color="#18AA0B" />
                           )}
                         </View>
                       </Pressable>
-                      {index < employees.length - 1 && <Separator className="bg-darkgray/15" />}
                     </View>
                   );
                 })
@@ -512,10 +504,10 @@ export default function SeniorShiftSwapScreen() {
                 hitSlop={8}
                 className={cn("w-8 items-center", !canPrev && "opacity-30")}
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} color="#222222" size={22} />
+                <AppIcon icon={ArrowLeft01Icon} color="#222222" size={26} />
               </Pressable>
-              <AppText className="flex-1 text-center text-base font-medium">
-                {calMonth.month() + 1} сар
+              <AppText className="flex-1 text-center text-lg font-medium">
+                {calMonth.format("MM")} сар
               </AppText>
               <Pressable
                 onPress={() => canNext && setCalMonth((m) => m.add(1, "month"))}
@@ -523,7 +515,7 @@ export default function SeniorShiftSwapScreen() {
                 hitSlop={8}
                 className={cn("w-8 items-center", !canNext && "opacity-30")}
               >
-                <HugeiconsIcon icon={ArrowRight01Icon} color="#222222" size={22} />
+                <AppIcon icon={ArrowRight01Icon} color="#222222" size={26} />
               </Pressable>
             </View>
 
@@ -534,7 +526,7 @@ export default function SeniorShiftSwapScreen() {
                   <AppText
                     key={w}
                     className={cn(
-                      "flex-1 text-center text-sm",
+                      "flex-1 text-center text-sm font-medium",
                       i >= 5 ? "text-blue" : "text-darkgray"
                     )}
                   >
@@ -556,18 +548,18 @@ export default function SeniorShiftSwapScreen() {
                         disabled={!cell || isPast}
                         onPress={() => cell && handlePickDate(cell.date)}
                         className={cn(
-                          "flex-1 h-12 items-center justify-center rounded-lg",
+                          "flex-1 h-[49px] items-center justify-center rounded-[5px]",
                           isSel && "bg-lightblue"
                         )}
                       >
                         {cell && (
                           <AppText
                             className={cn(
-                              "text-sm",
+                              "text-sm font-medium",
                               isPast
                                 ? "text-darkgray/30"
                                 : isSel
-                                  ? "text-darkblue font-medium"
+                                  ? "text-black font-semibold"
                                   : isWorking
                                     ? "text-black"
                                     : "text-darkgray/50"
@@ -607,10 +599,10 @@ export default function SeniorShiftSwapScreen() {
                         onPress={() => handleSelectDayShift(s)}
                         className="flex-row items-center justify-between py-3"
                       >
-                        <AppText className={cn("text-sm", isSel ? "text-black font-medium" : "text-darkgray")}>
+                        <AppText className={cn("text-base text-black", isSel && "font-medium")}>
                           {s.start} - {s.end}
                         </AppText>
-                        {isSel && <HugeiconsIcon icon={Tick02Icon} size={22} color="#18AA0B" />}
+                        {isSel && <AppIcon icon={Tick02Icon} size={24} color="#18AA0B" />}
                       </Pressable>
                       {i < dayShifts.length - 1 && <Separator className="bg-darkgray/12" />}
                     </View>

@@ -14,7 +14,7 @@ import {
   MinusSignIcon,
   PlusSignIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useRouter } from 'expo-router';
@@ -397,7 +397,7 @@ export default function OnboardingScreen() {
               <AppButton
                 className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                 isIconOnly
-                leftIcon={<HugeiconsIcon icon={MinusSignIcon} color="#222222" size={20} />}
+                leftIcon={<AppIcon icon={MinusSignIcon} color="#222222" size={20} />}
                 onPress={removeChild}
                 isDisabled={fields.length === 0}
               />
@@ -410,7 +410,7 @@ export default function OnboardingScreen() {
               <AppButton
                 className="w-11 h-11 rounded-full bg-white border-darkgray/30"
                 isIconOnly
-                leftIcon={<HugeiconsIcon icon={PlusSignIcon} color="#222222" size={20} />}
+                leftIcon={<AppIcon icon={PlusSignIcon} color="#222222" size={20} />}
                 onPress={addChild}
               />
             </View>
@@ -722,7 +722,7 @@ export default function OnboardingScreen() {
               variant="danger"
               // title="Алдаа"
               description={res.message}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -793,7 +793,7 @@ export default function OnboardingScreen() {
               className="rounded border-darkgray/60 w-11 h-11 p-0"
               isIconOnly
               leftIcon={
-                <HugeiconsIcon icon={ArrowLeft01Icon} color="#222222" size={24} />
+                <AppIcon icon={ArrowLeft01Icon} color="#222222" size={24} />
               }
               onPress={handleBack}
             />

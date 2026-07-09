@@ -154,18 +154,18 @@ export default function AnnouncementScreen() {
     const createdAt = item.created_at ? dayjs(item.created_at) : null;
     const dateStr = createdAt ? createdAt.format('MM/DD  HH:mm') : '';
     const isTodayItem = createdAt ? createdAt.isToday() : false;
-    const dateStyle = `text-sm ${isTodayItem ? 'text-blue font-medium' : 'text-darkgray'}`;
+    const dateStyle = `text-base ${isTodayItem ? 'text-blue font-medium' : 'text-darkgray'}`;
 
     return (
       <View className="py-5">
-        <AppText className={`text-base font-medium mt-2 ${item.type === 'warning' ? 'text-red' : ''}`}>{item.title}</AppText>
-        <View className="flex-row items-center justify-between mt-2">
+        <AppText className={`text-base font-medium ${item.type === 'warning' ? 'text-red' : ''}`}>{item.title}</AppText>
+        <View className="flex-row items-center justify-between mt-1">
           <AppText className={dateStyle}>
             {getTargetLabel(item)}
           </AppText>
           <AppText className={dateStyle}>{dateStr}</AppText>
         </View>
-        <AppText className="text-sm mt-2">{item.content}</AppText>
+        <AppText className="text-base mt-1">{item.content}</AppText>
         <AppAttachmentList attachments={item.attachments} className="mt-5" />
       </View>
     );
@@ -189,7 +189,7 @@ export default function AnnouncementScreen() {
             onEndReachedThreshold={0.3}
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            ItemSeparatorComponent={() => <Separator className="bg-darkgray/20" />}
+            ItemSeparatorComponent={() => <Separator className="bg-darkgray/20 h-px" />}
             contentContainerStyle={announcements.length === 0 ? { flexGrow: 1 } : undefined}
             ListEmptyComponent={
               <View className="flex-1 pt-5">

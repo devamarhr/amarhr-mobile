@@ -20,7 +20,7 @@ import {
   FileAttachmentIcon, CheckmarkCircle02Icon, Cancel01Icon, Alert01Icon, ArrowDown01Icon, MultiplicationSignIcon,
   Tick02Icon, Clock01Icon, Calendar03Icon
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import {
   Avatar, BottomSheet,
   Button, Chip, CloseButton, cn, Description, FieldError, InputOTP, Label, PressableFeedback, ScrollShadow, Select,
@@ -160,7 +160,7 @@ const TextFieldWithIconsContent = () => {
           className="rounded-full"
           placeholder="Ажилтны нэрээр хайх"
           leftIcon={
-            <HugeiconsIcon
+            <AppIcon
               size="20"
               color="#222222"
               icon={Search01Icon}
@@ -339,7 +339,7 @@ const ButtonVariantsContent = () => {
             label="Хавсралттай"
             labelClassName="text-blue"
             leftIcon={
-              <HugeiconsIcon
+              <AppIcon
                 icon={FileAttachmentIcon}
                 size={22}
                 color="#005FEE"
@@ -359,7 +359,7 @@ const ButtonVariantsContent = () => {
             label="Disabled"
             isDisabled
             leftIcon={
-              <HugeiconsIcon
+              <AppIcon
                 icon={Home02Icon}
                 size={24}
                 color="#6a6a6a"
@@ -380,7 +380,7 @@ const ButtonVariantsContent = () => {
 
           <AppButton
             leftIcon={
-              <HugeiconsIcon
+              <AppIcon
                 icon={HeartbreakIcon}
                 size={24}
                 color="#222222"
@@ -388,7 +388,7 @@ const ButtonVariantsContent = () => {
             }
             label="Favorite"
             rightIcon={
-              <HugeiconsIcon
+              <AppIcon
                 icon={ChevronLeft}
                 size={24}
                 color="#222222"
@@ -401,7 +401,7 @@ const ButtonVariantsContent = () => {
               isIconOnly
               className="border-darkgray/60 rounded"
               leftIcon={
-                <HugeiconsIcon
+                <AppIcon
                   icon={ArrowLeft01Icon}
                   size={24}
                   color="#222222"
@@ -413,7 +413,7 @@ const ButtonVariantsContent = () => {
               isIconOnly
               className="border-darkgray/30"
               leftIcon={
-                <HugeiconsIcon
+                <AppIcon
                   icon={MinusSignIcon}
                   size={24}
                   color="#222222"
@@ -574,9 +574,9 @@ const ToastVariantContent = () => {
                 variant="success"
                 title="You have upgraded your plan"
                 description="You can continue using HeroUI Chat"
-                icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+                icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
                 iconContainerClassName="justify-center"
-                action={<HugeiconsIcon icon={Cancel01Icon} size={16} color="#FFFFFF" />}
+                action={<AppIcon icon={Cancel01Icon} size={16} color="#FFFFFF" />}
                 actionClassName="justify-center"
                 onActionPress={(props) => props.hide()}
               />
@@ -617,7 +617,7 @@ const ToastVariantContent = () => {
                 variant="danger"
                 title="You have upgraded your plan"
                 description="You can continue using HeroUI Chat"
-                icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+                icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
                 showClose
               />
             ),
@@ -720,7 +720,7 @@ const DatepickerVariants = () => {
             onValueChange={setStartDate}
             placeholder="0000/00/00"
             icon={
-            <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+            <AppIcon icon={Calendar03Icon} size={22} color="#005FEE" />
             }
           />
           <AppDatePicker
@@ -732,7 +732,7 @@ const DatepickerVariants = () => {
             onValueChange={setEndDate}
             placeholder="0000/00/00"
             icon={
-              <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+              <AppIcon icon={Calendar03Icon} size={22} color="#005FEE" />
             }
           />
         </View>
@@ -751,7 +751,7 @@ const DatepickerVariants = () => {
           value={time}
           onValueChange={setTime}
           icon={
-            <HugeiconsIcon icon={Clock01Icon} size={22} color="#005FEE" />
+            <AppIcon icon={Clock01Icon} size={22} color="#005FEE" />
           }
         />
         <AppDatePicker
@@ -762,7 +762,7 @@ const DatepickerVariants = () => {
           onValueChange={setDatetime}
           format="YYYY/MM/DD HH:mm"
           icon={
-            <HugeiconsIcon icon={Calendar03Icon} size={22} color="#005FEE" />
+            <AppIcon icon={Calendar03Icon} size={22} color="#005FEE" />
           }
         />
       </View>
@@ -786,11 +786,11 @@ export default function ComponentsScreen() {
           >
             {isLight ? (
               <Animated.View key="moon" entering={ZoomIn} exiting={FadeOut}>
-                <HugeiconsIcon icon={Moon01Icon} size={28} color={"#000"} />
+                <AppIcon icon={Moon01Icon} size={28} color={"#000"} />
               </Animated.View>
             ) : (
               <Animated.View key="sun" entering={ZoomIn} exiting={FadeOut}>
-                <HugeiconsIcon icon={Sun01Icon} size={28} color={"#fff"} />
+                <AppIcon icon={Sun01Icon} size={28} color={"#fff"} />
               </Animated.View>
             )}
           </Pressable>

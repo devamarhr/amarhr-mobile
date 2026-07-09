@@ -6,6 +6,7 @@ import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
+import { RequestHeaderInfo } from '@/components/request-header-info';
 import { api, uploadFile } from '@/config/api';
 import { pickAttachments } from '@/utils/pick-attachment';
 import {
@@ -17,7 +18,7 @@ import {
   MultiplicationSignIcon,
   SquareLock02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -146,15 +147,16 @@ interface AttachmentSectionProps {
 function AttachmentSection({ attachments, isUploading, onPick, onRemove }: AttachmentSectionProps) {
   return (
     <>
+      {/* -mt-[5px] trims the parent gap-5 (20px) to the 15px the request screens use above "Файл хавсаргах". */}
       <Pressable
-        className={`flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
+        className={`-mt-[5px] flex-row items-center justify-end gap-2 ${attachments.length >= MAX_ATTACHMENTS ? 'opacity-40' : ''}`}
         onPress={onPick}
         disabled={isUploading || attachments.length >= MAX_ATTACHMENTS}
       >
         {isUploading ? (
           <Spinner color="#005FEE" size="sm" />
         ) : (
-          <HugeiconsIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+          <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
         )}
         <AppText className="text-base text-darkgray">
           {isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}
@@ -163,7 +165,7 @@ function AttachmentSection({ attachments, isUploading, onPick, onRemove }: Attac
       {attachments.map((file, index) => (
         <View key={index} className="flex-row items-center gap-3">
           <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-            <HugeiconsIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+            <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
             <AppText className="text-sm flex-1" numberOfLines={1}>
               {file.name}
             </AppText>
@@ -172,7 +174,7 @@ function AttachmentSection({ attachments, isUploading, onPick, onRemove }: Attac
             onPress={() => onRemove(index)}
             className="w-12 h-12 items-center justify-center border border-gray/20 rounded-xl"
           >
-            <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+            <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
           </Pressable>
         </View>
       ))}
@@ -220,8 +222,8 @@ function TypeSheet({ isOpen, onOpenChange, data, onSelect }: TypeSheetProps) {
     <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
       <BottomSheet.Portal>
         <BottomSheet.Overlay className="bg-[#6C719F]/40" />
-        <BottomSheet.Content enableOverDrag={false} handleComponent={null}>
-          <BottomSheet.Title className="text-center text-lg font-medium text-black pt-3 mb-4">
+        <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
+          <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Ээлжийн амралт нэмэх
           </BottomSheet.Title>
           <View style={{ paddingBottom: insets.bottom + 12 }}>
@@ -230,14 +232,14 @@ function TypeSheet({ isOpen, onOpenChange, data, onSelect }: TypeSheetProps) {
               className="flex-row items-center justify-between h-12.5 border-b border-darkgray/15"
             >
               <AppText className="text-base">Хуваарийн дагуу</AppText>
-              <AppText className="text-[13px] text-darkgray">{cycleRange}</AppText>
+              <AppText className="text-sm text-darkgray">{cycleRange}</AppText>
             </Pressable>
             <Pressable
               onPress={() => onSelect('unused')}
               className="flex-row items-center justify-between h-12.5 border-b border-darkgray/15"
             >
               <AppText className="text-base">Биеэр эдлээгүй хоног</AppText>
-              <AppText className="text-[13px] text-darkgray">{data.remaining_days} хоног</AppText>
+              <AppText className="text-sm text-darkgray">{data.remaining_days} хоног</AppText>
             </Pressable>
           </View>
         </BottomSheet.Content>
@@ -359,8 +361,8 @@ function ScheduledSheet({
           нь үндсэн window-д гардаг тул sheet-ийг мөн үндсэн window-д render хийнэ */}
       <BottomSheet.Portal disableFullWindowOverlay>
         <BottomSheet.Overlay className="bg-[#6C719F]/40" />
-        <BottomSheet.Content enableOverDrag={false} handleComponent={null}>
-          <BottomSheet.Title className="text-center text-lg font-medium text-black pt-3 mb-6">
+        <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
+          <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Хуваарийн дагуу
           </BottomSheet.Title>
           <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
@@ -375,7 +377,7 @@ function ScheduledSheet({
                   format="MM/DD"
                   minimumDate={minDate}
                   maximumDate={maxDate}
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                 />
               </View>
               <View className="flex-1">
@@ -385,14 +387,14 @@ function ScheduledSheet({
                   value={dayOptions.find((o) => o.value === days)}
                   onValueChange={(opt) => setDays(opt?.value ?? '')}
                   placeholder="Сонгох"
-                  renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
+                  renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                 />
               </View>
               <View className="flex-1 gap-2">
                 <AppText className="text-sm text-darkgray">Дуусах өдөр</AppText>
                 <View className="flex-row items-center gap-1.5 bg-[#F2F2F2] rounded-lg h-11 px-2.5">
-                  <HugeiconsIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
-                  <AppText className="text-base text-darkgray flex-1" numberOfLines={1}>
+                  <AppIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
+                  <AppText className="text-sm text-darkgray flex-1" numberOfLines={1}>
                     {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '00/00'}
                   </AppText>
                 </View>
@@ -414,7 +416,7 @@ function ScheduledSheet({
               isLoading={isSaving}
               isDisabled={isUploading}
               spinnerColor="#ffffff"
-              className="bg-blue border-0 rounded-full"
+              className="mt-[10px] bg-blue border-0 rounded-full"
               labelClassName="text-white text-base font-semibold"
             />
           </View>
@@ -503,8 +505,8 @@ function UnusedSheet({
     <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
       <BottomSheet.Portal disableFullWindowOverlay>
         <BottomSheet.Overlay className="bg-[#6C719F]/40" />
-        <BottomSheet.Content enableOverDrag={false} handleComponent={null}>
-          <BottomSheet.Title className="text-center text-lg font-medium text-black pt-3 mb-6">
+        <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
+          <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Биеэр эдлээгүй хоног
           </BottomSheet.Title>
           <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
@@ -516,7 +518,7 @@ function UnusedSheet({
                   value={monthOptions.find((o) => o.value === month)}
                   onValueChange={(opt) => setMonth(opt?.value ?? '')}
                   placeholder="Сонгох"
-                  icon={<HugeiconsIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   renderValue={(option) => <AppText className="text-base">{option.label}</AppText>}
                 />
               </View>
@@ -556,7 +558,7 @@ function UnusedSheet({
               isLoading={isSaving}
               isDisabled={isUploading}
               spinnerColor="#ffffff"
-              className="bg-blue border-0 rounded-full"
+              className="mt-[10px] bg-blue border-0 rounded-full"
               labelClassName="text-white text-base font-semibold"
             />
           </View>
@@ -587,7 +589,7 @@ export default function AnnualLeaveRequestScreen() {
             {...props}
             variant="danger"
             description={msg}
-            icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+            icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
           />
         ),
       });
@@ -603,7 +605,7 @@ export default function AnnualLeaveRequestScreen() {
             {...props}
             variant="success"
             description={msg}
-            icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+            icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
           />
         ),
       });
@@ -685,42 +687,26 @@ export default function AnnualLeaveRequestScreen() {
           backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
+          backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
         <View className="px-4 pb-7.5 gap-5">
           <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>
             {title}
           </AppText>
           {data && (
-            <View className="gap-2.5">
-              {hasCycle && (
-                <View className="flex-row gap-2">
-                  <AppText className="text-sm text-darkblue w-[180px]">Э/амралтын цикл</AppText>
-                  <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
-                    {dayjs(data.cycle_start_date, 'YYYY-MM-DD').format('YY/MM/DD')} -{' '}
-                    {dayjs(data.cycle_end_date, 'YYYY-MM-DD').format('YY/MM/DD')}
-                  </AppText>
-                </View>
-              )}
-              <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-[180px]">Хувааж авах боломж</AppText>
-                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
-                  {data.max_splits} удаа
-                </AppText>
-              </View>
-              <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-[180px]">Боломжит хоног</AppText>
-                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
-                  {data.available_days} хоног
-                </AppText>
-              </View>
-              <View className="flex-row gap-2">
-                <AppText className="text-sm text-darkblue w-[180px]">Үлдэгдэл хоног</AppText>
-                <AppText className="text-sm font-medium text-darkerblue flex-1" numberOfLines={1}>
-                  {data.remaining_days} хоног
-                </AppText>
-              </View>
-            </View>
+            <RequestHeaderInfo
+              rows={[
+                ...(hasCycle
+                  ? [{
+                      label: 'Э/амралтын цикл',
+                      value: `${dayjs(data.cycle_start_date, 'YYYY-MM-DD').format('YY/MM/DD')} - ${dayjs(data.cycle_end_date, 'YYYY-MM-DD').format('YY/MM/DD')}`,
+                    }]
+                  : []),
+                { label: 'Боломжит хоног', value: `${data.available_days} хоног` },
+                { label: 'Үлдэгдэл хоног', value: `${data.remaining_days} хоног` },
+                { label: 'Хувааж авах боломж', value: `${data.max_splits} удаа` },
+              ]}
+            />
           )}
         </View>
 
@@ -749,7 +735,7 @@ export default function AnnualLeaveRequestScreen() {
                   </AppText>
                   <View className="flex-row gap-3 items-center">
                     <View className="flex-1 flex-row items-center gap-2 border border-gray/30 rounded-lg h-11 px-2.5">
-                      <HugeiconsIcon icon={Calendar03Icon} color="#222222" size={24} />
+                      <AppIcon icon={Calendar03Icon} color="#222222" size={24} />
                       <AppText
                         className={`text-base flex-1 ${split.type === 'unused' ? 'opacity-70' : ''}`}
                         numberOfLines={1}
@@ -765,9 +751,9 @@ export default function AnnualLeaveRequestScreen() {
                       className="w-11 h-11 items-center justify-center border border-gray/30 rounded-lg"
                     >
                       {split.decree_id != null ? (
-                        <HugeiconsIcon icon={SquareLock02Icon} color="#6A6A6A" size={22} />
+                        <AppIcon icon={SquareLock02Icon} color="#6A6A6A" size={22} />
                       ) : (
-                        <HugeiconsIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+                        <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
                       )}
                     </Pressable>
                   </View>

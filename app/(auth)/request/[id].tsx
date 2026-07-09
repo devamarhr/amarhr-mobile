@@ -4,7 +4,7 @@ import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
-import { InfoRowsView, type InfoRow } from '@/components/info-rows';
+import { type InfoRow } from '@/components/info-rows';
 import { api } from '@/config/api';
 import { useRequestRefreshStore } from '@/store/request-refresh-store';
 import {
@@ -12,10 +12,10 @@ import {
   ArrowLeft02Icon,
   CheckmarkCircle02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Separator, useToast } from 'heroui-native';
+import { useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,6 +70,13 @@ interface RequestSetting {
   detail?: SettingDetail;
 }
 
+interface Decree {
+  id: number;
+  status: string;
+  description: string | null;
+  attachments?: Attachment[] | null;
+}
+
 interface EmployeeRequestDetail {
   id: number;
   employee_request_setting_id: number;
@@ -82,6 +89,7 @@ interface EmployeeRequestDetail {
   attachments: Attachment[] | null;
   created_at: string | null;
   setting: RequestSetting;
+  decree?: Decree | null;
 }
 
 const statusMap: Record<string, { label: string; color: string }> = {
@@ -90,7 +98,18 @@ const statusMap: Record<string, { label: string; color: string }> = {
   review_pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
   approved: { label: 'Зөвшөөрсөн', color: 'text-green' },
   rejected: { label: 'Татгалзсан', color: 'text-red' },
-  read: { label: 'Уншиж танилцсан', color: 'text-darkcyan' },
+  read: { label: 'Уншиж танилцсан', color: 'text-darkercyan' },
+};
+
+const ANNUAL_LEAVE_TYPE_LABELS: Record<string, string> = {
+  scheduled: 'Хуваарийн дагуу',
+  advance: 'Урьдчилж авсан',
+  unused: 'Биеэр эдлээгүй хоног',
+};
+
+const SALARY_PERIOD_LABELS: Record<string, string> = {
+  advance: 'Урьдчилгаа цалин дээр',
+  payroll: 'Сүүл цалин дээр',
 };
 
 function getDecisionLabel(type: ReviewerType): string | null {
@@ -139,6 +158,17 @@ function getFormType(setting: RequestSetting | undefined, detail: Record<string,
   return 'textOnly';
 }
 
+// Stacked label/value field: a 14px muted label above a 16px value, matching the
+// request-detail design (value is a plain single line that wraps for long text).
+function InfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <View>
+      <AppText className="text-sm text-darkgray/50">{label}</AppText>
+      <AppText className="text-base">{value}</AppText>
+    </View>
+  );
+}
+
 export default function RequestDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -166,7 +196,16 @@ export default function RequestDetailScreen() {
 
   const detail = request?.detail ?? {};
   const description = (detail.description as string | undefined) ?? '';
-  const status = request ? statusMap[request.status] ?? { label: request.status, color: 'text-darkgray' } : null;
+  // At the decree stage the request's own status is the raw "decree"; surface the
+  // decree's status (pending/approved/rejected) via the same statusMap instead.
+  const effectiveStatus = request
+    ? request.status === 'decree'
+      ? request.decree?.status ?? request.status
+      : request.status
+    : null;
+  const status = effectiveStatus
+    ? statusMap[effectiveStatus] ?? { label: effectiveStatus, color: 'text-darkgray' }
+    : null;
   const isPending = request
     ? ['pending', 'senior_pending', 'review_pending'].includes(request.status)
     : false;
@@ -187,7 +226,7 @@ export default function RequestDetailScreen() {
               {...props}
               variant="success"
               description={res.message || 'Хүсэлт амжилттай устгалаа.'}
-              icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
+              icon={<AppIcon icon={CheckmarkCircle02Icon} color="#18AA0B" />}
             />
           ),
         });
@@ -200,7 +239,7 @@ export default function RequestDetailScreen() {
               {...props}
               variant="danger"
               description={res.message || 'Алдаа гарлаа'}
-              icon={<HugeiconsIcon icon={Alert01Icon} color="#BC1818" />}
+              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
             />
           ),
         });
@@ -281,6 +320,18 @@ export default function RequestDetailScreen() {
       if (shiftDate && shiftDate.isValid()) {
         rows.push({ label: 'Огноо', value: shiftDate.format('MM/DD') });
       }
+      const timeTypeLabels: Record<string, string> = {
+        overtime: 'Илүү цаг',
+        compensatory: 'Нөхөн олговорт цаг',
+        accumulated: 'Хуримтлуулсан цаг',
+        compensatory_rest: 'Нөхөн амралт',
+      };
+      rows.push({
+        label: 'Цагийн төрөл',
+        value: detail.overtime_category
+          ? timeTypeLabels[detail.overtime_category] ?? detail.overtime_category
+          : detail.leave ?? 'Энгийн цаг',
+      });
       shifts.forEach((s, idx) => {
         const arrival = parseDt(s.arrivalTime);
         const leave = parseDt(s.leaveTime);
@@ -470,6 +521,39 @@ export default function RequestDetailScreen() {
   }, [request, formType, detail]);
 
   const renderAnnualLeave = () => {
+    // New shape: the request detail is a single annual-leave split object carrying a
+    // `type` (scheduled / advance / unused) instead of a `splits` array.
+    if (!Array.isArray(detail.splits) && typeof detail.type === 'string') {
+      const rows: InfoRow[] = [];
+      const typeLabel = ANNUAL_LEAVE_TYPE_LABELS[detail.type];
+      if (typeLabel) rows.push({ label: 'Төрөл', value: typeLabel });
+
+      if (detail.type === 'unused') {
+        if (detail.year && detail.month) {
+          rows.push({ label: 'Сар', value: `${detail.year} оны ${detail.month}-р сар` });
+        }
+        if (detail.days != null) rows.push({ label: 'Хоног', value: `${detail.days} хоног` });
+        const salaryLabel = detail.salary_period
+          ? SALARY_PERIOD_LABELS[detail.salary_period] ?? detail.salary_period
+          : null;
+        if (salaryLabel) {
+          rows.push({ label: 'Олговор авах цалингийн хуваарь', value: salaryLabel });
+        }
+      } else {
+        const start = detail.start_date ? dayjs(detail.start_date, 'YYYY-MM-DD') : null;
+        const end = detail.end_date ? dayjs(detail.end_date, 'YYYY-MM-DD') : null;
+        const sameDay = start && end && start.isValid() && end.isValid() && start.isSame(end, 'day');
+        if (start && start.isValid() && end && end.isValid() && !sameDay) {
+          rows.push({ label: 'Огноо', value: `${start.format('YYYY/MM/DD')} — ${end.format('YYYY/MM/DD')}` });
+        } else if (start && start.isValid()) {
+          rows.push({ label: 'Огноо', value: start.format('YYYY/MM/DD') });
+        }
+        if (detail.days != null) rows.push({ label: 'Хоног', value: `${detail.days} хоног` });
+      }
+
+      return rows.map((row, i) => <InfoField key={i} label={row.label} value={row.value} />);
+    }
+
     const splits = Array.isArray(detail.splits) ? detail.splits : [];
     if (splits.length === 0) return null;
     const totalDays = splits.reduce(
@@ -490,7 +574,7 @@ export default function RequestDetailScreen() {
       rows.push({ label: `Амралт ${i + 1}`, value });
     });
     if (totalDays > 0) rows.push({ label: 'Хоног', value: `${totalDays} хоног` });
-    return <InfoRowsView rows={rows} labelClassName="text-darkgray/50" valueClassName="text-base" />;
+    return rows.map((row, i) => <InfoField key={i} label={row.label} value={row.value} />);
   };
 
   return (
@@ -501,7 +585,7 @@ export default function RequestDetailScreen() {
           backTitleClassName="text-sm font-medium text-darkblue"
           className="px-4"
           showBack
-          backIcon={<HugeiconsIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
+          backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
 
         {loading ? (
@@ -515,7 +599,7 @@ export default function RequestDetailScreen() {
         ) : (
           <>
             <View className="px-4 pb-7.5">
-              <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>
+              <AppText className="text-base font-semibold text-black" numberOfLines={1}>
                 {request.setting.name}
               </AppText>
             </View>
@@ -525,42 +609,46 @@ export default function RequestDetailScreen() {
               contentContainerClassName="pb-10 pt-7.5"
               showsVerticalScrollIndicator={false}
             >
-              <View className="gap-6">
+              <View className="gap-5">
                 {formType === 'annualLeave'
                   ? renderAnnualLeave()
-                  : formRows.length > 0
-                    ? <InfoRowsView rows={formRows} labelClassName="text-darkgray/50" valueClassName="text-base" />
-                    : null}
+                  : formRows.map((row, i) => (
+                      <InfoField key={i} label={row.label} value={row.value} />
+                    ))}
 
-                <View className="gap-1">
+                <View>
                   <AppText className="text-sm text-darkgray/50">Шалтгаан</AppText>
                   <AppText className={`text-base ${description ? 'text-black' : 'text-muted'}`}>
                     {description || '-'}
                   </AppText>
-                  <AppAttachmentList attachments={request.attachments} className="mt-1.5" />
+                  <AppAttachmentList attachments={request.attachments} className="mt-5" />
                 </View>
 
-                {(request.decision_detail?.comment || request.review_detail?.comment) && (
-                  <View className="gap-3 pt-2">
-                    <Separator className="bg-darkgray/12" />
-                    {request.review_detail?.comment && (
-                      <View>
-                        <AppText className="text-sm text-darkgray">
-                          {getReviewLabel(request.review_by_type) ?? 'Санал'}
-                        </AppText>
-                        <AppText className="text-sm mt-1">{request.review_detail.comment}</AppText>
-                        <AppAttachmentList attachments={request.review_detail.attachments} className="mt-1.5" />
-                      </View>
+                {request.review_detail?.comment && (
+                  <View>
+                    <AppText className="text-sm text-darkgray/50">
+                      {getReviewLabel(request.review_by_type) ?? 'Санал'}
+                    </AppText>
+                    <AppText className="text-base">{request.review_detail.comment}</AppText>
+                    <AppAttachmentList attachments={request.review_detail.attachments} className="mt-5" />
+                  </View>
+                )}
+                {request.decision_detail?.comment && (
+                  <View>
+                    <AppText className="text-sm text-darkgray/50">
+                      {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
+                    </AppText>
+                    <AppText className="text-base">{request.decision_detail.comment}</AppText>
+                    <AppAttachmentList attachments={request.decision_detail.attachments} className="mt-5" />
+                  </View>
+                )}
+                {request.decree && (request.decree.description || request.decree.attachments?.length) && (
+                  <View>
+                    <AppText className="text-sm text-darkgray/50">Админ</AppText>
+                    {request.decree.description && (
+                      <AppText className="text-base">{request.decree.description}</AppText>
                     )}
-                    {request.decision_detail?.comment && (
-                      <View>
-                        <AppText className="text-sm text-darkgray">
-                          {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
-                        </AppText>
-                        <AppText className="text-sm mt-1">{request.decision_detail.comment}</AppText>
-                        <AppAttachmentList attachments={request.decision_detail.attachments} className="mt-1.5" />
-                      </View>
-                    )}
+                    <AppAttachmentList attachments={request.decree.attachments} className="mt-5" />
                   </View>
                 )}
 
@@ -572,14 +660,14 @@ export default function RequestDetailScreen() {
                 className="px-4 bg-background"
                 style={{ paddingBottom: insets.bottom + 10, paddingTop: 12 }}
               >
-                <AppText className={`text-base font-medium text-center ${status.color}`}>
+                <AppText className={`text-base font-semibold text-center ${status.color}`}>
                   {status.label}
                 </AppText>
                 {isPending && (
                   <AppButton
                     label="Илгээсэн өргөдөл хүсэлтийг цуцлах"
                     onPress={() => setConfirmOpen(true)}
-                    className="w-full rounded-full mt-3"
+                    className="w-full rounded-full mt-5"
                     labelClassName="text-red/50 text-base font-medium"
                   />
                 )}

@@ -88,8 +88,8 @@ interface AppToastProps extends ToastComponentProps {
  *       variant="success"
  *       title="Success!"
  *       description="Your action was completed"
- *       icon={<HugeiconsIcon icon={CheckIcon} />}
- *       action={<HugeiconsIcon icon={CloseIcon} size={16} />}
+ *       icon={<AppIcon icon={CheckIcon} />}
+ *       action={<AppIcon icon={CloseIcon} size={16} />}
  *       onActionPress={(props) => props.hide()}
  *     />
  *   ),
@@ -142,14 +142,35 @@ export function AppToast({
     }
   };
 
-  return (
-    <Toast variant={variant} className="flex-row gap-3 shadow-lg shadow-black/15" {...toastProps}>
-      {icon && <View className={cn('justify-center',iconContainerClassName)}>{icon}</View>}
+  // success/danger render as a solid green/red pill with white text and a white
+  // icon, matching the Figma design. Other variants keep the HeroUI defaults.
+  const isFilled = variant === 'success' || variant === 'danger';
+  const filledBgClass = variant === 'success' ? 'bg-green' : variant === 'danger' ? 'bg-red' : '';
+  const renderedIcon =
+    isFilled && React.isValidElement(icon)
+      ? React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
+          color: '#FFFFFF',
+          size: (icon.props as { size?: number }).size ?? 20,
+        })
+      : icon;
 
-      <View className={cn('flex-1',contentContainerClassName)}>
-        {title && <Toast.Title className={titleClassName}>{title}</Toast.Title>}
+  return (
+    <Toast
+      variant={variant}
+      className={cn('flex-row gap-3 shadow-lg shadow-black/15', isFilled && filledBgClass)}
+      {...toastProps}
+      // Force the 10px corner radius via inline style so it always wins over the
+      // HeroUI root's rounded-3xl regardless of class-merge ordering.
+      style={isFilled ? { borderRadius: 10 } : undefined}
+    >
+      {renderedIcon && <View className={cn('justify-center', iconContainerClassName)}>{renderedIcon}</View>}
+
+      <View className={cn('flex-1', contentContainerClassName)}>
+        {title && (
+          <Toast.Title className={cn(isFilled && 'text-white', titleClassName)}>{title}</Toast.Title>
+        )}
         {description && (
-          <Toast.Description className={descriptionClassName}>
+          <Toast.Description className={cn(isFilled && 'text-base text-white', descriptionClassName)}>
             {description}
           </Toast.Description>
         )}

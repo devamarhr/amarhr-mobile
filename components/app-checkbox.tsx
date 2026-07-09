@@ -1,5 +1,5 @@
 import { Tick02Icon } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import { cn } from 'heroui-native';
 import React from 'react';
 import { Pressable, View } from 'react-native';
@@ -22,7 +22,7 @@ export function AppCheckbox({
   return (
     <Pressable onPress={() => onSelectedChange(!isSelected)} className={className} hitSlop={6}>
       {isSelected ? (
-        <HugeiconsIcon icon={Tick02Icon} color={color} size={size} strokeWidth={2.5} />
+        <AppIcon icon={Tick02Icon} color={color} size={size} strokeWidth={2} />
       ) : (
         <View
           className={cn('rounded-md border border-darkgray/30')}

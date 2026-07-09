@@ -224,10 +224,16 @@ interface ReviewDetail {
   decision_at?: string | null;
 }
 
+interface Decree {
+  id: number;
+  status: string;
+  description: string | null;
+}
+
 interface EmployeeRequest {
   id: number;
   employee_request_setting_id: number;
-  status: 'pending' | 'senior_pending' | 'review_pending' | 'approved' | 'rejected' | 'read';
+  status: 'pending' | 'senior_pending' | 'review_pending' | 'approved' | 'rejected' | 'read' | 'decree';
   review_by_type: ReviewerType;
   review_detail: ReviewDetail | null;
   decision_by_type: ReviewerType;
@@ -237,6 +243,7 @@ interface EmployeeRequest {
     id: number;
     name: string;
   };
+  decree?: Decree | null;
 }
 
 interface PaginatedRequestResponse {
@@ -252,7 +259,7 @@ const statusMap: Record<string, { label: string; color: string }> = {
   review_pending: { label: 'Хүлээгдэж байна', color: 'text-yellow' },
   approved: { label: 'Зөвшөөрсөн', color: 'text-green' },
   rejected: { label: 'Татгалзсан', color: 'text-red' },
-  read: { label: 'Уншиж танилцсан', color: 'text-darkcyan' },
+  read: { label: 'Уншиж танилцсан', color: 'text-darkercyan' },
 };
 
 function getDecisionLabel(type: ReviewerType): string | null {
@@ -416,7 +423,7 @@ export default function RequestScreen() {
             className={`flex-1 rounded-full ${activeTab === 1 ? 'border-darkgray' : 'border-darkgray/30'}`}
             labelComponent={
               <View className="flex-row items-center gap-1.5">
-                <AppText className={`text-sm ${activeTab === 1 ? 'font-medium text-black' : 'text-darkgray/50'}`}>
+                <AppText className={`text-base ${activeTab === 1 ? 'font-medium text-black' : 'text-darkgray/50'}`}>
                   Шийдвэр
                 </AppText>
                 {hasEmployeeRequestNotification && (
@@ -450,7 +457,7 @@ export default function RequestScreen() {
                   {category.items.map((item, index) => (
                     <View key={item.id}>
                       <Pressable className="py-3.5" onPress={() => handleItemPress(item)}>
-                        <AppText className="text-sm" numberOfLines={1}>{item.label}</AppText>
+                        <AppText className="text-base font-medium" numberOfLines={1}>{item.label}</AppText>
                       </Pressable>
                       {index < category.items.length - 1 && (
                         <Separator className="bg-darkgray/12" />
@@ -484,7 +491,23 @@ export default function RequestScreen() {
               </View>
             ) : null}
             renderItem={({ item: employeeRequest }) => {
-              const status = statusMap[employeeRequest.status] ?? { label: employeeRequest.status, color: 'text-darkgray' };
+              // When a request has reached the decree stage, surface the decree's own
+              // status (pending/approved/rejected) instead of the raw "decree" value,
+              // reusing the same labels/colors as the request statuses.
+              const effectiveStatus =
+                employeeRequest.status === 'decree'
+                  ? employeeRequest.decree?.status ?? employeeRequest.status
+                  : employeeRequest.status;
+              const status = statusMap[effectiveStatus] ?? { label: effectiveStatus, color: 'text-darkgray' };
+              // At the decree stage the admin's decision text lives on the decree
+              // (decree.description), not on decision_detail; label it as the admin.
+              const isDecree = employeeRequest.status === 'decree';
+              const decisionComment = isDecree
+                ? employeeRequest.decree?.description ?? null
+                : employeeRequest.decision_detail?.comment ?? null;
+              const decisionLabel = isDecree
+                ? 'Админ'
+                : getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр';
               return (
                 <Pressable
                   className="py-3"
@@ -495,29 +518,29 @@ export default function RequestScreen() {
                 >
                   <AppText className="text-base font-medium">{employeeRequest.setting.name}</AppText>
                   <View className="flex-row items-center justify-between mt-1">
-                    <AppText className={`text-sm font-medium ${status.color}`}>
+                    <AppText className={`text-base font-semibold ${status.color}`}>
                       {status.label}
                     </AppText>
                     {employeeRequest.created_at && (
-                      <AppText className="text-sm text-darkgray">
+                      <AppText className="text-base text-darkgray">
                         {dayjs(employeeRequest.created_at).format('MM/DD  HH:mm')}
                       </AppText>
                     )}
                   </View>
                   {employeeRequest.review_detail?.comment && (
                     <>
-                      <AppText className="text-sm text-darkgray mt-1">
+                      <AppText className="text-base text-darkgray mt-1">
                         {getReviewLabel(employeeRequest.review_by_type) ?? 'Санал'}
                       </AppText>
-                      <AppText className="text-sm mt-0.5 mb-2" numberOfLines={3}>{employeeRequest.review_detail.comment}</AppText>
+                      <AppText className="text-base mt-0.5 mb-2" numberOfLines={3}>{employeeRequest.review_detail.comment}</AppText>
                     </>
                   )}
-                  {employeeRequest.decision_detail?.comment && (
+                  {decisionComment && (
                     <>
-                      <AppText className="text-sm text-darkgray mt-1">
-                        {getDecisionLabel(employeeRequest.decision_by_type) ?? 'Шийдвэр'}
+                      <AppText className="text-base text-darkgray mt-1">
+                        {decisionLabel}
                       </AppText>
-                      <AppText className="text-sm mt-0.5" numberOfLines={3}>{employeeRequest.decision_detail.comment}</AppText>
+                      <AppText className="text-base mt-0.5" numberOfLines={3}>{decisionComment}</AppText>
                     </>
                   )}
                 </Pressable>

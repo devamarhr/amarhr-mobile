@@ -13,7 +13,7 @@ import {
   ArrowUp01Icon,
   Sun03StrokeStandard,
 } from '@hugeicons-pro/core-stroke-standard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { router, useFocusEffect } from "expo-router";
 import { cn, Separator } from 'heroui-native';
@@ -325,7 +325,7 @@ function TimesheetListRow({
             </View>
           </View>
           <View className="flex-1 items-center justify-center">
-            <HugeiconsIcon icon={Sun03StrokeStandard} size={24} color="#F0B400" />
+            <AppIcon icon={Sun03StrokeStandard} size={24} color="#F0B400" />
           </View>
           <View className="flex-1 items-center" />
           <View className="flex-1 items-center" />
@@ -414,13 +414,13 @@ function TimesheetList({
       <View className="flex-row">
         <View className="w-[103px]" />
         <View className="flex-1 items-center">
-          <HugeiconsIcon icon={Login03Icon} size={22} color="#6A6A6A80" />
+          <AppIcon icon={Login03Icon} size={22} color="#6A6A6A80" />
         </View>
         <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={Logout03Icon} size={22} color="#6A6A6A80" />
+          <AppIcon icon={Logout03Icon} size={22} color="#6A6A6A80" />
         </View>
         <View className="flex-1 items-center justify-center">
-          <HugeiconsIcon icon={Clock01Icon} size={22} color="#6A6A6A80" />
+          <AppIcon icon={Clock01Icon} size={22} color="#6A6A6A80" />
         </View>
       </View>
 
@@ -719,7 +719,7 @@ function YearView({
         <View className="flex-row justify-between mb-7.5">
           <AppText className="text-base text-darkgray leading-6">Баярын өдөр</AppText>
           <Pressable className="flex-row gap-1 items-center" onPress={() => setShowHoliday(!showHoliday)}>
-            <HugeiconsIcon icon={showHoliday ? ArrowUp01Icon : ArrowDown01Icon} />
+            <AppIcon icon={showHoliday ? ArrowUp01Icon : ArrowDown01Icon} />
             <AppText className="text-base font-medium text-blue leading-6">{totalHolidayDays} хоног</AppText>
           </Pressable>
         </View>

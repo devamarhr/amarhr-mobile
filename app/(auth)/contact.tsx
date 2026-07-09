@@ -7,7 +7,7 @@ import {
   Search01Icon,
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { HugeiconsIcon } from "@hugeicons/react-native";
+import { AppIcon } from "@/components/app-icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { Avatar, ScrollShadow } from "heroui-native";
 import React, { useCallback, useEffect, useState } from "react";
@@ -90,7 +90,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
   return (
     <Animated.View layout={LinearTransition.duration(220)}>
       <Pressable onPress={onToggle} className="flex-row items-center gap-2.5 h-16 py-1.5">
-        <Avatar alt={contact.name} className="w-13 h-13">
+        <Avatar alt={contact.name} className="w-[52px] h-[52px]">
           {contact.avatar ? (
             <Avatar.Image source={{ uri: contact.avatar }} />
           ) : null}
@@ -114,7 +114,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
             onPress={() => contact.phone && Linking.openURL(`tel:${contact.phone}`)}
           >
             <View className="w-13 items-center justify-center">
-              <HugeiconsIcon icon={SmartPhone01Icon} color="#6A6A6A" size={20} />
+              <AppIcon icon={SmartPhone01Icon} color="#6A6A6A" size={20} />
             </View>
             <AppText className={`font-medium ${contact.phone ? 'text-blue' : 'text-darkgray'}`}>
               {contact.phone ?? '********'}
@@ -122,7 +122,7 @@ function ContactCard({ contact, isExpanded, onToggle }: {
           </Pressable>
           <View className="flex-row items-center gap-2.5">
             <View className="w-13 items-center justify-center">
-              <HugeiconsIcon icon={AtIcon} color="#6A6A6A" size={20} />
+              <AppIcon icon={AtIcon} color="#6A6A6A" size={20} />
             </View>
             <AppText className="font-medium">{contact.email ?? '-'}</AppText>
           </View>
@@ -209,7 +209,7 @@ export default function ContactScreen() {
             className="rounded-full"
             placeholder="Ажилтны нэрээр хайх"
             leftIcon={
-              <HugeiconsIcon icon={Search01Icon} color="#222222" size={20} />
+              <AppIcon icon={Search01Icon} color="#222222" size={20} />
             }
             value={searchQuery}
             onChangeText={setSearchQuery}

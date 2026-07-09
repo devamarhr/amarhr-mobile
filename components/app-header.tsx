@@ -2,7 +2,7 @@ import { View, Pressable } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { cn } from 'heroui-native';
 import { AppText } from '@/components/app-text';
-import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppIcon } from "@/components/app-icon";
 import { ArrowLeft02Icon } from '@hugeicons-pro/core-stroke-standard';
 
 interface AppHeaderProps {
@@ -34,7 +34,7 @@ export function AppHeader({ title, subtitle, showBack, backHref, backIcon, backT
     <View className={cn('flex-row items-center justify-between gap-2 mt-4 mb-5', className)}>
       {(showBack || backHref) && (
         <Pressable onPress={handleBack} className="flex-row items-center gap-2 flex-1">
-          {backIcon || <HugeiconsIcon icon={ArrowLeft02Icon} color="#222222" size={24} />}
+          {backIcon || <AppIcon icon={ArrowLeft02Icon} color="#222222" size={24} />}
           {(backTitle || (subtitle && !title)) && (
             <View className="flex-1">
               {subtitle && !title && <AppText numberOfLines={1} className={cn('text-sm text-darkgray', subtitleClassName)}>{subtitle}</AppText>}
