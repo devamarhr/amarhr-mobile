@@ -21,7 +21,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { cn, Label, useToast } from 'heroui-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
-import { Image, View } from 'react-native';
+import { ActivityIndicator, Image, View } from 'react-native';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,7 +43,21 @@ export default function OnboardingScreen() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(authState.profileImage ?? null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const { nationalityOptions, relationshipOptions, addressOptions, bankOptions } = useSelectOptions();
+
+  const showError = (message: string) => {
+    toast.show({
+      component: (props) => (
+        <AppToast
+          {...props}
+          variant="danger"
+          description={message}
+          icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
+        />
+      ),
+    });
+  };
 
   // Function that returns array of page components
   const getPages = () => {
@@ -550,15 +564,23 @@ export default function OnboardingScreen() {
         });
 
         if (!result.canceled && result.assets[0]) {
-          setProfileImage(result.assets[0].uri);
           const uri = result.assets[0].uri;
+          setProfileImage(uri);
+          setIsUploadingImage(true);
           try {
             const res = await uploadFile<{ path: string; url: string }>('/file-upload', uri);
-            if (res.status === 200) {
+            if (res.status === 200 && res.data.path) {
               setValue('profileImage', res.data.path, { shouldValidate: true });
+            } else {
+              setProfileImage(null);
+              showError('Зураг хуулахад алдаа гарлаа. Дахин оролдоно уу.');
             }
           } catch (error) {
             console.error('Image upload error:', error);
+            setProfileImage(null);
+            showError('Зураг хуулахад алдаа гарлаа. Дахин оролдоно уу.');
+          } finally {
+            setIsUploadingImage(false);
           }
         }
       };
@@ -582,13 +604,21 @@ export default function OnboardingScreen() {
         if (!result.canceled && result.assets[0]) {
           const uri = result.assets[0].uri;
           setProfileImage(uri);
+          setIsUploadingImage(true);
           try {
-            const res = await uploadFile<{ name: string; path: string }>('/file-upload', uri);
-            if (res.status === 200) {
-              setValue('profileImage', res.data.name, { shouldValidate: true });
+            const res = await uploadFile<{ path: string }>('/file-upload', uri);
+            if (res.status === 200 && res.data.path) {
+              setValue('profileImage', res.data.path, { shouldValidate: true });
+            } else {
+              setProfileImage(null);
+              showError('Зураг хуулахад алдаа гарлаа. Дахин оролдоно уу.');
             }
           } catch (error) {
             console.error('Image upload error:', error);
+            setProfileImage(null);
+            showError('Зураг хуулахад алдаа гарлаа. Дахин оролдоно уу.');
+          } finally {
+            setIsUploadingImage(false);
           }
         }
       };
@@ -611,6 +641,11 @@ export default function OnboardingScreen() {
                     resizeMode="cover"
                   />
                 ) : null}
+                {isUploadingImage ? (
+                  <View className="absolute inset-0 items-center justify-center bg-black/30">
+                    <ActivityIndicator color="#ffffff" />
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
@@ -625,12 +660,14 @@ export default function OnboardingScreen() {
               className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
               labelClassName="text-black text-base"
               onPress={handleUploadFromPhone}
+              isDisabled={isUploadingImage}
             />
             <AppButton
               label="Шинээр зураг авах"
               className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
               labelClassName="text-black text-base"
               onPress={handleTakePhoto}
+              isDisabled={isUploadingImage}
             />
           </View>
         </View>
@@ -715,17 +752,7 @@ export default function OnboardingScreen() {
       if(res.status === 200){
         setProfileData(res.data)
       }else{
-        toast.show({
-          component: (props) => (
-            <AppToast
-              {...props}
-              variant="danger"
-              // title="Алдаа"
-              description={res.message}
-              icon={<AppIcon icon={Alert01Icon} color="#BC1818" />}
-            />
-          ),
-        });
+        showError(res.message);
       }
     } catch (error) {
       console.error('Onboarding error:', error);
@@ -818,6 +845,7 @@ export default function OnboardingScreen() {
             className="flex-1 rounded border-darkgray/60"
             onPress={currentPage === totalPages - 1 ? handleSubmit(handleComplete) : handleNext}
             isLoading={isLoading}
+            isDisabled={isUploadingImage}
           />
         </View>
       </View>

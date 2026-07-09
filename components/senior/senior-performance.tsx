@@ -1,4 +1,4 @@
-import { AppDialog } from "@/components/app-dialog";
+import { AppButton } from "@/components/app-button";
 import { AppIcon } from "@/components/app-icon";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppText } from "@/components/app-text";
@@ -13,6 +13,7 @@ import {
 } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   MinusSignIcon,
   PlusSignIcon,
@@ -23,9 +24,10 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
-import { Avatar, Separator } from "heroui-native";
+import { Avatar, BottomSheet, Separator, useBottomSheetAwareHandlers } from "heroui-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, FlatList, Keyboard, Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface SalaryPerfMonth {
   year: number;
@@ -60,6 +62,27 @@ interface SalaryPerfResponse {
 
 const PERF_STEP = 5;
 
+function NoteField({
+  value,
+  onChangeText,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+}) {
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  return (
+    <AppTextField
+      isTextArea
+      className="h-25"
+      placeholder="Тэмдэглэл бичих"
+      value={value}
+      onChangeText={onChangeText}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    />
+  );
+}
+
 export function SeniorPerformance({
   onScroll,
   onDeadlineChange,
@@ -68,6 +91,7 @@ export function SeniorPerformance({
   onDeadlineChange?: (info: DeadlineInfo | null) => void;
 }) {
   const contentPad = useSeniorContentPad();
+  const insets = useSafeAreaInsets();
   const [months, setMonths] = useState<SalaryPerfMonth[]>([]);
   const [items, setItems] = useState<SalaryPerfItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<SelectOption | null>(null);
@@ -262,6 +286,7 @@ export function SeniorPerformance({
     })
       .then((res) => {
         if (res.status >= 200 && res.status < 300) {
+          Keyboard.dismiss();
           setNoteFor(null);
           fetchData(selectedSummaryRef.current, false, true);
         }
@@ -432,51 +457,68 @@ export function SeniorPerformance({
         />
       )}
 
-      <AppDialog isOpen={noteFor !== null} onOpenChange={(open) => !open && setNoteFor(null)}>
-        <View className="mb-4 gap-1.5">
-          <AppDialog.Title>Тэмдэглэл</AppDialog.Title>
-        </View>
-        {noteFor?.notes?.length ? (
-          <ScrollView
-            className="max-h-48 mb-4"
-            showsVerticalScrollIndicator={false}
+      <BottomSheet
+        isOpen={noteFor !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            Keyboard.dismiss();
+            setNoteFor(null);
+          }
+        }}
+      >
+        <BottomSheet.Portal>
+          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Content
+            enableOverDrag={false}
+            handleComponent={null}
+            backgroundClassName="rounded-t-[10px]"
           >
-            <View className="gap-2">
-              {noteFor.notes.map((note, i) => (
-                <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
-                  <AppText className="text-sm">{note.content}</AppText>
-                  <View className="flex-row items-center justify-between mt-1 gap-3">
-                    {note.creator_name ? (
-                      <AppText className="text-xs text-darkgray" numberOfLines={1}>
-                        {note.creator_name}
-                      </AppText>
-                    ) : (
-                      <View />
-                    )}
-                    {note.created_at ? (
-                      <AppText className="text-xs text-darkgray">
-                        {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
-                      </AppText>
-                    ) : null}
+            <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
+              Тэмдэглэл
+            </BottomSheet.Title>
+            <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
+              {noteFor?.notes?.length ? (
+                <BottomSheetScrollView
+                  className="max-h-48"
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View className="gap-2">
+                    {noteFor.notes.map((note, i) => (
+                      <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
+                        <AppText className="text-sm">{note.content}</AppText>
+                        <View className="flex-row items-center justify-between mt-1 gap-3">
+                          {note.creator_name ? (
+                            <AppText className="text-xs text-darkgray" numberOfLines={1}>
+                              {note.creator_name}
+                            </AppText>
+                          ) : (
+                            <View />
+                          )}
+                          {note.created_at ? (
+                            <AppText className="text-xs text-darkgray">
+                              {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
                   </View>
-                </View>
-              ))}
+                </BottomSheetScrollView>
+              ) : null}
+              <NoteField value={noteDraft} onChangeText={setNoteDraft} />
+              <AppButton
+                label="Хадгалах"
+                onPress={saveNote}
+                isLoading={savingNote}
+                isDisabled={noteDraft.trim() === ""}
+                spinnerColor="#ffffff"
+                className="mt-[10px] bg-blue border-0 rounded-full"
+                labelClassName="text-white text-base font-semibold"
+              />
             </View>
-          </ScrollView>
-        ) : null}
-        <AppTextField
-          isTextArea
-          placeholder="Тэмдэглэл бичих"
-          value={noteDraft}
-          onChangeText={setNoteDraft}
-        />
-        <AppDialog.Button
-          label="Хадгалах"
-          className="mt-4"
-          isDisabled={noteDraft.trim() === "" || savingNote}
-          onPress={saveNote}
-        />
-      </AppDialog>
+          </BottomSheet.Content>
+        </BottomSheet.Portal>
+      </BottomSheet>
     </>
   );
 }

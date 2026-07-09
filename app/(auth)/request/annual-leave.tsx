@@ -28,7 +28,7 @@ import {
   useToast,
 } from 'heroui-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -329,6 +329,10 @@ function ScheduledSheet({
       showError('Эхлэх өдөр, хоногоо сонгоно уу');
       return;
     }
+    if (!description.trim()) {
+      showError('Шалтгаанаа бичнэ үү');
+      return;
+    }
     setIsSaving(true);
     try {
       const res = await api({
@@ -470,6 +474,10 @@ function UnusedSheet({
   const handleSave = async () => {
     if (!month || !days || !salaryPeriod) {
       showError('Сар, хоног, цалингийн хуваарь сонгоно уу');
+      return;
+    }
+    if (!description.trim()) {
+      showError('Шалтгаанаа бичнэ үү');
       return;
     }
     setIsSaving(true);
@@ -671,6 +679,7 @@ export default function AnnualLeaveRequestScreen() {
   };
 
   const handleSaved = () => {
+    Keyboard.dismiss();
     setScheduledOpen(false);
     setUnusedOpen(false);
     fetchData();
@@ -784,7 +793,10 @@ export default function AnnualLeaveRequestScreen() {
           />
           <ScheduledSheet
             isOpen={scheduledOpen}
-            onOpenChange={setScheduledOpen}
+            onOpenChange={(open) => {
+              if (!open) Keyboard.dismiss();
+              setScheduledOpen(open);
+            }}
             data={data}
             onSaved={handleSaved}
             showError={showError}
@@ -793,7 +805,10 @@ export default function AnnualLeaveRequestScreen() {
           />
           <UnusedSheet
             isOpen={unusedOpen}
-            onOpenChange={setUnusedOpen}
+            onOpenChange={(open) => {
+              if (!open) Keyboard.dismiss();
+              setUnusedOpen(open);
+            }}
             data={data}
             onSaved={handleSaved}
             showError={showError}
