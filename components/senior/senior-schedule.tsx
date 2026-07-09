@@ -419,6 +419,10 @@ export function SeniorSchedule({
   const [selectedRoster, setSelectedRoster] = useState<number | null>(null);
   const [selected, setSelected] = useState<number>(isCurrentMonth ? today.date() : 1);
   const [loading, setLoading] = useState(true);
+  // Whole-page gate: stays true until the first load of all three initial calls
+  // (schedule detail + month summary + attendance) finishes, so the page renders
+  // in one shot instead of each section popping in independently.
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -529,9 +533,15 @@ export function SeniorSchedule({
   // change or the screen regains focus (e.g. returning after a shift swap).
   useFocusEffect(
     useCallback(() => {
-      void fetchDetail();
-      void fetchSummary();
-      void fetchAttendance();
+      let active = true;
+      // Reveal the page only after all three finish; day/roster changes below
+      // keep the page visible and rely on the lighter `loading` (shift section).
+      Promise.all([fetchDetail(), fetchSummary(), fetchAttendance()]).finally(() => {
+        if (active) setInitialLoading(false);
+      });
+      return () => {
+        active = false;
+      };
     }, [fetchDetail, fetchSummary, fetchAttendance])
   );
 
@@ -712,6 +722,14 @@ export function SeniorSchedule({
   const shifts = detail?.shifts ?? [];
   const nonWorking = detail?.non_working ?? [];
   const isEmpty = !loading && shifts.length === 0 && nonWorking.length === 0;
+
+  if (initialLoading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <>
