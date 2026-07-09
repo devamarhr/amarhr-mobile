@@ -2,6 +2,7 @@ import { AppAttachmentList } from "@/components/app-attachment-list";
 import { AppButton } from "@/components/app-button";
 import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
 import { AppToast } from "@/components/app-toast";
@@ -13,7 +14,6 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppIcon } from "@/components/app-icon";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { Avatar, Spinner, useToast } from "heroui-native";

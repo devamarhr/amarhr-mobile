@@ -2,6 +2,7 @@ import { AppAttachmentList } from '@/components/app-attachment-list';
 import { AppButton } from '@/components/app-button';
 import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
 import { type InfoRow } from '@/components/info-rows';
@@ -12,7 +13,6 @@ import {
   ArrowLeft02Icon,
   CheckmarkCircle02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useToast } from 'heroui-native';
@@ -660,7 +660,7 @@ export default function RequestDetailScreen() {
                 className="px-4 bg-background"
                 style={{ paddingBottom: insets.bottom + 10, paddingTop: 12 }}
               >
-                <AppText className={`text-base font-semibold text-center ${status.color}`}>
+                <AppText className={`text-base font-medium text-center ${status.color}`}>
                   {status.label}
                 </AppText>
                 {isPending && (

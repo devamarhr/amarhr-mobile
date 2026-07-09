@@ -518,7 +518,7 @@ export default function RequestScreen() {
                 >
                   <AppText className="text-base font-medium">{employeeRequest.setting.name}</AppText>
                   <View className="flex-row items-center justify-between mt-1">
-                    <AppText className={`text-base font-semibold ${status.color}`}>
+                    <AppText className={`text-base font-normal ${status.color}`}>
                       {status.label}
                     </AppText>
                     {employeeRequest.created_at && (
