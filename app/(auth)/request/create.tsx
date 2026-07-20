@@ -308,7 +308,7 @@ export default function RequestCreateScreen() {
               format="MM/DD"
               icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
               isDisabled
-              triggerClassName="bg-[#f2f2f2] border-transparent disabled:opacity-100"
+              triggerClassName="bg-lightgray border-transparent disabled:opacity-100"
             />
           </View>
         </View>

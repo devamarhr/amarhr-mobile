@@ -18,7 +18,7 @@ export function AppDialog({ isOpen, onOpenChange, children, className }: AppDial
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal className="px-4">
-        <Dialog.Overlay className="bg-[#6C719F]/40" />
+        <Dialog.Overlay className="bg-scrim/40" />
         <Dialog.Content className={cn('rounded-[10px]', className)}>
           {children}
         </Dialog.Content>

@@ -388,7 +388,7 @@ function TimesheetListRow({
         );
       })}
       {day.leave && (
-        <View className={cn('px-[15px] py-1', day.leave_type === 'remote' ? 'bg-[#e4f4ff]' : 'bg-yellow/10')}>
+        <View className={cn('px-[15px] py-1', day.leave_type === 'remote' ? 'bg-skyblue' : 'bg-yellow/10')}>
           <AppText className="text-darkgray/70 text-xs">{day.leave}</AppText>
         </View>
       )}

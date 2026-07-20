@@ -291,7 +291,7 @@ export function AppSelect({
         </Select.Trigger>
 
         <Select.Portal>
-          <Select.Overlay className="bg-[#6C719F]/40" />
+          <Select.Overlay className="bg-scrim/40" />
           <Select.Content
             presentation="bottom-sheet"
             snapPoints={resolvedSnapPoints}

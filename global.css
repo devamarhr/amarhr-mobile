@@ -37,18 +37,24 @@
   --color-black: var(--color-black);
   --color-darkgray: var(--color-darkgray);
   --color-gray: var(--color-gray);
+  --color-lightgray: var(--color-lightgray);
   --color-red: var(--color-red);
   --color-darkgreen: var(--color-darkgreen);
   --color-green: var(--color-green);
+  --color-emerald: var(--color-emerald);
   --color-darkerblue: var(--color-darkerblue);
   --color-darkblue: var(--color-darkblue);
+  --color-scrim: var(--color-scrim);
+  --color-bluegray: var(--color-bluegray);
   --color-blue: var(--color-blue);
   --color-lightblue: var(--color-lightblue);
+  --color-skyblue: var(--color-skyblue);
   --color-yellow: var(--color-yellow);
   --color-amber: var(--color-amber);
   --color-orange: var(--color-orange);
   --color-darkercyan: var(--color-darkercyan);
   --color-darkcyan: var(--color-darkcyan);
+  --color-brightcyan: var(--color-brightcyan);
   --color-cyan: var(--color-cyan);
   --color-lightcyan: var(--color-lightcyan);
 }
@@ -110,18 +116,24 @@
       --color-black: oklch(0.252 0 0); /* #222222 */
       --color-darkgray: oklch(0.5243 0 0); /* #6A6A6A */
       --color-gray: oklch(0.5658 0 0); /* #767676 */
+      --color-lightgray: oklch(0.9613 0 0); /* #F2F2F2 */
       --color-red: oklch(0.5086 0.1956 27.89); /* #BC1818 */
       --color-darkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
       --color-green: oklch(0.6416 0.2128 142.12); /* #18AA0B */
+      --color-emerald: oklch(0.5663 0.1492 151.98); /* #008E47 */
       --color-darkerblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
       --color-darkblue: oklch(0.5212 0.0454 272.32); /* #606884 */
+      --color-scrim: oklch(0.5634 0.0733 279.15); /* #6C719F — dialog/sheet overlay */
+      --color-bluegray: oklch(0.7442 0.0319 267.1); /* #A3ACC1 */
       --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
       --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
+      --color-skyblue: oklch(0.9581 0.0226 238.77); /* #E4F4FF */
       --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
       --color-amber: oklch(0.7465 0.1613 70.4); /* #DF9800 */
       --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
       --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
       --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
+      --color-brightcyan: oklch(0.7194 0.1262 213.68); /* #00B8D4 */
       --color-cyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
       --color-lightcyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
     }
@@ -181,18 +193,24 @@
       --color-black: oklch(0.252 0 0); /* #222222 */
       --color-darkgray: oklch(0.5243 0 0); /* #6A6A6A */
       --color-gray: oklch(0.5658 0 0); /* #767676 */
+      --color-lightgray: oklch(0.9613 0 0); /* #F2F2F2 */
       --color-red: oklch(0.5086 0.1956 27.89); /* #BC1818 */
       --color-darkgreen: oklch(0.5252 0.172 142.05); /* #14810A */
       --color-green: oklch(0.6416 0.2128 142.12); /* #18AA0B */
+      --color-emerald: oklch(0.5663 0.1492 151.98); /* #008E47 */
       --color-darkerblue: oklch(0.1996 0.1001 271.3); /* #090B42 */
       --color-darkblue: oklch(0.5212 0.0454 272.32); /* #606884 */
+      --color-scrim: oklch(0.5634 0.0733 279.15); /* #6C719F — dialog/sheet overlay */
+      --color-bluegray: oklch(0.7442 0.0319 267.1); /* #A3ACC1 */
       --color-blue: oklch(0.5354 0.228169 260.7702); /* #005FEE */
       --color-lightblue: oklch(0.9495 0.0212 259.19); /* #E6EFFD */
+      --color-skyblue: oklch(0.9581 0.0226 238.77); /* #E4F4FF */
       --color-yellow: oklch(0.8034 0.1648 84.3); /* #F0B400 */
       --color-amber: oklch(0.7465 0.1613 70.4); /* #DF9800 */
       --color-orange: oklch(0.6509 0.199903 41.0879); /* #EE5700 */
       --color-darkercyan: oklch(0.643 0.1108 208.9); /* #009FB1 */
       --color-darkcyan: oklch(0.7105 0.1222 208.65); /* #01B6CA */
+      --color-brightcyan: oklch(0.7194 0.1262 213.68); /* #00B8D4 */
       --color-cyan: oklch(0.785 0.13526 208.841); /* #00D0E7 */
       --color-lightcyan: oklch(0.9581 0.0326 206.07); /* #D9F8FC */
     }

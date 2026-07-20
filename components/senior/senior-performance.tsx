@@ -478,7 +478,7 @@ export function SeniorPerformance({
         }}
       >
         <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Overlay className="bg-scrim/40" />
           <BottomSheet.Content
             enableOverDrag={false}
             handleComponent={null}

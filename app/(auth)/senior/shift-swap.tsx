@@ -1,5 +1,6 @@
 import { AppButton } from "@/components/app-button";
 import { AppHeader } from "@/components/app-header";
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
@@ -13,7 +14,6 @@ import {
   Tick02Icon,
   UserSwitchIcon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppIcon } from "@/components/app-icon";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Avatar, BottomSheet, cn, Separator, useToast } from "heroui-native";
@@ -311,7 +311,7 @@ export default function SeniorShiftSwapScreen() {
         >
           <View className="px-4 gap-[30px]">
             {/* Source card (fixed) */}
-            <View className="flex-row items-center gap-2 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
+            <View className="flex-row items-center gap-2 rounded-[10px] bg-lightgray px-3 h-[72px]">
               <Avatar alt={shortName(sourcePerson)} className="w-[52px] h-[52px]">
                 <Avatar.Image source={{ uri: params.profileImageUrl ?? "" }} />
                 <Avatar.Fallback classNames={{ text: "text-black text-xs" }}>
@@ -345,7 +345,7 @@ export default function SeniorShiftSwapScreen() {
               <>
                 {/* Target card — the swap icon floats centered in the 30px gap
                     above it (per design), so it adds no vertical space. */}
-                <View className="relative flex-row items-center gap-2 rounded-[10px] bg-[#F2F2F2] px-3 h-[72px]">
+                <View className="relative flex-row items-center gap-2 rounded-[10px] bg-lightgray px-3 h-[72px]">
                   <View className="absolute -top-[26px] left-0 right-0 items-center">
                     <AppIcon icon={UserSwitchIcon} color="#005FEE" size={22} />
                   </View>
@@ -418,7 +418,7 @@ export default function SeniorShiftSwapScreen() {
       {/* Солигдох ажилтан picker */}
       <BottomSheet isOpen={pickerOpen} onOpenChange={setPickerOpen}>
         <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Overlay className="bg-scrim/40" />
           <BottomSheet.Content
             snapPoints={["92%"]}
             topInset={insets.top}
@@ -487,7 +487,7 @@ export default function SeniorShiftSwapScreen() {
       {/* Calendar sheet (pick date → shift) */}
       <BottomSheet isOpen={calOpen} onOpenChange={setCalOpen}>
         <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Overlay className="bg-scrim/40" />
           <BottomSheet.Content
             snapPoints={["70%"]}
             topInset={insets.top}

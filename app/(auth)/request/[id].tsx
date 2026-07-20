@@ -578,7 +578,7 @@ export default function RequestDetailScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f2f2f2]">
+    <View className="flex-1 bg-lightgray">
       <StyledSafeAreaView className="flex-1" edges={['top']}>
         <AppHeader
           backTitle="Буцах"

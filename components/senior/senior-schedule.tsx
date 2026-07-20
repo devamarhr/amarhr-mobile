@@ -220,7 +220,7 @@ function StatCard({
     <Pressable
       onPress={onPress}
       disabled={total <= 0}
-      className="flex-1 h-[38px] rounded-[5px] bg-[#F2F2F2] flex-row items-center justify-between px-3"
+      className="flex-1 h-[38px] rounded-[5px] bg-lightgray flex-row items-center justify-between px-3"
     >
       <AppText className="text-sm font-medium text-darkgray">{metric.label}</AppText>
       <AppText className="text-sm font-medium text-black">
@@ -376,13 +376,13 @@ function ShiftRow({
         <View className="flex-row gap-3 pb-3">
           <Pressable
             onPress={onSwap}
-            className="flex-1 h-11 rounded-full bg-[#F2F2F2] items-center justify-center"
+            className="flex-1 h-11 rounded-full bg-lightgray items-center justify-center"
           >
             <AppText className="text-sm font-semibold text-blue">Хуваарь солих</AppText>
           </Pressable>
           <Pressable
             onPress={onRelease}
-            className="flex-1 h-11 rounded-full bg-[#F2F2F2] items-center justify-center"
+            className="flex-1 h-11 rounded-full bg-lightgray items-center justify-center"
           >
             <AppText className="text-sm font-semibold text-red">Чөлөөлөх</AppText>
           </Pressable>
@@ -983,7 +983,7 @@ export function SeniorSchedule({
         }}
       >
         <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Overlay className="bg-scrim/40" />
           <BottomSheet.Content
             snapPoints={["92%"]}
             topInset={insets.top}
@@ -1057,7 +1057,7 @@ export function SeniorSchedule({
         }}
       >
         <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+          <BottomSheet.Overlay className="bg-scrim/40" />
           <BottomSheet.Content
             snapPoints={["55%", "90%"]}
             topInset={insets.top}

@@ -147,7 +147,7 @@ function DayCell({
           <View className="w-6 h-1.5 rounded-full bg-yellow/30" />
         )}
         {day.isCurrentMonth && data?.isRemote && (
-          <View className="w-6 h-1.5 rounded-full bg-[#00B8D4]/30" />
+          <View className="w-6 h-1.5 rounded-full bg-brightcyan/30" />
         )}
         {day.isCurrentMonth && data?.isAnnualLeave && (
           <HugeiconsIcon icon={Sun03Icon} size={12} color="#F0B400" />

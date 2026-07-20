@@ -48,7 +48,7 @@ export function SeniorMenuBar({ active, onChange, hiddenKeys, badges }: Props) {
           >
             <AppIcon icon={item.icon} size={24} color={isActive ? "#FFFFFF" : "#A3ACC1"} />
             <AppText
-              className={`text-[10px] font-medium mt-1 ${isActive ? "text-white" : "text-[#A3ACC1]"}`}
+              className={`text-[10px] font-medium mt-1 ${isActive ? "text-white" : "text-bluegray"}`}
             >
               {item.label}
             </AppText>

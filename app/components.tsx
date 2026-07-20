@@ -490,7 +490,7 @@ const SwitchCustomStylesContent = () => {
               <StyledIonicons
                 name="sunny"
                 size={16}
-                className="text-[#854d0e]"
+                className="text-amber"
               />
             </Animated.View>
           )
@@ -501,7 +501,7 @@ const SwitchCustomStylesContent = () => {
               <StyledIonicons
                 name="moon"
                 size={16}
-                className="text-[#dbeafe]"
+                className="text-lightblue"
               />
             </Animated.View>
           )

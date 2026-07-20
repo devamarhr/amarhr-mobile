@@ -122,7 +122,7 @@ export default function SeniorScreen() {
             activeMenu === "announcement" ? (
               <AppButton
                 label="Илгээх"
-                className="h-10 px-5 rounded-full border-0 bg-[#F2F2F2]"
+                className="h-10 px-5 rounded-full border-0 bg-lightgray"
                 labelClassName="text-blue font-semibold"
                 onPress={() => router.navigate("/senior/announcement/create")}
               />

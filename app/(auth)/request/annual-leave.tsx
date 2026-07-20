@@ -221,7 +221,7 @@ function TypeSheet({ isOpen, onOpenChange, data, onSelect }: TypeSheetProps) {
   return (
     <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
       <BottomSheet.Portal>
-        <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+        <BottomSheet.Overlay className="bg-scrim/40" />
         <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
           <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Ээлжийн амралт нэмэх
@@ -364,7 +364,7 @@ function ScheduledSheet({
       {/* disableFullWindowOverlay: native date-picker modal болон attachment dialog
           нь үндсэн window-д гардаг тул sheet-ийг мөн үндсэн window-д render хийнэ */}
       <BottomSheet.Portal disableFullWindowOverlay>
-        <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+        <BottomSheet.Overlay className="bg-scrim/40" />
         <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
           <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Хуваарийн дагуу
@@ -396,7 +396,7 @@ function ScheduledSheet({
               </View>
               <View className="flex-1 gap-2">
                 <AppText className="text-sm text-darkgray">Дуусах өдөр</AppText>
-                <View className="flex-row items-center gap-1.5 bg-[#F2F2F2] rounded-lg h-11 px-2.5">
+                <View className="flex-row items-center gap-1.5 bg-lightgray rounded-lg h-11 px-2.5">
                   <AppIcon icon={Calendar03Icon} color="#6A6A6A" size={22} />
                   <AppText className="text-sm text-darkgray flex-1" numberOfLines={1}>
                     {endDate ? dayjs(endDate, 'YYYY-MM-DD').format('MM/DD') : '00/00'}
@@ -512,7 +512,7 @@ function UnusedSheet({
   return (
     <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
       <BottomSheet.Portal disableFullWindowOverlay>
-        <BottomSheet.Overlay className="bg-[#6C719F]/40" />
+        <BottomSheet.Overlay className="bg-scrim/40" />
         <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
           <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
             Биеэр эдлээгүй хоног
@@ -778,7 +778,7 @@ export default function AnnualLeaveRequestScreen() {
             onPress={() => setTypeSheetOpen(true)}
             isDisabled={isLoading || !hasCycle || reachedSplitLimit}
             className="bg-white border-darkblue/15 rounded-full"
-            labelClassName="text-[#008E47] text-base font-semibold"
+            labelClassName="text-emerald text-base font-semibold"
           />
         </View>
       </StyledSafeAreaView>
