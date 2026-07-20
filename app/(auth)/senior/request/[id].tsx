@@ -870,7 +870,7 @@ export default function SeniorRequestDetailScreen() {
       </View>
     </AppDialog>
 
-    <AppDialog isOpen={expandedText !== null} onOpenChange={(open) => !open && setExpandedText(null)}>
+    <AppDialog isOpen={expandedText !== null} onOpenChange={(open) => !open && setExpandedText(null)} className="pb-10">
       <View className="mb-4 gap-1.5">
         <AppDialog.Title>{expandedText?.title ?? ""}</AppDialog.Title>
       </View>

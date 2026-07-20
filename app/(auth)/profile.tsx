@@ -266,7 +266,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <AppDialog isOpen={infoDialog !== null} onOpenChange={(open) => !open && setInfoDialog(null)}>
+      <AppDialog isOpen={infoDialog !== null} onOpenChange={(open) => !open && setInfoDialog(null)} className="pb-10">
         <View className="gap-1.5">
           <AppDialog.Title>{infoDialog?.title}</AppDialog.Title>
           <AppDialog.Description>{infoDialog?.description}</AppDialog.Description>

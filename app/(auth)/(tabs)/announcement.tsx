@@ -165,7 +165,7 @@ export default function AnnouncementScreen() {
           </AppText>
           <AppText className={dateStyle}>{dateStr}</AppText>
         </View>
-        <AppText className="text-base mt-1">{item.content}</AppText>
+        <AppText className="text-base mt-2.5">{item.content}</AppText>
         <AppAttachmentList attachments={item.attachments} className="mt-5" />
       </View>
     );

@@ -598,7 +598,7 @@ export default function HomeScreen() {
         </BottomSheet.Portal>
       </BottomSheet>
 
-      <AppDialog isOpen={eventDialog !== null} onOpenChange={(open) => !open && setEventDialog(null)}>
+      <AppDialog isOpen={eventDialog !== null} onOpenChange={(open) => !open && setEventDialog(null)} className="pb-10">
         <View className="gap-1.5">
           <AppDialog.Title>
             {eventDialog ? formatEventDate(eventDialog.start_date, eventDialog.end_date) : ''}

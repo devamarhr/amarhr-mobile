@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/app-header";
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
 import { api } from "@/config/api";
@@ -7,7 +8,6 @@ import {
   Search01Icon,
   SmartPhone01Icon,
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppIcon } from "@/components/app-icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { Avatar, ScrollShadow } from "heroui-native";
 import React, { useCallback, useEffect, useState } from "react";
@@ -243,7 +243,7 @@ export default function ContactScreen() {
             <ActivityIndicator />
           </View>
         ) : (
-          <ScrollShadow className="flex-1 mt-2" LinearGradientComponent={LinearGradient}>
+          <ScrollShadow size={20} className="flex-1 mt-2" LinearGradientComponent={LinearGradient}>
             <ScrollView
               className="flex-1"
               showsVerticalScrollIndicator={false}
