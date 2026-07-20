@@ -133,9 +133,9 @@ function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined
   if (setting.type === 'benefit' && setting.adjustment_setting?.detail?.length) {
     return setting.adjustment_setting.detail.map((item) => {
       if (item.amount_type === 'fixed') {
-        return { label: 'Нэг удаагийн', value: `₮${item.amount.toLocaleString()}` };
+        return { label: 'Нэг удаагийн', value: `₮ ${item.amount.toLocaleString()}` };
       }
-      return { label: 'Үндсэн цалингийн', value: `%${item.amount}` };
+      return { label: 'Үндсэн цалингийн', value: `% ${item.amount}` };
     });
   }
 
@@ -437,7 +437,7 @@ export default function RequestScreen() {
         {activeTab === 0 ? (
           <ScrollView
             className="flex-1"
-            contentContainerClassName="pb-5"
+            contentContainerClassName="pb-15"
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -471,7 +471,7 @@ export default function RequestScreen() {
         ) : (
           <FlatList
             className="flex-1 px-4"
-            contentContainerClassName="pb-5"
+            contentContainerClassName="pb-15"
             data={employeeRequests}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             showsVerticalScrollIndicator={false}
@@ -522,7 +522,7 @@ export default function RequestScreen() {
                       {status.label}
                     </AppText>
                     {employeeRequest.created_at && (
-                      <AppText className="text-base text-darkgray">
+                      <AppText className="text-base text-darkgray/50">
                         {dayjs(employeeRequest.created_at).format('MM/DD  HH:mm')}
                       </AppText>
                     )}

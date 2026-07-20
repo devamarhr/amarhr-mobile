@@ -748,7 +748,7 @@ export function SeniorSchedule({
       >
         {/* Attendance summary — 2×2 stat cards; tap one to open the per-employee list. */}
         {attendance && (
-          <View className="gap-3 mb-4">
+          <View className="gap-3 mb-6">
             <View className="flex-row gap-3">
               {ATTENDANCE_METRICS.slice(0, 2).map((metric) => (
                 <StatCard
@@ -839,6 +839,8 @@ export function SeniorSchedule({
         {rosterOptions.length > 0 && (
           <View className="mt-4">
             <AppSelect
+              label="Хуваарь сонгох"
+              labelClassName="text-base"
               title="Хуваарь сонгох"
               options={rosterOptions}
               value={selectedRosterOption}

@@ -159,13 +159,13 @@ export default function AnnouncementScreen() {
     return (
       <View className="py-5">
         <AppText className={`text-base font-medium ${item.type === 'warning' ? 'text-red' : ''}`}>{item.title}</AppText>
-        <View className="flex-row items-center justify-between mt-1">
+        <AppText className="text-base mt-2.5">{item.content}</AppText>
+        <View className="flex-row items-center justify-between mt-3 gap-3">
+          <AppText className={dateStyle}>{dateStr}</AppText>
           <AppText className={dateStyle}>
             {getTargetLabel(item)}
           </AppText>
-          <AppText className={dateStyle}>{dateStr}</AppText>
         </View>
-        <AppText className="text-base mt-2.5">{item.content}</AppText>
         <AppAttachmentList attachments={item.attachments} className="mt-5" />
       </View>
     );

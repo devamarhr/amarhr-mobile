@@ -65,9 +65,11 @@ const PERF_STEP = 5;
 function NoteField({
   value,
   onChangeText,
+  isInvalid,
 }: {
   value: string;
   onChangeText: (text: string) => void;
+  isInvalid?: boolean;
 }) {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   return (
@@ -79,6 +81,8 @@ function NoteField({
       onChangeText={onChangeText}
       onFocus={onFocus}
       onBlur={onBlur}
+      isInvalid={isInvalid}
+      errorMessage="Тэмдэглэл бичнэ үү"
     />
   );
 }
@@ -101,6 +105,7 @@ export function SeniorPerformance({
   const [search, setSearch] = useState("");
   const [noteFor, setNoteFor] = useState<SalaryPerfItem | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [noteInvalid, setNoteInvalid] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
   const isFetching = useRef(false);
   const loadedMonth = useRef<string | null>(null);
@@ -272,12 +277,17 @@ export function SeniorPerformance({
   const openNote = useCallback((item: SalaryPerfItem) => {
     setNoteFor(item);
     setNoteDraft("");
+    setNoteInvalid(false);
   }, []);
 
   const saveNote = useCallback(() => {
-    if (!noteFor) return;
+    if (!noteFor || savingNote) return;
     const content = noteDraft.trim();
-    if (!content || savingNote) return;
+    if (!content) {
+      setNoteInvalid(true);
+      return;
+    }
+    setNoteInvalid(false);
     setSavingNote(true);
     api({
       path: `/senior/salary-performance/${noteFor.id}/note`,
@@ -463,6 +473,7 @@ export function SeniorPerformance({
           if (!open) {
             Keyboard.dismiss();
             setNoteFor(null);
+            setNoteInvalid(false);
           }
         }}
       >
@@ -505,12 +516,18 @@ export function SeniorPerformance({
                   </View>
                 </BottomSheetScrollView>
               ) : null}
-              <NoteField value={noteDraft} onChangeText={setNoteDraft} />
+              <NoteField
+                value={noteDraft}
+                onChangeText={(text) => {
+                  setNoteDraft(text);
+                  if (noteInvalid && text.trim()) setNoteInvalid(false);
+                }}
+                isInvalid={noteInvalid}
+              />
               <AppButton
                 label="Хадгалах"
                 onPress={saveNote}
                 isLoading={savingNote}
-                isDisabled={noteDraft.trim() === ""}
                 spinnerColor="#ffffff"
                 className="mt-[10px] bg-blue border-0 rounded-full"
                 labelClassName="text-white text-base font-semibold"

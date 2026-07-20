@@ -295,7 +295,6 @@ export default function RequestCreateScreen() {
                   format="MM/DD"
                   icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
-                  errorMessage={errors.startDate?.message}
                 />
               )}
             />
@@ -328,7 +327,6 @@ export default function RequestCreateScreen() {
                   placeholder="Сонгох"
                   renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                   isInvalid={!!errors.days}
-                  errorMessage={errors.days?.message}
                   isDisabled={!startDateSelected || dayOptions.length === 0}
                 />
               )}
@@ -361,7 +359,6 @@ export default function RequestCreateScreen() {
                   format="MM/DD"
                   icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
-                  errorMessage={errors.startDate?.message}
                 />
               )}
             />
@@ -385,7 +382,6 @@ export default function RequestCreateScreen() {
                   minuteInterval={5}
                   icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
-                  errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
                 />
               )}
@@ -405,7 +401,6 @@ export default function RequestCreateScreen() {
                   placeholder="Сонгох"
                   renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
                   isInvalid={!!errors.hours}
-                  errorMessage={errors.hours?.message}
                   isDisabled={!dateSelected || hourOptions.length === 0}
                 />
               )}
@@ -436,7 +431,6 @@ export default function RequestCreateScreen() {
                   format="MM/DD"
                   icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startDate}
-                  errorMessage={errors.startDate?.message}
                 />
               )}
             />
@@ -460,7 +454,6 @@ export default function RequestCreateScreen() {
                   minuteInterval={5}
                   icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                   isInvalid={!!errors.startTime}
-                  errorMessage={errors.startTime?.message}
                   isDisabled={!dateSelected}
                 />
               )}
@@ -483,7 +476,6 @@ export default function RequestCreateScreen() {
                   placeholder="Сонгох"
                   renderValue={(option) => <AppText className="text-base">{option.label} цаг</AppText>}
                   isInvalid={!!errors.hours}
-                  errorMessage={errors.hours?.message}
                   isDisabled={!dateSelected}
                 />
               )}
@@ -509,6 +501,8 @@ export default function RequestCreateScreen() {
             <Controller
               control={control}
               name="shift.arrivalTime"
+              // Талбар идэвхгүй (ирсэн цаг бүртгэгдээгүй) үед заавал биш.
+              rules={{ required: !arrivalDisabled }}
               render={({ field: { onChange, value } }) => (
                 <AppDatePicker
                   label="Ирсэн цаг"
@@ -524,7 +518,6 @@ export default function RequestCreateScreen() {
                   placeholderClassName="text-darkerblue/50"
                   icon={<AppIcon icon={Login03Icon} color="#222" size={22} />}
                   isInvalid={!!arrivalError}
-                  errorMessage={arrivalError?.message}
                   isDisabled={arrivalDisabled}
                 />
               )}
@@ -535,6 +528,7 @@ export default function RequestCreateScreen() {
               control={control}
               name="shift.leaveTime"
               rules={{
+                required: true,
                 validate: (v) => {
                   if (!v || !watchedArrival) return true;
                   const start = dayjs(watchedArrival, 'YYYY-MM-DD HH:mm');
@@ -562,7 +556,6 @@ export default function RequestCreateScreen() {
                   minimumDate={crossesDay ? minLeaveDate : undefined}
                   icon={<AppIcon icon={Logout03Icon} color="#222" size={22} />}
                   isInvalid={!!leaveError}
-                  errorMessage={leaveError?.message}
                 />
               )}
             />
@@ -625,8 +618,10 @@ export default function RequestCreateScreen() {
             <Controller
               control={control}
               name="description"
+              rules={{ required: true }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
+                  isInvalid={!!errors.description}
                   textFieldClassName={formFields ? 'mt-5' : ''}
                   label={
                     params.settingKey === 'feedback'

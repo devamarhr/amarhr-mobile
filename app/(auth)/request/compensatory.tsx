@@ -343,7 +343,6 @@ export default function CompensatoryRequestScreen() {
                         format="MM/DD"
                         icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.start}
-                        errorMessage={errors.start?.message}
                       />
                     )}
                   />
@@ -364,7 +363,6 @@ export default function CompensatoryRequestScreen() {
                         minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
                         icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                         isInvalid={!!errors.end}
-                        errorMessage={errors.end?.message}
                         isDisabled={!watchStart}
                       />
                     )}
@@ -395,7 +393,6 @@ export default function CompensatoryRequestScreen() {
                           format="MM/DD"
                           icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                           isInvalid={!!errors.hourDate}
-                          errorMessage={errors.hourDate?.message}
                         />
                       )}
                     />
@@ -419,7 +416,6 @@ export default function CompensatoryRequestScreen() {
                           minuteInterval={5}
                           icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.start}
-                          errorMessage={errors.start?.message}
                           isDisabled={!watchHourDate}
                         />
                       )}
@@ -441,7 +437,6 @@ export default function CompensatoryRequestScreen() {
                           minuteInterval={5}
                           icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
                           isInvalid={!!errors.end}
-                          errorMessage={errors.end?.message}
                           isDisabled={!watchHourDate}
                         />
                       )}
@@ -471,8 +466,10 @@ export default function CompensatoryRequestScreen() {
             <Controller
               control={control}
               name="description"
+              rules={{ required: true }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <AppTextField
+                  isInvalid={!!errors.description}
                   label="Шалтгаан"
                   value={value}
                   onChangeText={onChange}

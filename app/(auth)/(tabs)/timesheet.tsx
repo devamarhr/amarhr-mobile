@@ -271,7 +271,7 @@ function ShiftRow({
     <View className={cn('flex-row', !isFirst && 'border-t border-darkgray/5')}>
       <View className={cn('w-[103px] px-[15px] py-[13px]', isToday && isFirst && 'bg-lightblue')}>
         <View className={cn('flex-row items-baseline gap-2.5', !isFirst && 'opacity-0')}>
-          <AppText className={cn('text-base font-medium', dayColor)}>{dayStr}</AppText>
+          <AppText numberOfLines={1} className={cn('w-[26px] text-base font-medium', dayColor)}>{dayStr}</AppText>
           <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
         </View>
       </View>
@@ -322,7 +322,7 @@ function TimesheetListRow({
         <View className="flex-row">
           <View className="w-[103px] px-[15px] py-[13px]">
             <View className="flex-row items-baseline gap-2.5">
-              <AppText className={cn('text-base font-medium', dayColor)}>{dayStr}</AppText>
+              <AppText numberOfLines={1} className={cn('w-[26px] text-base font-medium', dayColor)}>{dayStr}</AppText>
               <AppText className={cn('text-xs', dayColor || 'text-darkgray')}>{weekdayStr}</AppText>
             </View>
           </View>
