@@ -107,6 +107,16 @@ export default function RequestCreateScreen() {
     Array.from({ length: maxHours }, (_, i) => ({ value: String(i + 1), label: `${i + 1} цаг` })),
     [maxHours]
   );
+  // Overtime duration: 1:00 … 12:00 in 30-min steps, capped at the API max hours.
+  const overtimeHourOptions = useMemo(() => {
+    const cap = maxHours > 0 ? Math.min(maxHours, 12) : 12;
+    return Array.from({ length: cap * 2 - 1 }, (_, i) => {
+      const hours = 1 + i * 0.5;
+      const whole = Math.floor(hours);
+      const minutes = hours % 1 ? '30' : '00';
+      return { value: String(hours), label: `${whole}:${minutes}` };
+    });
+  }, [maxHours]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
@@ -408,18 +418,6 @@ export default function RequestCreateScreen() {
 
   const renderOvertimeFields = () => {
     const dateSelected = !!watch('startDate');
-    // Overtime duration is picked as HH:mm in 30-min steps; cap at the API max hours (default 24h).
-    const cap = Math.min(maxHours || 24, 24);
-    const baseDay = dayjs().startOf('day');
-    const maxDurationDate = baseDay.add(cap, 'hour').toDate();
-    // Form stores duration as decimal hours (2:30 -> 2.5); convert to/from a Date for the picker.
-    const hoursToDate = (h?: number) => {
-      if (h == null) return undefined;
-      const whole = Math.floor(h);
-      const minutes = Math.round((h - whole) * 60);
-      return baseDay.hour(whole).minute(minutes).toDate();
-    };
-    const dateToHours = (d: Date) => dayjs(d).hour() + dayjs(d).minute() / 60;
     return (
       <View className="gap-6">
         <View className="flex-row gap-3">
@@ -477,17 +475,13 @@ export default function RequestCreateScreen() {
                 validate: (v) => (v != null && v > 0) || 'Цаг сонгоно уу',
               }}
               render={({ field: { onChange, value } }) => (
-                <AppDatePicker
+                <AppSelect
                   label="Ажиллах цаг"
-                  mode="time"
-                  value={hoursToDate(value)}
-                  onValueChange={(date) => onChange(dateToHours(date))}
-                  placeholder="00:00"
-                  format="HH:mm"
-                  minuteInterval={30}
-                  initialDate={baseDay.toDate()}
-                  maximumDate={maxDurationDate}
-                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
+                  options={overtimeHourOptions}
+                  value={value != null ? overtimeHourOptions.find(o => o.value === String(value)) : undefined}
+                  onValueChange={(opt) => onChange(opt ? parseFloat(opt.value) : undefined)}
+                  placeholder="Сонгох"
+                  renderValue={(option) => <AppText className="text-base">{option.label} цаг</AppText>}
                   isInvalid={!!errors.hours}
                   errorMessage={errors.hours?.message}
                   isDisabled={!dateSelected}

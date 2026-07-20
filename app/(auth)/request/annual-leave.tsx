@@ -2,6 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
+import { AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
@@ -18,7 +19,6 @@ import {
   MultiplicationSignIcon,
   SquareLock02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -236,7 +236,7 @@ function TypeSheet({ isOpen, onOpenChange, data, onSelect }: TypeSheetProps) {
             </Pressable>
             <Pressable
               onPress={() => onSelect('unused')}
-              className="flex-row items-center justify-between h-12.5 border-b border-darkgray/15"
+              className="flex-row items-center justify-between h-12.5"
             >
               <AppText className="text-base">Биеэр эдлээгүй хоног</AppText>
               <AppText className="text-sm text-darkgray">{data.remaining_days} хоног</AppText>
@@ -828,8 +828,8 @@ export default function AnnualLeaveRequestScreen() {
           <AppDialog.Title>Хуваарь устгах</AppDialog.Title>
           <AppDialog.Description>
             {confirmSplit?.type === 'unused'
-              ? `Та "${confirmSplit.days} хоног" олговрын хуваарийг устгахдаа итгэлтэй байна уу?`
-              : `Та "${formatRange(confirmSplit?.start_date ?? null, confirmSplit?.end_date ?? null)}" амралтын хуваарийг устгахдаа итгэлтэй байна уу?`}
+              ? `Та биеэр эдлээгүй ${confirmSplit.days} хоногийн олговрыг устгахдаа итгэлтэй байна уу?`
+              : `Та "${formatRange(confirmSplit?.start_date ?? null, confirmSplit?.end_date ?? null)}" төлөвлөсөн ээлжийн амралтаа устгахдаа итгэлтэй байна уу?`}
           </AppDialog.Description>
         </View>
         <View className="flex-row gap-3">

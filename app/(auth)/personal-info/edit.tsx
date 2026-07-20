@@ -36,7 +36,7 @@ export default function PersonalInfoEditScreen() {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     defaultValues: {
       lastName: lastName ?? '',
@@ -565,6 +565,7 @@ export default function PersonalInfoEditScreen() {
             <AppButton
               label="Хадгалах"
               onPress={handleSubmit(handleSave)}
+              isDisabled={!isDirty}
               isLoading={isLoading}
               className="mt-4 rounded border-darkgray/60"
             />

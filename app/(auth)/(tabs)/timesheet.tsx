@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/app-icon";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppText } from '@/components/app-text';
 import type { DayData } from '@/components/timesheet-calendar';
@@ -13,12 +14,12 @@ import {
   ArrowUp01Icon,
   Sun03StrokeStandard,
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { router, useFocusEffect } from "expo-router";
 import { cn, Separator } from 'heroui-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -155,6 +156,7 @@ interface YearSummaryHoliday {
 interface YearSummaryExtra {
   has_annual_leave: boolean;
   annual_leave_available_days: number;
+  annual_leave_total_days: number;
   annual_leave_splits: { start_date: string; end_date: string; days: number }[];
   medical_examinations: string[];
 }
@@ -631,7 +633,6 @@ function YearView({
       ranges.push({ start: h.dates[0], end: h.dates[h.dates.length - 1], color: 'blue' });
     });
     if (extra?.has_annual_leave) {
-      // Confirmed annual-leave splits (solid #DF9800).
       extra.annual_leave_splits?.forEach((s) => {
         if (s?.start_date && s?.end_date) {
           ranges.push({ start: s.start_date, end: s.end_date, color: 'annual' });
@@ -692,7 +693,12 @@ function YearView({
       {/* Extra stats */}
       <View className="gap-2.5">
         <View className="flex-row justify-between">
-          <AppText className="text-base text-darkgray leading-6">Э/амралтын хоног</AppText>
+          <AppText className="text-base text-darkgray leading-6">Э/амралтын нийт хоног</AppText>
+          <AppText className="text-base leading-6">{extra?.annual_leave_total_days ?? 0} хоног</AppText>
+        </View>
+
+        <View className="flex-row justify-between">
+          <AppText className="text-base text-darkgray leading-6">Э/амралтын үлдсэн хоног</AppText>
           <AppText className="text-base leading-6">{extra?.annual_leave_available_days ?? 0} хоног</AppText>
         </View>
 
@@ -701,7 +707,7 @@ function YearView({
           {hasSplits ? (
             <View className="items-end gap-2.5">
               {splitFormattedList.map((s, i) => (
-                <AppText key={`s-${i}`} className="text-base text-[#DF9800] leading-6">{s}</AppText>
+                <AppText key={`s-${i}`} className="text-base text-amber leading-6">{s}</AppText>
               ))}
             </View>
           ) : (
@@ -717,7 +723,7 @@ function YearView({
         </View>
 
         <View className="flex-row justify-between mb-7.5">
-          <AppText className="text-base text-darkgray leading-6">Баярын өдөр</AppText>
+          <AppText className="text-base text-darkgray leading-6">Нийтээр амрах баярын өдөр</AppText>
           <Pressable className="flex-row gap-1 items-center" onPress={() => setShowHoliday(!showHoliday)}>
             <AppIcon icon={showHoliday ? ArrowUp01Icon : ArrowDown01Icon} />
             <AppText className="text-base font-medium text-blue leading-6">{totalHolidayDays} хоног</AppText>
@@ -728,19 +734,23 @@ function YearView({
       {/* Holidays */}
       {
         showHoliday && (
-          <View className="gap-4 mb-7.5">
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(140)}
+            className="gap-4 mb-7.5"
+          >
             {holidays.map((h) => (
               <View key={h.key} className="gap-1">
                 <AppText className="text-base text-blue leading-6">{formatHolidayDates(h.dates)}</AppText>
                 <AppText className="text-base leading-6">{h.name}</AppText>
               </View>
             ))}
-          </View>
+          </Animated.View>
         )
       }
 
       {/* Mini calendars grid - 2 per row */}
-      <View className="gap-3 pb-20">
+      <Animated.View className="gap-3 pb-20" layout={LinearTransition.duration(220)}>
         {Array.from({ length: 6 }, (_, i) => (
           <View key={i} className="flex-row gap-3">
             <MiniCalendar
@@ -759,7 +769,7 @@ function YearView({
             />
           </View>
         ))}
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }

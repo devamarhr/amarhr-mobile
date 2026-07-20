@@ -1,6 +1,7 @@
 import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
@@ -16,7 +17,6 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { cn, Spinner, useToast } from 'heroui-native';
@@ -170,9 +170,11 @@ export default function CompensatoryRequestScreen() {
 
   const eligibilityError = useMemo<string | null>(() => {
     if (!compensatoryCheck || compensatoryCheck.is_eligible) return null;
-    if (compensatoryCheck.work_minutes === 0) return 'Ажлын цаг байхгүй байна';
+    if (compensatoryCheck.work_minutes === 0) {
+      return 'Таны сонгосон хугацаанд ажлын хуваарь байхгүй тул нөхөн амрах боломжгүй';
+    }
     const requested = formatMinutesAsHHMM(compensatoryCheck.work_minutes);
-    return `Таны нөхөж амрах хүсэлтийн цаг ${requested} хуримтлагдсан цагаас хэтэрсэн байна`;
+    return `Таны нөхөж амрах хүсэлтийн цаг /${requested}/ хуримтлагдсан цагаас хэтэрсэн байна`;
   }, [compensatoryCheck]);
 
   useEffect(() => {

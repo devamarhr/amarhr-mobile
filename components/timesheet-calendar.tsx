@@ -234,7 +234,6 @@ function MiniDayCell({
   const rawHighlight = highlightRanges?.find(
     (r) => day.date >= r.start && day.date <= r.end && day.isCurrentMonth,
   );
-  // Annual leave (#DF9800) skips non-working days within the range.
   const isAnnualLeave = rawHighlight?.color === 'annual';
   const highlight = rawHighlight && isAnnualLeave && isNonWorking ? undefined : rawHighlight;
 
@@ -243,8 +242,8 @@ function MiniDayCell({
       <View
         className={cn(
           'w-5 h-5 items-center justify-center rounded-full',
-          day.isToday && 'bg-lightblue',
-          highlight?.color === 'annual' && 'bg-[#DF9800]',
+          day.isToday && 'bg-black',
+          highlight?.color === 'annual' && 'bg-amber',
           highlight?.color === 'blue' && 'bg-blue',
           highlight?.color === 'cyan' && 'bg-cyan',
         )}
@@ -255,6 +254,7 @@ function MiniDayCell({
             !day.isCurrentMonth && 'text-darkgray/30',
             day.isCurrentMonth && isNonWorking && 'text-darkgray/30',
             day.isCurrentMonth && !isNonWorking && 'text-black',
+            day.isToday && 'text-white',
             highlight && day.isCurrentMonth && 'text-white',
           )}
         >

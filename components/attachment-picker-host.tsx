@@ -1,4 +1,5 @@
 import { AppDialog } from '@/components/app-dialog';
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import {
   pickDocuments,
@@ -7,7 +8,6 @@ import {
   type PickedAsset,
 } from '@/utils/pick-attachment';
 import { File02Icon, Image02Icon } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -57,11 +57,11 @@ export function AttachmentPickerHost() {
   };
 
   return (
-    <AppDialog isOpen={isOpen} onOpenChange={handleOpenChange}>
+    <AppDialog isOpen={isOpen} onOpenChange={handleOpenChange} className="pb-10">
       <View className="mb-4 gap-1.5">
         <AppDialog.Title>Хавсралт сонгох</AppDialog.Title>
       </View>
-      <View className="gap-2">
+      <View className="gap-4">
         <Pressable
           className="flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3"
           onPress={handlePhotos}

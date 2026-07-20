@@ -91,8 +91,8 @@ export function AppTextField({
       <InputComponent
         {...inputProps}
         className={cn(
-          'rounded-lg border border-gray/30 focus:border-gray/30 px-3 text-base leading-6 ios:shadow-none android:shadow-none',
-          isTextArea ? 'ios:py-3 android:py-2.75' : 'h-11 min-h-0 py-0',
+          'rounded-lg border border-gray/30 focus:border-gray/30 px-3 text-base ios:shadow-none android:shadow-none',
+          isTextArea ? 'ios:py-3 android:py-2.75' : 'h-11 min-h-0 py-0 leading-[1.21]',
           hasIcons && 'flex-1',
           leftIcon && 'pl-10',
           rightIcon && 'pr-10',

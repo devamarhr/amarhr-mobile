@@ -110,14 +110,14 @@ export default function ContractInfoScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom }}
         >
           <View className="px-4">
-            <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} valueClassName="text-blue" />
+            <InfoField label="Хөдөлмөрийн гэрээ" value={contractInfo?.isPermanent ? 'Хугацаагүй' : 'Хугацаатай'} />
             <InfoField
               label={contractInfo?.isPermanent ? 'Гэрээ эхэлсэн огноо' : 'Гэрээ эхэлсэн/дуусах огноо'}
               value={contractInfo?.isPermanent
                 ? contractInfo?.startDate
                 : (contractInfo?.startDate && contractInfo?.endDate ? `${contractInfo.startDate} - ${contractInfo.endDate}` : null)}
             />
-            <InfoField label="Гэрээний төрөл" value={contractInfo?.type} valueClassName="text-blue" />
+            <InfoField label="Гэрээний төрөл" value={contractInfo?.type} />
             <InfoField label="Гэрээний дугаар" value={contractInfo?.contractNumber} />
             <InfoField label="НДШ тайлагнах төрөл" value={contractInfo?.insuranceType} />
             <InfoField label="НДШ төлсөн сар / Нийт ажилласан жилийн" value={contractInfo?.totalWorkMonths ? `${contractInfo.totalWorkMonths} сар` : null} />
