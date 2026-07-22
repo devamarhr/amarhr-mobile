@@ -14,11 +14,11 @@ import {
 } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 import { Search01Icon } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
-import { Avatar, BottomSheet, Separator } from "heroui-native";
+import { Avatar, Separator } from "heroui-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,7 +27,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatAnnouncementDate(iso: string | null): string {
   if (!iso) return "";
@@ -83,18 +82,15 @@ export function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) 
   const lastPage = useRef(1);
   const isFetching = useRef(false);
 
-  const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   // Recipients of the announcement whose "Илгээсэн N" was tapped (null = closed).
   const [sentEmployees, setSentEmployees] = useState<AnnouncementEmployee[] | null>(null);
-  // Measure header + list to size the sent-employee sheet to its content
-  // (capped at 80%), mirroring AppSelect — gorhom dynamic sizing breaks Android scroll.
-  const [sentHeaderH, setSentHeaderH] = useState(0);
-  const [sentListH, setSentListH] = useState(0);
-  const sentSheetHeight = Math.min(
-    sentHeaderH + sentListH || windowHeight * 0.8,
-    windowHeight * 0.8
-  );
+  // react-native-actions-sheet — контентоор auto-size. Imperative ref-ээр удирдана.
+  const sentSheetRef = useRef<ActionSheetRef>(null);
+  useEffect(() => {
+    if (sentEmployees) sentSheetRef.current?.show();
+    else sentSheetRef.current?.hide();
+  }, [sentEmployees]);
 
   const monthOptions = useMemo<SelectOption[]>(
     () =>
@@ -293,35 +289,23 @@ export function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) 
       )}
 
       {/* Илгээсэн ажилтан — announcement recipients */}
-      <BottomSheet
-        isOpen={!!sentEmployees}
-        onOpenChange={(o) => {
-          if (!o) setSentEmployees(null);
-        }}
+      <ActionSheet
+        ref={sentSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => setSentEmployees(null)}
       >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            snapPoints={[sentSheetHeight]}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-          >
-            <View
-              className="py-4 items-center"
-              onLayout={(e) => setSentHeaderH(e.nativeEvent.layout.height)}
-            >
-              <AppText className="text-lg font-medium">Илгээсэн ажилтан</AppText>
-            </View>
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">Илгээсэн ажилтан</AppText>
+        </View>
 
-            <BottomSheetScrollView
-              contentContainerClassName="px-4 pb-8"
-              showsVerticalScrollIndicator={false}
-              onContentSizeChange={(_w, h) => setSentListH(h)}
-            >
-              {(sentEmployees ?? []).map((emp) => (
+        <SheetScrollView
+          style={{ maxHeight: windowHeight * 0.7 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {(sentEmployees ?? []).map((emp) => (
                 <View key={emp.id} className="flex-row items-center gap-2 h-16">
                   <Avatar alt={fullName(emp)} className="w-[52px] h-[52px]">
                     <Avatar.Image source={{ uri: emp.profile_image_url ?? "" }} />
@@ -341,10 +325,8 @@ export function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) 
                   </View>
                 </View>
               ))}
-            </BottomSheetScrollView>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+        </SheetScrollView>
+      </ActionSheet>
     </>
   );
 }

@@ -1,6 +1,8 @@
 import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
+import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
+import { AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
@@ -10,14 +12,15 @@ import {
   ArrowLeft02Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
+  MultiplicationSignIcon,
   SquareLock02Icon,
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { BottomSheet, Spinner, useToast } from 'heroui-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Spinner, useToast } from 'heroui-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import ActionSheet, { ActionSheetRef } from 'react-native-actions-sheet';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -45,9 +48,9 @@ interface AnnualLeaveData {
 }
 
 const SPLIT_TYPE_LABELS: Record<SplitType, string> = {
-  scheduled: 'Хуваарийн дагуух э/амралт',
+  scheduled: 'Төлөвлөсөн ээлжийн амралт',
   advance: 'Урьдчилж авсан э/амралт',
-  unused: 'Биеэр эдлээгүй хоногийн олговор',
+  unused: 'Биеэр эдлээгүй хоногийн олговор авах',
 };
 
 function formatSplitRange(start: string | null, end: string | null): string {
@@ -89,11 +92,17 @@ function AddSheet({
   showError,
   showSuccess,
 }: AddSheetProps) {
-  const insets = useSafeAreaInsets();
+  const sheetRef = useRef<ActionSheetRef>(null);
+  useEffect(() => {
+    if (isOpen) sheetRef.current?.show();
+    else sheetRef.current?.hide();
+  }, [isOpen]);
   const [startDate, setStartDate] = useState('');
   const [days, setDays] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  // Хоосон талбарт toast-ын оронд улаан border харуулна (талбар бөглөгдмөгц арилна).
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -101,6 +110,7 @@ function AddSheet({
       setDays('');
       setEndDate('');
       setIsSaving(false);
+      setShowErrors(false);
     }
   }, [isOpen]);
 
@@ -141,7 +151,7 @@ function AddSheet({
 
   const handleSave = async () => {
     if (!startDate || !days) {
-      showError('Эхлэх өдөр, хоногоо сонгоно уу');
+      setShowErrors(true);
       return;
     }
     if (!endDate) {
@@ -184,16 +194,19 @@ function AddSheet({
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      {/* disableFullWindowOverlay: native date-picker modal үндсэн window-д
-          гардаг тул sheet-ийг мөн үндсэн window-д render хийнэ */}
-      <BottomSheet.Portal disableFullWindowOverlay>
-        <BottomSheet.Overlay className="bg-scrim/40" />
-        <BottomSheet.Content enableOverDrag={false} handleComponent={null} backgroundClassName="rounded-t-[10px]">
-          <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
-            Ээлжийн амралт нэмэх
-          </BottomSheet.Title>
-          <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
+    <ActionSheet
+      ref={sheetRef}
+      isModal={false}
+      gestureEnabled
+      indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+      containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+      onClose={() => onOpenChange(false)}
+    >
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">Ээлжийн амралт нэмэх</AppText>
+        </View>
+        <View className="px-4">
+          <View className="gap-5">
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <AppDatePicker
@@ -205,6 +218,7 @@ function AddSheet({
                   format="MM/DD"
                   minimumDate={minDate}
                   maximumDate={maxDate}
+                  isInvalid={showErrors && !startDate}
                   icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
                 />
               </View>
@@ -215,6 +229,7 @@ function AddSheet({
                   value={dayOptions.find((o) => o.value === days)}
                   onValueChange={(opt) => setDays(opt?.value ?? '')}
                   placeholder="Сонгох"
+                  isInvalid={showErrors && !days}
                   renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
                 />
               </View>
@@ -238,9 +253,8 @@ function AddSheet({
               labelClassName="text-white text-base font-semibold"
             />
           </View>
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+        </View>
+    </ActionSheet>
   );
 }
 
@@ -261,6 +275,8 @@ export default function SeniorLeavePlanScreen() {
   const [data, setData] = useState<AnnualLeaveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [confirmSplit, setConfirmSplit] = useState<AnnualLeaveSplit | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const showError = useCallback(
     (msg: string) => {
@@ -319,6 +335,29 @@ export default function SeniorLeavePlanScreen() {
   const handleSaved = () => {
     setAddOpen(false);
     fetchData();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmSplit) return;
+    setIsDeleting(true);
+    try {
+      const res = await api({
+        path: `/senior/annual-leaves/${params.id}/splits/${confirmSplit.id}`,
+        method: 'DELETE',
+      });
+      if (res.status === 200) {
+        setConfirmSplit(null);
+        showSuccess(res.message);
+        await fetchData();
+      } else {
+        setConfirmSplit(null);
+        showError(res.message || 'Алдаа гарлаа');
+      }
+    } catch (e) {
+      console.error('Delete error:', e);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const hasCycle = !!data?.cycle_start_date && !!data?.cycle_end_date;
@@ -396,27 +435,46 @@ export default function SeniorLeavePlanScreen() {
                 Ээлжийн амралтын хуваарь байхгүй байна
               </AppText>
             ) : (
-              data.splits.map((split, index) => (
+              data.splits.map((split, index) => {
+                // Төлөвлөсөн э/амралтыг өөр хооронд нь #1, #2 гэж дугаарлаад ард нь
+                // харуулна. Биеэр эдлээгүй хоногийн олговорт дугаар харуулахгүй.
+                const scheduledNo =
+                  split.type === 'scheduled'
+                    ? data.splits.slice(0, index + 1).filter((s) => s.type === 'scheduled').length
+                    : 0;
+                return (
                 <View key={split.id} className="gap-2.5">
                   <AppText className="text-sm text-darkgray">
-                    #{index + 1} {SPLIT_TYPE_LABELS[split.type]}
+                    {SPLIT_TYPE_LABELS[split.type]}
+                    {scheduledNo > 0 ? ` #${scheduledNo}` : ''}
                   </AppText>
-                  <View className="flex-row items-center gap-2 border border-gray/30 rounded-lg h-11 px-2.5">
-                    <AppIcon icon={Calendar03Icon} color="#222222" size={24} />
-                    <AppText
-                      className={`text-base flex-1 ${split.type === 'unused' ? 'opacity-70' : ''}`}
-                      numberOfLines={1}
+                  <View className="flex-row gap-3 items-center">
+                    <View className="flex-1 flex-row items-center gap-2 border border-gray/30 rounded-lg h-11 px-2.5">
+                      <AppIcon icon={Calendar03Icon} color="#222222" size={24} />
+                      <AppText
+                        className={`text-base flex-1 ${split.type === 'unused' ? 'opacity-70' : ''}`}
+                        numberOfLines={1}
+                      >
+                        {split.type === 'unused'
+                          ? `${split.days} хоног`
+                          : formatSplitRange(split.start_date, split.end_date)}
+                      </AppText>
+                    </View>
+                    <Pressable
+                      onPress={() => setConfirmSplit(split)}
+                      disabled={split.decree_id != null}
+                      className="w-11 h-11 items-center justify-center border border-gray/30 rounded-lg"
                     >
-                      {split.type === 'unused'
-                        ? `${split.days} хоног`
-                        : formatSplitRange(split.start_date, split.end_date)}
-                    </AppText>
-                    {split.decree_id != null && (
-                      <AppIcon icon={SquareLock02Icon} color="#6A6A6A" size={20} />
-                    )}
+                      {split.decree_id != null ? (
+                        <AppIcon icon={SquareLock02Icon} color="#6A6A6A" size={22} />
+                      ) : (
+                        <AppIcon icon={MultiplicationSignIcon} color="#EF444480" size={24} />
+                      )}
+                    </Pressable>
                   </View>
                 </View>
-              ))
+                );
+              })
             )}
           </View>
         </ScrollView>
@@ -443,6 +501,35 @@ export default function SeniorLeavePlanScreen() {
           showSuccess={showSuccess}
         />
       )}
+
+      <AppDialog
+        isOpen={confirmSplit != null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmSplit(null);
+        }}
+      >
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>Хуваарь устгах</AppDialog.Title>
+          <AppDialog.Description>
+            {confirmSplit?.type === 'unused'
+              ? `Биеэр эдлээгүй ${confirmSplit.days} хоногийн олговрыг устгахдаа итгэлтэй байна уу?`
+              : `"${formatSplitRange(confirmSplit?.start_date ?? null, confirmSplit?.end_date ?? null)}" төлөвлөсөн ээлжийн амралтыг устгахдаа итгэлтэй байна уу?`}
+          </AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button
+            label="Үгүй"
+            className="flex-1"
+            onPress={() => setConfirmSplit(null)}
+          />
+          <AppDialog.Button
+            label="Тийм"
+            className="flex-1"
+            isLoading={isDeleting}
+            onPress={handleConfirmDelete}
+          />
+        </View>
+      </AppDialog>
     </View>
   );
 }

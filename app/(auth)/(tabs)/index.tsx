@@ -1,6 +1,7 @@
 import { AppButton } from "@/components/app-button";
 import { AppCheckbox } from "@/components/app-checkbox";
 import { AppDialog } from "@/components/app-dialog";
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
@@ -18,14 +19,14 @@ import {
   UserMultipleIcon,
   Wifi01Icon,
 } from "@hugeicons-pro/core-stroke-rounded";
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
 import * as Notifications from "expo-notifications";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, BottomSheet, useToast } from "heroui-native";
+import { Avatar, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, View } from 'react-native';
+import ActionSheet, { ActionSheetRef } from "react-native-actions-sheet";
 import { NetworkInfo } from 'react-native-network-info';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -165,7 +166,7 @@ export default function HomeScreen() {
   const companyName = useAuthStore((state) => state.companyName);
   const attendanceMethod = useAuthStore((state) => state.attendanceMethod);
   const allowedAttendanceMethod = useAuthStore((state) => state.allowedAttendanceMethod);
-  const [methodSheetOpen, setMethodSheetOpen] = useState(false);
+  const methodSheetRef = useRef<ActionSheetRef>(null);
   const [saveSelection, setSaveSelection] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [action, setAction] = useState<PunchAction>('none');
@@ -216,7 +217,7 @@ export default function HomeScreen() {
   };
 
   const handleSelectMethod = useCallback((method: 'geo' | 'wifi') => {
-    setMethodSheetOpen(false);
+    methodSheetRef.current?.hide();
     if (saveSelection) {
       useAuthStore.getState().setSettings({ attendance_method: method });
       api({ path: '/settings', method: 'PUT', data: { attendance_method: method } }).then((res) => {
@@ -522,7 +523,7 @@ export default function HomeScreen() {
                 proceedWithAttendance(attendanceMethod);
               } else {
                 setSaveSelection(false);
-                setMethodSheetOpen(true);
+                methodSheetRef.current?.show();
               }
             }}
             className="w-[200px] h-[200px] rounded-full items-center justify-center"
@@ -553,50 +554,47 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <BottomSheet
-       isOpen={methodSheetOpen} onOpenChange={setMethodSheetOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <BottomSheet.Content
-            snapPoints={['35%']}
-            enableOverDrag={false}
-            handleComponent={null}
+      <ActionSheet
+        ref={methodSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+      >
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">Цаг бүртгэлийн арга сонгох</AppText>
+        </View>
+        <View className="px-4 gap-5">
+          <View className="flex-row gap-5 justify-center">
+            {allowedAttendanceMethod.map((method) => (
+              <View key={method} className="items-center gap-2">
+                <AppButton
+                  isIconOnly
+                  leftIcon={
+                    <AppIcon
+                      icon={methodIcons[method]}
+                      color="#222222"
+                      size={28}
+                    />
+                  }
+                  onPress={() => handleSelectMethod(method)}
+                  className="w-20 h-20 rounded-2xl border-darkgray"
+                />
+                <AppText className="text-sm">{methodLabels[method]}</AppText>
+              </View>
+            ))}
+          </View>
+          <Pressable
+            onPress={() => setSaveSelection((prev) => !prev)}
+            className="flex-row items-center gap-2.5 justify-center"
           >
-            <BottomSheet.Title className="text-center mb-8">
-              Цаг бүртгэлийн арга сонгох
-            </BottomSheet.Title>
-            <View className="flex-row gap-5 mb-5 px-4 justify-center">
-              {allowedAttendanceMethod.map((method) => (
-                <View key={method} className="items-center gap-2">
-                  <AppButton
-                    isIconOnly
-                    leftIcon={
-                      <AppIcon
-                        icon={methodIcons[method]}
-                        color="#222222"
-                        size={28}
-                      />
-                    }
-                    onPress={() => handleSelectMethod(method)}
-                    className="w-20 h-20 rounded-2xl border-darkgray"
-                  />
-                  <AppText className="text-sm">{methodLabels[method]}</AppText>
-                </View>
-              ))}
-            </View>
-            <Pressable
-              onPress={() => setSaveSelection((prev) => !prev)}
-              className="flex-row items-center gap-2.5 justify-center"
-            >
-              <AppCheckbox
-                isSelected={saveSelection}
-                onSelectedChange={setSaveSelection}
-              />
-              <AppText className="text-sm text-darkgray">Сонголт хадгалах</AppText>
-            </Pressable>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+            <AppCheckbox
+              isSelected={saveSelection}
+              onSelectedChange={setSaveSelection}
+            />
+            <AppText className="text-sm text-darkgray">Сонголт хадгалах</AppText>
+          </Pressable>
+        </View>
+      </ActionSheet>
 
       <AppDialog isOpen={eventDialog !== null} onOpenChange={(open) => !open && setEventDialog(null)} className="pb-10">
         <View className="gap-1.5">

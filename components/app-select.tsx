@@ -1,8 +1,8 @@
+import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
@@ -205,6 +205,11 @@ export function AppSelect({
   const resolvedSnapPoints = snapPoints?.length
     ? snapPoints
     : [Math.min(measuredHeight || maxSheetHeight, maxSheetHeight)];
+  // Only allow scrolling when the content actually exceeds the sheet cap. With few
+  // options the sheet fits the content exactly, so we disable scroll to kill the iOS
+  // overscroll/bounce that otherwise makes a non-scrollable list feel scrollable.
+  // (When custom snapPoints force a fixed height we can't know, so keep scroll on.)
+  const needsScroll = snapPoints?.length ? true : measuredHeight > maxSheetHeight;
   const displayTitle = title || label || 'Select';
 
   const handleOpenChange = useCallback((open: boolean) => {
@@ -317,6 +322,7 @@ export function AppSelect({
 
             <BottomSheetScrollView
               ref={scrollRef}
+              scrollEnabled={needsScroll}
               contentContainerClassName="px-4 pb-10"
               showsVerticalScrollIndicator={false}
               onContentSizeChange={(_w, h) => setListHeight(h)}

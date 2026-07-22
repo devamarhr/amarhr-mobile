@@ -23,7 +23,7 @@ import { cn, Spinner, useToast } from 'heroui-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -62,6 +62,7 @@ const formatMinutesAsHHMM = (minutes: number) => {
 export default function CompensatoryRequestScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [footerHeight, setFooterHeight] = useState(0);
   const params = useLocalSearchParams<{
     id: string;
     title: string;
@@ -288,7 +289,8 @@ export default function CompensatoryRequestScreen() {
         <KeyboardAwareScrollView
           style={{ flex: 1, paddingHorizontal: 16, backgroundColor: '#ffffff' }}
           showsVerticalScrollIndicator={false}
-          bottomOffset={20}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={footerHeight + 42 + 20}
         >
           <View className="gap-[30px] pb-10 pt-7.5">
             <View className="flex-row gap-3">
@@ -511,16 +513,21 @@ export default function CompensatoryRequestScreen() {
           </View>
         </KeyboardAwareScrollView>
 
-        <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10 }}>
-          <AppButton
-            label="Илгээх"
-            onPress={handleSubmit(handleSend)}
-            isDisabled={isUploading || isChecking || !!eligibilityError || !!rangeError}
-            isLoading={isLoading}
-            className="bg-lightblue border-darkblue/15"
-            labelClassName="text-darkerblue text-base font-medium"
-          />
-        </View>
+        <KeyboardStickyView
+          offset={{ closed: 0, opened: insets.bottom - 54 }}
+          onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+        >
+          <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>
+            <AppButton
+              label="Илгээх"
+              onPress={handleSubmit(handleSend)}
+              isDisabled={isUploading || isChecking || !!eligibilityError || !!rangeError}
+              isLoading={isLoading}
+              className="bg-lightblue border-darkblue/15"
+              labelClassName="text-darkerblue text-base font-medium"
+            />
+          </View>
+        </KeyboardStickyView>
       </StyledSafeAreaView>
     </View>
   );

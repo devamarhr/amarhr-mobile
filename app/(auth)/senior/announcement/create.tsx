@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
 import { Avatar, cn, Separator, Spinner, useToast } from "heroui-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -64,13 +64,17 @@ export default function CreateAnnouncementScreen() {
   const [employees, setEmployees] = useState<SubordinateEmployee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [employeeIds, setEmployeeIds] = useState<number[]>([]);
+  const [employeeError, setEmployeeError] = useState(false);
 
   const [title, setTitle] = useState("");
+  const [titleError, setTitleError] = useState(false);
   const [content, setContent] = useState("");
+  const [contentError, setContentError] = useState(false);
 
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [footerHeight, setFooterHeight] = useState(0);
 
   useEffect(() => {
     api<SubordinateDepartment[]>({
@@ -99,6 +103,10 @@ export default function CreateAnnouncementScreen() {
       }
     }).catch(console.error).finally(() => setEmployeesLoading(false));
   }, [departmentIds]);
+
+  useEffect(() => {
+    if (employeeIds.length > 0) setEmployeeError(false);
+  }, [employeeIds]);
 
   const departmentLabel = useMemo(() => {
     if (departmentIds.length === 0) return "Бүх алба, хэлтэс";
@@ -200,20 +208,16 @@ export default function CreateAnnouncementScreen() {
   };
 
   const handleSend = async () => {
-    if (employeeIds.length === 0) {
-      showError("Ажилтан сонгоно уу");
-      return;
-    }
     const trimmedTitle = title.trim();
     const trimmedContent = content.trim();
-    if (!trimmedTitle) {
-      showError("Гарчиг бичнэ үү");
-      return;
-    }
-    if (!trimmedContent) {
-      showError("Агуулгаа бичнэ үү");
-      return;
-    }
+
+    const empErr = employeeIds.length === 0;
+    const titleErr = !trimmedTitle;
+    const contentErr = !trimmedContent;
+    setEmployeeError(empErr);
+    setTitleError(titleErr);
+    setContentError(contentErr);
+    if (empErr || titleErr || contentErr) return;
 
     setIsSubmitting(true);
     try {
@@ -261,7 +265,8 @@ export default function CreateAnnouncementScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
-          bottomOffset={20}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={footerHeight + 42 + 20}
         >
           <View className="gap-[30px]">
             <AppSelect
@@ -298,7 +303,8 @@ export default function CreateAnnouncementScreen() {
               trigger={
                 <View
                   className={cn(
-                    "flex-row rounded-lg border border-gray/30 items-center px-3 h-11",
+                    "flex-row rounded-lg border items-center px-3 h-11",
+                    employeeError ? "border-red" : "border-gray/30",
                     !canPickEmployees && "opacity-50"
                   )}
                 >
@@ -360,16 +366,24 @@ export default function CreateAnnouncementScreen() {
             <AppTextField
               label="Гарчиг"
               isRequired
+              isInvalid={titleError}
               value={title}
-              onChangeText={setTitle}
+              onChangeText={(t) => {
+                setTitle(t);
+                if (t.trim()) setTitleError(false);
+              }}
               placeholder="Гарчиг оруулна уу"
             />
 
             <AppTextField
               label="Агуулга"
               isRequired
+              isInvalid={contentError}
               value={content}
-              onChangeText={setContent}
+              onChangeText={(t) => {
+                setContent(t);
+                if (t.trim()) setContentError(false);
+              }}
               isTextArea
               className="h-36"
               placeholder="Зарлал, мэдээллээ энд бичнэ үү"
@@ -410,8 +424,13 @@ export default function CreateAnnouncementScreen() {
             </View>
           )}
         </KeyboardAwareScrollView>
+      </View>
 
-        <View style={{ paddingBottom: insets.bottom + 10 }}>
+      <KeyboardStickyView
+        offset={{ closed: 0, opened: insets.bottom - 54 }}
+        onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+      >
+        <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>
           <AppButton
             label="Илгээх"
             onPress={handleSend}
@@ -421,7 +440,7 @@ export default function CreateAnnouncementScreen() {
             labelClassName="text-darkerblue text-base font-medium"
           />
         </View>
-      </View>
+      </KeyboardStickyView>
     </StyledSafeAreaView>
   );
 }

@@ -2,6 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppCheckbox } from '@/components/app-checkbox';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
+import { AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
@@ -19,14 +20,13 @@ import {
   FileAttachmentIcon,
   MultiplicationSignIcon
 } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spinner, useToast } from 'heroui-native';
 import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { withUniwind } from 'uniwind';
 
@@ -59,6 +59,7 @@ function parseDateTimeToString(s?: string): string | undefined {
 export default function RequestCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [footerHeight, setFooterHeight] = useState(0);
   const params = useLocalSearchParams<{
     id: string;
     title: string;
@@ -325,7 +326,7 @@ export default function RequestCreateScreen() {
                   value={value != null ? dayOptions.find(o => o.value === String(value)) : undefined}
                   onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
                   placeholder="Сонгох"
-                  renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
+                  renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
                   isInvalid={!!errors.days}
                   isDisabled={!startDateSelected || dayOptions.length === 0}
                 />
@@ -399,7 +400,7 @@ export default function RequestCreateScreen() {
                   value={value != null ? hourOptions.find(o => o.value === String(value)) : undefined}
                   onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
                   placeholder="Сонгох"
-                  renderValue={(option) => <AppText className="text-sm">{option.value}</AppText>}
+                  renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
                   isInvalid={!!errors.hours}
                   isDisabled={!dateSelected || hourOptions.length === 0}
                 />
@@ -610,7 +611,7 @@ export default function RequestCreateScreen() {
           style={{flex:1,paddingHorizontal: 16,backgroundColor: "#ffffff"}}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bottomOffset={40}
+          bottomOffset={footerHeight + 42 + 20}
         >
           <View className="pb-10 pt-7.5">
             {formFields}
@@ -676,16 +677,21 @@ export default function RequestCreateScreen() {
           </View>
         </KeyboardAwareScrollView>
 
-        <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10 }}>
-          <AppButton
-            label="Илгээх"
-            onPress={handleSubmit(handleSend)}
-            isDisabled={isUploading}
-            isLoading={isLoading}
-            className="bg-lightblue border-darkblue/15"
-            labelClassName="text-darkerblue text-base font-medium"
-          />
-        </View>
+        <KeyboardStickyView
+          offset={{ closed: 0, opened: insets.bottom - 54 }}
+          onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+        >
+          <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>
+            <AppButton
+              label="Илгээх"
+              onPress={handleSubmit(handleSend)}
+              isDisabled={isUploading}
+              isLoading={isLoading}
+              className="bg-lightblue border-darkblue/15"
+              labelClassName="text-darkerblue text-base font-medium"
+            />
+          </View>
+        </KeyboardStickyView>
       </StyledSafeAreaView>
     </View>
   );

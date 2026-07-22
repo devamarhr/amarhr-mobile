@@ -19,7 +19,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Avatar, Spinner, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -200,6 +200,8 @@ export default function SeniorRequestDetailScreen() {
   const [request, setRequest] = useState<EmployeeRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
+  const [commentError, setCommentError] = useState(false);
+  const [footerHeight, setFooterHeight] = useState(0);
   const [submittingAction, setSubmittingAction] = useState<ActionType | null>(null);
   const [actionAttachments, setActionAttachments] = useState<{ name: string; path: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -313,6 +315,14 @@ export default function SeniorRequestDetailScreen() {
     } finally {
       setSubmittingAction(null);
     }
+  };
+
+  const requestAction = (action: ActionType) => {
+    if (!comment.trim()) {
+      setCommentError(true);
+      return;
+    }
+    setPendingAction(action);
   };
 
   const formType = useMemo(
@@ -637,13 +647,14 @@ export default function SeniorRequestDetailScreen() {
             </View>
 
             <KeyboardAwareScrollView
-              style={{ flex: 1 }}
-              contentContainerStyle={{ flexGrow: 1 }}
+              style={{ flex: 1, backgroundColor: "#ffffff" }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: footerHeight }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              bottomOffset={20}
+              bottomOffset={footerHeight + 42 + 20}
+              bounces={false}
             >
-            <View className="px-4 pb-5">
+            <View className="px-4 pb-5 bg-darkgray/7">
 
               {employee && (
                 <View className="flex-row items-center gap-3 mb-5">
@@ -731,14 +742,16 @@ export default function SeniorRequestDetailScreen() {
               <View className="gap-3 pt-6">
                 <AppTextField
                   isTextArea
+                  isInvalid={commentError}
                   placeholder="Тайлбараа энд бичнэ үү"
                   value={comment}
-                  onChangeText={setComment}
+                  onChangeText={(text) => {
+                    setComment(text);
+                    if (text.trim()) setCommentError(false);
+                  }}
                   multiline
                   numberOfLines={4}
                   className="min-h-24"
-                  returnKeyType="done"
-                  submitBehavior="blurAndSubmit"
                 />
 
                 <Pressable
@@ -778,6 +791,10 @@ export default function SeniorRequestDetailScreen() {
             </View>
             </KeyboardAwareScrollView>
 
+            <KeyboardStickyView
+              offset={{ closed: 0, opened: insets.bottom - 54 }}
+              onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+            >
             {actionMode === "decide" ? (
               <View
                 className="flex-row gap-3 px-4 bg-background"
@@ -788,18 +805,18 @@ export default function SeniorRequestDetailScreen() {
                   className="flex-1 border-red/15 bg-red/10"
                   labelClassName="text-red"
                   isLoading={submittingAction === "reject"}
-                  isDisabled={isUploading || !comment.trim() || (submittingAction !== null && submittingAction !== "reject")}
+                  isDisabled={isUploading || (submittingAction !== null && submittingAction !== "reject")}
                   spinnerColor="#EF4444"
-                  onPress={() => setPendingAction("reject")}
+                  onPress={() => requestAction("reject")}
                 />
                 <AppButton
                   label="Зөвшөөрөх"
                   className="flex-1 border-green/15 bg-green/10"
                   labelClassName="text-green"
                   isLoading={submittingAction === "approve"}
-                  isDisabled={isUploading || !comment.trim() || (submittingAction !== null && submittingAction !== "approve")}
+                  isDisabled={isUploading || (submittingAction !== null && submittingAction !== "approve")}
                   spinnerColor="#16A34A"
-                  onPress={() => setPendingAction("approve")}
+                  onPress={() => requestAction("approve")}
                 />
               </View>
             ) : actionMode === "review" ? (
@@ -809,9 +826,9 @@ export default function SeniorRequestDetailScreen() {
                   className="border-darkcyan/15 bg-darkcyan/10"
                   labelClassName="text-darkcyan"
                   isLoading={submittingAction === "review"}
-                  isDisabled={isUploading || !comment.trim()}
+                  isDisabled={isUploading}
                   spinnerColor="#0E7490"
-                  onPress={() => setPendingAction("review")}
+                  onPress={() => requestAction("review")}
                 />
               </View>
             ) : request?.review_by_type?.includes("Employee") && request?.status === "pending" ? (
@@ -829,6 +846,7 @@ export default function SeniorRequestDetailScreen() {
                 <AppText className={`text-base font-medium ${status.color}`}>{status.label}</AppText>
               </View>
             ) : null}
+            </KeyboardStickyView>
           </>
         )}
     </StyledSafeAreaView>

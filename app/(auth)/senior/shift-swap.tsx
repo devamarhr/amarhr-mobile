@@ -4,7 +4,6 @@ import { AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppToast } from "@/components/app-toast";
 import { api } from "@/config/api";
-import { BottomSheetScrollView, type BottomSheetScrollViewMethods } from "@gorhom/bottom-sheet";
 import {
   Alert01Icon,
   ArrowLeft01Icon,
@@ -16,9 +15,10 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, Separator, useToast } from "heroui-native";
+import { Avatar, cn, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { withUniwind } from "uniwind";
 
@@ -80,6 +80,7 @@ function DateLabel({ date }: { date: string }) {
 export default function SeniorShiftSwapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const { toast } = useToast();
 
   const params = useLocalSearchParams<{
@@ -110,14 +111,15 @@ export default function SeniorShiftSwapScreen() {
   const [targetEmployee, setTargetEmployee] = useState<ShiftEmployee | null>(null);
   const [targetShift, setTargetShift] = useState<TargetShift | null>(null);
 
-  // Employee picker sheet
+  // Employee picker sheet (react-native-actions-sheet — контентоор auto-size).
   const [pickerOpen, setPickerOpen] = useState(false);
   const [employees, setEmployees] = useState<ShiftEmployee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
-  const pickerScrollRef = useRef<BottomSheetScrollViewMethods>(null);
+  const pickerSheetRef = useRef<ActionSheetRef>(null);
 
   // Calendar sheet
   const [calOpen, setCalOpen] = useState(false);
+  const calSheetRef = useRef<ActionSheetRef>(null);
   const [calMonth, setCalMonth] = useState(() => dayjs(sourceDate).startOf("month"));
   const [pickDate, setPickDate] = useState<string | null>(null);
   const [monthSchedule, setMonthSchedule] = useState<MonthScheduleDay[]>([]);
@@ -150,7 +152,6 @@ export default function SeniorShiftSwapScreen() {
   useEffect(() => {
     if (!pickerOpen || rosterTemplateId == null) return;
     setEmployeesLoading(true);
-    pickerScrollRef.current?.scrollTo({ y: 0, animated: false });
     api<ShiftEmployee[]>({
       path: `/senior/timesheet/shift-employees?roster_template_id=${rosterTemplateId}`,
       method: "GET",
@@ -222,6 +223,16 @@ export default function SeniorShiftSwapScreen() {
     if (!calOpen || !targetEmployee) return;
     loadMonthSchedule(targetEmployee.id, calMonth);
   }, [calOpen, targetEmployee, calMonth, loadMonthSchedule]);
+
+  // ActionSheet нь imperative тул open state-ийг show/hide рүү синк хийнэ.
+  useEffect(() => {
+    if (pickerOpen) pickerSheetRef.current?.show();
+    else pickerSheetRef.current?.hide();
+  }, [pickerOpen]);
+  useEffect(() => {
+    if (calOpen) calSheetRef.current?.show();
+    else calSheetRef.current?.hide();
+  }, [calOpen]);
 
   // Calendar grid + navigation bounds (today's month .. +1 month, no past days).
   const todayStart = dayjs().startOf("day");
@@ -416,27 +427,22 @@ export default function SeniorShiftSwapScreen() {
       </StyledSafeAreaView>
 
       {/* Солигдох ажилтан picker */}
-      <BottomSheet isOpen={pickerOpen} onOpenChange={setPickerOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            snapPoints={["92%"]}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-          >
-            <View className="h-[60px] items-center justify-center">
-              <AppText className="text-lg font-medium text-center">Солигдох ажилтан</AppText>
-            </View>
-
-            <BottomSheetScrollView
-              ref={pickerScrollRef}
-              contentContainerClassName="px-4 pb-8"
-              showsVerticalScrollIndicator={false}
-            >
-              {employeesLoading ? (
+      <ActionSheet
+        ref={pickerSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => setPickerOpen(false)}
+      >
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">Солигдох ажилтан</AppText>
+        </View>
+        <SheetScrollView
+          style={{ maxHeight: windowHeight * 0.7 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {employeesLoading ? (
                 <View className="py-6 items-center">
                   <ActivityIndicator />
                 </View>
@@ -479,23 +485,17 @@ export default function SeniorShiftSwapScreen() {
                   );
                 })
               )}
-            </BottomSheetScrollView>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+        </SheetScrollView>
+      </ActionSheet>
 
       {/* Calendar sheet (pick date → shift) */}
-      <BottomSheet isOpen={calOpen} onOpenChange={setCalOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            snapPoints={["70%"]}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-          >
+      <ActionSheet
+        ref={calSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => setCalOpen(false)}
+      >
             {/* Month navigation (dismiss via overlay tap / swipe — no close button, per design) */}
             <View className="flex-row px-4 py-5 items-center">
               <Pressable
@@ -576,7 +576,7 @@ export default function SeniorShiftSwapScreen() {
             </View>
 
             {/* Shifts of the picked date */}
-            <View className="px-4 mt-3 flex-1">
+            <View className="px-4 mt-3 pb-8">
               <Separator className="bg-darkgray/12 mb-2" />
               {monthLoading ? (
                 <View className="py-4 items-center">
@@ -610,9 +610,7 @@ export default function SeniorShiftSwapScreen() {
                 })
               )}
             </View>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+      </ActionSheet>
     </View>
   );
 }

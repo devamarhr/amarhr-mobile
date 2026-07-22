@@ -6,7 +6,7 @@ import { AppToast } from "@/components/app-toast";
 import { avatarFallback, useSeniorContentPad } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
-import { BottomSheetScrollView, type BottomSheetScrollViewMethods } from "@gorhom/bottom-sheet";
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 import {
   Alert01Icon,
   ArrowDown01Icon,
@@ -17,16 +17,16 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, BottomSheet, cn, Separator, useToast } from "heroui-native";
+import { Avatar, cn, Separator, useToast } from "heroui-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function shortName(emp: { first_name?: string | null; last_name?: string | null }): string {
   const initial = emp.last_name?.[0];
@@ -402,7 +402,7 @@ export function SeniorSchedule({
   onScroll?: ScrollHandler;
 }) {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const contentPad = useSeniorContentPad();
   const { toast } = useToast();
   const today = dayjs();
@@ -439,7 +439,18 @@ export function SeniorSchedule({
   const [addList, setAddList] = useState<ShiftEmployee[]>([]);
   const [addLoading, setAddLoading] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
-  const addScrollRef = useRef<BottomSheetScrollViewMethods>(null);
+  // react-native-actions-sheet — контентоор auto-size. Imperative ref-ээр удирдана.
+  const addSheetRef = useRef<ActionSheetRef>(null);
+  const metricSheetRef = useRef<ActionSheetRef>(null);
+  // open state (addShift/metricKey) → show/hide синк.
+  useEffect(() => {
+    if (addShift) addSheetRef.current?.show();
+    else addSheetRef.current?.hide();
+  }, [addShift]);
+  useEffect(() => {
+    if (metricKey !== null) metricSheetRef.current?.show();
+    else metricSheetRef.current?.hide();
+  }, [metricKey]);
 
   const selectedDate = `${year}-${String(month).padStart(2, "0")}-${String(selected).padStart(2, "0")}`;
   // Past-day shifts can't be added/released/swapped, so their rows aren't actionable.
@@ -668,7 +679,6 @@ export function SeniorSchedule({
       setAddShift(shift);
       setAddList([]);
       setAddLoading(true);
-      addScrollRef.current?.scrollTo({ y: 0, animated: false });
       const rosterQuery = selectedRoster != null ? `&roster_template_id=${selectedRoster}` : "";
       // shift_index → "ажиллахгүй" шүүлтийг тухайн ээлжээр нарийсгана: өөр ээлжид
       // ажиллаж байгаа ч энэ ээлжид сул ажилчид жагсаалтад орно.
@@ -837,10 +847,9 @@ export function SeniorSchedule({
 
         {/* Roster template selector */}
         {rosterOptions.length > 0 && (
-          <View className="mt-4">
+          <View className="mt-4 gap-2">
+            <AppText className="text-base font-medium text-black mb-2">Хуваарь сонгох</AppText>
             <AppSelect
-              label="Хуваарь сонгох"
-              labelClassName="text-base"
               title="Хуваарь сонгох"
               options={rosterOptions}
               value={selectedRosterOption}
@@ -976,35 +985,26 @@ export function SeniorSchedule({
       </AppDialog>
 
       {/* Ажилтан нэмэх bottom sheet */}
-      <BottomSheet
-        isOpen={!!addShift}
-        onOpenChange={(o) => {
-          if (!o) setAddShift(null);
-        }}
+      <ActionSheet
+        ref={addSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => setAddShift(null)}
       >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            snapPoints={["92%"]}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-          >
             {/* No close button per design — dismiss via overlay tap / swipe down. */}
-            <View className="py-4 items-center">
-              <AppText className="text-lg font-medium">Нэмэх ажилтнаа сонгох</AppText>
+            <View className="px-4 py-5">
+              <AppText className="text-lg font-medium text-center">Нэмэх ажилтнаа сонгох</AppText>
               {addShift && (
-                <AppText className="text-sm text-darkgray mt-1">
+                <AppText className="text-sm text-darkgray text-center mt-1">
                   {dayjs(selectedDate).format("MM/DD")}   {addShift.start} - {addShift.end}
                 </AppText>
               )}
             </View>
 
-            <BottomSheetScrollView
-              ref={addScrollRef}
-              contentContainerClassName="px-4 pb-8"
+            <SheetScrollView
+              style={{ maxHeight: windowHeight * 0.7 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
               showsVerticalScrollIndicator={false}
             >
               {addLoading ? (
@@ -1042,38 +1042,28 @@ export function SeniorSchedule({
                   );
                 })
               )}
-            </BottomSheetScrollView>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+            </SheetScrollView>
+      </ActionSheet>
 
       {/* Attendance metric detail — employees ranked by the tapped metric.
           A peek sheet (cards stay visible behind); dismiss by tapping the
           overlay or swiping down, per design (no close button). */}
-      <BottomSheet
-        isOpen={metricKey !== null}
-        onOpenChange={(o) => {
-          if (!o) setMetricKey(null);
-        }}
+      <ActionSheet
+        ref={metricSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => setMetricKey(null)}
       >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            snapPoints={["55%", "90%"]}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-          >
-            <View className="h-[60px] items-center justify-center">
-              <AppText className="text-lg font-medium">
+            <View className="px-4 py-5">
+              <AppText className="text-lg font-medium text-center">
                 {activeMetric ? activeMetric.sheetTitle(month) : ""}
               </AppText>
             </View>
 
-            <BottomSheetScrollView
-              contentContainerClassName="px-4 pb-8"
+            <SheetScrollView
+              style={{ maxHeight: windowHeight * 0.7 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
               showsVerticalScrollIndicator={false}
             >
               {metricRows.length === 0 ? (
@@ -1090,10 +1080,8 @@ export function SeniorSchedule({
                   />
                 ))
               )}
-            </BottomSheetScrollView>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+            </SheetScrollView>
+      </ActionSheet>
     </>
   );
 }

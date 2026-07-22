@@ -13,7 +13,6 @@ import {
 } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   MinusSignIcon,
   PlusSignIcon,
@@ -24,10 +23,10 @@ import {
 } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
-import { Avatar, BottomSheet, Separator, useBottomSheetAwareHandlers } from "heroui-native";
+import { Avatar, Separator } from "heroui-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Keyboard, Pressable, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ActionSheet, { ActionSheetRef, ScrollView } from "react-native-actions-sheet";
 
 interface SalaryPerfMonth {
   year: number;
@@ -71,7 +70,7 @@ function NoteField({
   onChangeText: (text: string) => void;
   isInvalid?: boolean;
 }) {
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  // ActionSheet keyboard-оо өөрөө зохицуулдаг тул gorhom-ийн aware handler хэрэггүй.
   return (
     <AppTextField
       isTextArea
@@ -79,8 +78,6 @@ function NoteField({
       placeholder="Тэмдэглэл бичих"
       value={value}
       onChangeText={onChangeText}
-      onFocus={onFocus}
-      onBlur={onBlur}
       isInvalid={isInvalid}
       errorMessage="Тэмдэглэл бичнэ үү"
     />
@@ -95,7 +92,6 @@ export function SeniorPerformance({
   onDeadlineChange?: (info: DeadlineInfo | null) => void;
 }) {
   const contentPad = useSeniorContentPad();
-  const insets = useSafeAreaInsets();
   const [months, setMonths] = useState<SalaryPerfMonth[]>([]);
   const [items, setItems] = useState<SalaryPerfItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<SelectOption | null>(null);
@@ -107,6 +103,9 @@ export function SeniorPerformance({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteInvalid, setNoteInvalid] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
+  // react-native-actions-sheet — контентоор auto-size + keyboard-ыг өөрөө зохицуулна
+  // (reanimated шаардахгүй). Imperative ref-ээр нээж/хаана.
+  const noteSheetRef = useRef<ActionSheetRef>(null);
   const isFetching = useRef(false);
   const loadedMonth = useRef<string | null>(null);
 
@@ -278,6 +277,7 @@ export function SeniorPerformance({
     setNoteFor(item);
     setNoteDraft("");
     setNoteInvalid(false);
+    noteSheetRef.current?.show();
   }, []);
 
   const saveNote = useCallback(() => {
@@ -297,7 +297,7 @@ export function SeniorPerformance({
       .then((res) => {
         if (res.status >= 200 && res.status < 300) {
           Keyboard.dismiss();
-          setNoteFor(null);
+          noteSheetRef.current?.hide();
           fetchData(selectedSummaryRef.current, false, true);
         }
       })
@@ -467,75 +467,66 @@ export function SeniorPerformance({
         />
       )}
 
-      <BottomSheet
-        isOpen={noteFor !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            Keyboard.dismiss();
-            setNoteFor(null);
-            setNoteInvalid(false);
-          }
+      <ActionSheet
+        ref={noteSheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        onClose={() => {
+          Keyboard.dismiss();
+          setNoteFor(null);
+          setNoteDraft("");
+          setNoteInvalid(false);
         }}
       >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay className="bg-scrim/40" />
-          <BottomSheet.Content
-            enableOverDrag={false}
-            handleComponent={null}
-            backgroundClassName="rounded-t-[10px]"
-          >
-            <BottomSheet.Title className="text-center text-lg font-medium text-black pb-5">
-              Тэмдэглэл
-            </BottomSheet.Title>
-            <View className="gap-5" style={{ paddingBottom: insets.bottom + 12 }}>
-              {noteFor?.notes?.length ? (
-                <BottomSheetScrollView
-                  className="max-h-48"
-                  showsVerticalScrollIndicator={false}
-                >
-                  <View className="gap-2">
-                    {noteFor.notes.map((note, i) => (
-                      <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
-                        <AppText className="text-sm">{note.content}</AppText>
-                        <View className="flex-row items-center justify-between mt-1 gap-3">
-                          {note.creator_name ? (
-                            <AppText className="text-xs text-darkgray" numberOfLines={1}>
-                              {note.creator_name}
-                            </AppText>
-                          ) : (
-                            <View />
-                          )}
-                          {note.created_at ? (
-                            <AppText className="text-xs text-darkgray">
-                              {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
-                            </AppText>
-                          ) : null}
-                        </View>
-                      </View>
-                    ))}
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">Тэмдэглэл</AppText>
+        </View>
+        <View className="px-4 pb-2 gap-5">
+          {noteFor?.notes?.length ? (
+            <ScrollView className="max-h-48" showsVerticalScrollIndicator={false}>
+              <View className="gap-2">
+                {noteFor.notes.map((note, i) => (
+                  <View key={note.id ?? i} className="bg-darkgray/5 rounded-lg px-3 py-2">
+                    <AppText className="text-sm">{note.content}</AppText>
+                    <View className="flex-row items-center justify-between mt-1 gap-3">
+                      {note.creator_name ? (
+                        <AppText className="text-xs text-darkgray" numberOfLines={1}>
+                          {note.creator_name}
+                        </AppText>
+                      ) : (
+                        <View />
+                      )}
+                      {note.created_at ? (
+                        <AppText className="text-xs text-darkgray">
+                          {dayjs(note.created_at).format("YYYY/MM/DD HH:mm")}
+                        </AppText>
+                      ) : null}
+                    </View>
                   </View>
-                </BottomSheetScrollView>
-              ) : null}
-              <NoteField
-                value={noteDraft}
-                onChangeText={(text) => {
-                  setNoteDraft(text);
-                  if (noteInvalid && text.trim()) setNoteInvalid(false);
-                }}
-                isInvalid={noteInvalid}
-              />
-              <AppButton
-                label="Хадгалах"
-                onPress={saveNote}
-                isLoading={savingNote}
-                spinnerColor="#ffffff"
-                className="mt-[10px] bg-blue border-0 rounded-full"
-                labelClassName="text-white text-base font-semibold"
-              />
-            </View>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+                ))}
+              </View>
+            </ScrollView>
+          ) : null}
+
+          <NoteField
+            value={noteDraft}
+            onChangeText={(text) => {
+              setNoteDraft(text);
+              if (noteInvalid && text.trim()) setNoteInvalid(false);
+            }}
+            isInvalid={noteInvalid}
+          />
+          <AppButton
+            label="Хадгалах"
+            onPress={saveNote}
+            isLoading={savingNote}
+            spinnerColor="#ffffff"
+            className="mt-[10px] bg-blue border-0 rounded-full"
+            labelClassName="text-white text-base font-semibold"
+          />
+        </View>
+      </ActionSheet>
     </>
   );
 }
