@@ -651,7 +651,7 @@ export default function SeniorRequestDetailScreen() {
               contentContainerStyle={{ flexGrow: 1, paddingBottom: footerHeight }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              bottomOffset={footerHeight + 42 + 20}
+              bottomOffset={footerHeight + 20}
               bounces={false}
             >
             <View className="px-4 pb-5 bg-darkgray/7">
@@ -792,7 +792,7 @@ export default function SeniorRequestDetailScreen() {
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView
-              offset={{ closed: 0, opened: insets.bottom - 54 }}
+              offset={{ closed: 0, opened: insets.bottom - 12 }}
               onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
             >
             {actionMode === "decide" ? (

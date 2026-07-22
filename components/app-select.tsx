@@ -1,11 +1,10 @@
 import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
-import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Tick02Icon, UnfoldMoreIcon } from '@hugeicons-pro/core-stroke-standard';
-import { cn, FieldError, Label, PressableFeedback, Select, Separator } from 'heroui-native';
-import React, { useCallback, useRef, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { cn, FieldError, Label, PressableFeedback, Separator } from 'heroui-native';
+import React, { useCallback, useRef } from 'react';
+import { Keyboard, Pressable, useWindowDimensions, View } from 'react-native';
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from 'react-native-actions-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SelectOption = {
@@ -135,7 +134,7 @@ interface AppSelectProps {
    */
   separatorClassName?: string;
   /**
-   * Additional CSS classes for each Select.Item
+   * Additional CSS classes for each option row
    */
   itemClassName?: string;
   /**
@@ -190,55 +189,52 @@ export function AppSelect({
   renderValue,
   trigger,
 }: AppSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const scrollRef = useRef<BottomSheetScrollViewMethods>(null);
+  const sheetRef = useRef<ActionSheetRef>(null);
+  const scrollRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
-  // No explicit snapPoints → size the sheet to its MEASURED content height (fixed
-  // title + list), capped at 80%. We measure (onLayout + onContentSizeChange) instead
-  // of gorhom's enableDynamicSizing, which breaks BottomSheetScrollView scrolling on
-  // Android. A fixed snap point + h-full keeps the list reliably scrollable at the cap.
-  const maxSheetHeight = height * 0.8;
-  const measuredHeight = headerHeight + listHeight;
-  const resolvedSnapPoints = snapPoints?.length
-    ? snapPoints
-    : [Math.min(measuredHeight || maxSheetHeight, maxSheetHeight)];
-  // Only allow scrolling when the content actually exceeds the sheet cap. With few
-  // options the sheet fits the content exactly, so we disable scroll to kill the iOS
-  // overscroll/bounce that otherwise makes a non-scrollable list feel scrollable.
-  // (When custom snapPoints force a fixed height we can't know, so keep scroll on.)
-  const needsScroll = snapPoints?.length ? true : measuredHeight > maxSheetHeight;
-  const displayTitle = title || label || 'Select';
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    setIsOpen(open);
-    if (open && scrollRef.current) {
-      scrollRef.current.scrollTo({ y: 0, animated: false });
-    }
-  }, []);
 
   const isMultiple = selectionMode === 'multiple';
+  const displayTitle = title || label || 'Select';
 
-  // Handle type conversion for heroui-native Select. Multiple mode receives the
-  // full array of currently-selected options; single mode receives one option.
-  const handleValueChange = (next: any) => {
+  // Жагсаалтын өндөр: snapPoints ('35%' гэх мэт хувь) өгвөл тухайн хувиар ТОГТМОЛ
+  // өндөр; үгүй бол контентоороо автоматаар томроод дэлгэцийн 72%-д тултал багтана
+  // (түүнээс урт бол scroll).
+  const percentRaw = snapPoints?.length
+    ? parseFloat(String(snapPoints[0]).replace('%', ''))
+    : NaN;
+  const percent = Number.isFinite(percentRaw) && percentRaw > 0 ? percentRaw / 100 : undefined;
+  const listStyle = percent ? { height: height * percent } : { maxHeight: height * 0.72 };
+
+  const openSheet = useCallback(() => {
+    if (isDisabled) return;
+    // Sheet-ийн дотор textarea-гийн keyboard нээлттэй байхад select-ийг дарахад
+    // keyboard хаагдаж sheet-тэй давхцахаас сэргийлж эхлээд хаана.
+    Keyboard.dismiss();
+    sheetRef.current?.show();
+  }, [isDisabled]);
+
+  const isSelected = (option: SelectOption) =>
+    isMultiple
+      ? (values ?? []).some((o) => o.value === option.value)
+      : value?.value === option.value;
+
+  const handleSelect = (option: SelectOption) => {
     if (isMultiple) {
-      const arr = ((next as SelectOption[]) ?? []).map(
-        (o) => options.find((opt) => opt.value === o?.value) || o
-      );
-      onValuesChange?.(arr);
+      // Олон сонголт: утгыг toggle хийж, sheet-ийг нээлттэй үлдээнэ.
+      const current = values ?? [];
+      const exists = current.some((o) => o.value === option.value);
+      const next = exists
+        ? current.filter((o) => o.value !== option.value)
+        : [...current, option];
+      onValuesChange?.(next);
     } else {
-      const fullOption = options.find((opt) => opt.value === next?.value);
-      onValueChange?.(fullOption);
+      onValueChange?.(option);
+      sheetRef.current?.hide();
     }
   };
 
-  // Value handed to heroui Select (array in multiple mode).
-  const selectValue = isMultiple ? values ?? [] : value;
-
-  // Full option data for the default single-mode trigger display.
+  // Default single-mode trigger дэлгэцлэх бүрэн option.
   const fullValue =
     !isMultiple && value
       ? options.find((opt) => opt.value === value.value) || value
@@ -254,135 +250,94 @@ export function AppSelect({
         </Label>
       )}
 
-      <Select
-        presentation="bottom-sheet"
-        selectionMode={selectionMode as any}
-        isOpen={isOpen}
-        onOpenChange={handleOpenChange}
-        value={selectValue as any}
-        onValueChange={handleValueChange as any}
-        isDisabled={isDisabled}
-      >
-        <Select.Trigger variant="unstyled" asChild className="">
-          {trigger ? (
-            <PressableFeedback className={triggerClassName}>
-              {trigger}
-            </PressableFeedback>
-          ) : (
-            <PressableFeedback
-              className={cn(
-                'flex-row rounded-lg border border-gray/30 items-center justify-center px-3 py-1 h-11 disabled:opacity-50',
-                icon && 'gap-2',
-                isInvalid && 'border-red',
-                triggerClassName
-              )}
-            >
-              {icon}
-              <View className="flex-1">
-                {fullValue && renderValue ? (
-                  renderValue(fullValue)
-                ) : (
-                  <AppText className={cn(
-                    'text-base',
-                    !fullValue && 'text-muted'
-                  )}>
-                    {fullValue?.label ?? placeholder}
-                  </AppText>
-                )}
-              </View>
-              <AppIcon icon={UnfoldMoreIcon} size={20} color={arrowIconColor} />
-            </PressableFeedback>
+      {trigger ? (
+        <PressableFeedback onPress={openSheet} isDisabled={isDisabled} className={triggerClassName}>
+          {trigger}
+        </PressableFeedback>
+      ) : (
+        <PressableFeedback
+          onPress={openSheet}
+          isDisabled={isDisabled}
+          className={cn(
+            'flex-row rounded-lg border border-gray/30 items-center justify-center px-3 py-1 h-11 disabled:opacity-50',
+            icon && 'gap-2',
+            isInvalid && 'border-red',
+            triggerClassName
           )}
-        </Select.Trigger>
-
-        <Select.Portal>
-          <Select.Overlay className="bg-scrim/40" />
-          <Select.Content
-            presentation="bottom-sheet"
-            snapPoints={resolvedSnapPoints}
-            topInset={insets.top}
-            enableOverDrag={false}
-            enableDynamicSizing={false}
-            handleComponent={null}
-            contentContainerClassName="h-full p-0 rounded-t-[10px] border border-transparent bg-overlay overflow-hidden"
-            contentContainerProps={{
-              style: {
-                borderCurve: 'continuous',
-              },
-            }}
-          >
-            <View
-              className="px-4 py-5"
-              onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-            >
-              <AppText className="text-lg font-medium text-center">
-                {displayTitle}
+        >
+          {icon}
+          <View className="flex-1">
+            {fullValue && renderValue ? (
+              renderValue(fullValue)
+            ) : (
+              <AppText className={cn('text-base', !fullValue && 'text-muted')}>
+                {fullValue?.label ?? placeholder}
               </AppText>
-            </View>
+            )}
+          </View>
+          <AppIcon icon={UnfoldMoreIcon} size={20} color={arrowIconColor} />
+        </PressableFeedback>
+      )}
 
-            <BottomSheetScrollView
-              ref={scrollRef}
-              scrollEnabled={needsScroll}
-              contentContainerClassName="px-4 pb-10"
-              showsVerticalScrollIndicator={false}
-              onContentSizeChange={(_w, h) => setListHeight(h)}
-            >
-              {listHeader}
-              {options.map((option, index) => (
-                <View key={option.value}>
-                  <Select.Item
-                    className={cn('py-3', itemClassName)}
-                    value={option.value}
-                    label={option.label}
-                  >
-                    {renderItem ? (
-                      // Custom render
-                      ({ isSelected, isDisabled }) => (
-                        <>
-                          {renderItem({ option, isSelected, isDisabled })}
-                          <Select.ItemIndicator>
-                            <AppIcon
-                              icon={Tick02Icon}
-                              size={indicatorIconSize}
-                              color={indicatorIconColor}
-                              strokeWidth={2}
-                            />
-                          </Select.ItemIndicator>
-                        </>
-                      )
-                    ) : (
-                      // Default render
-                      ({ isSelected }) => (
-                        <>
-                          <View className="flex-1">
-                            <Select.ItemLabel className={isSelected ? 'font-medium' : 'font-normal'} />
-                          </View>
-                          <Select.ItemIndicator>
-                            <AppIcon
-                              icon={Tick02Icon}
-                              size={indicatorIconSize}
-                              color={indicatorIconColor}
-                              strokeWidth={2}
-                            />
-                          </Select.ItemIndicator>
-                        </>
-                      )
-                    )}
-                  </Select.Item>
-                  {showSeparators && index < options.length - 1 && (
-                    <Separator className={cn('bg-darkgray/15', separatorClassName)} />
-                  )}
-                </View>
-              ))}
-            </BottomSheetScrollView>
-          </Select.Content>
-        </Select.Portal>
-      </Select>
       {errorMessage && isInvalid && (
         <FieldError isInvalid className={cn('', errorMessageClassName)}>
           {errorMessage}
         </FieldError>
       )}
+
+      <ActionSheet
+        ref={sheetRef}
+        gestureEnabled
+        indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
+        containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+        useBottomSafeAreaPadding={false}
+        onOpen={() => scrollRef.current?.scrollTo?.({ y: 0, animated: false })}
+      >
+        <View className="px-4 py-5">
+          <AppText className="text-lg font-medium text-center">{displayTitle}</AppText>
+        </View>
+
+        <SheetScrollView
+          ref={scrollRef}
+          style={listStyle}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom }}
+          showsVerticalScrollIndicator={false}
+        >
+          {listHeader}
+          {options.map((option, index) => {
+            const selected = isSelected(option);
+            return (
+              <View key={option.value}>
+                <Pressable
+                  className={cn('flex-row items-center py-3', itemClassName)}
+                  onPress={() => handleSelect(option)}
+                >
+                  {renderItem ? (
+                    renderItem({ option, isSelected: selected, isDisabled })
+                  ) : (
+                    <View className="flex-1">
+                      <AppText className={cn('text-base', selected ? 'font-medium' : 'font-normal')}>
+                        {option.label}
+                      </AppText>
+                    </View>
+                  )}
+                  {selected && (
+                    <AppIcon
+                      icon={Tick02Icon}
+                      size={indicatorIconSize}
+                      color={indicatorIconColor}
+                      strokeWidth={2}
+                    />
+                  )}
+                </Pressable>
+                {showSeparators && index < options.length - 1 && (
+                  <Separator className={cn('bg-darkgray/15', separatorClassName)} />
+                )}
+              </View>
+            );
+          })}
+        </SheetScrollView>
+      </ActionSheet>
     </View>
   );
 }

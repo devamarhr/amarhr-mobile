@@ -10,7 +10,7 @@ import { HeroUINativeProvider, PortalHost } from 'heroui-native';
 import { useCallback, useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardAvoidingView, KeyboardProvider, KeyboardToolbar } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import '../config/dayjs';
 import '../global.css';
@@ -54,7 +54,6 @@ function AppContent() {
             dialogs and toasts — deterministic z-order on Android included. */}
         <PortalHost name="floating-overlay" />
         <AttachmentPickerHost />
-        <KeyboardToolbar doneText="Хаах" showArrows={false} />
       </HeroUINativeProvider>
     </AppThemeProvider>
   );

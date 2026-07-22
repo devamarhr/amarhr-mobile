@@ -202,26 +202,6 @@ function AttachmentSection({ attachments, isUploading, onPick, onRemove }: Attac
   );
 }
 
-// Global KeyboardToolbar-ийн өндөр (react-native-keyboard-controller). Sheet-ийн
-// доод товчийг toolbar-аас дээш өргөхөд ашиглана.
-const KEYBOARD_TOOLBAR_HEIGHT = 42;
-
-// ActionSheet keyboard гарахад бүх контентоо дээш өргөж, доод захыг keyboard-ийн
-// орой дээр байрлуулдаг. Тэнд global toolbar сууж доод товчийг халхалдаг тул
-// keyboard идэвхтэй эсэхээр нэмэлт padding өгнө.
-function useSheetKeyboardVisible() {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => setVisible(true));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setVisible(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return visible;
-}
-
 function SheetDescriptionField({
   value,
   onChangeText,
@@ -489,9 +469,6 @@ function UnusedSheet({
   // Save дархад заавал бөглөх талбар хоосон бол toast-ын оронд тухайн талбарт
   // улаан border харуулна. Талбар бөглөгдмөгц isInvalid автоматаар арилна.
   const [showErrors, setShowErrors] = useState(false);
-  // Keyboard гарахад global KeyboardToolbar (42px) "Илгээх" товчийг халхалдаг тул
-  // sheet-ийн доод padding-ийг нэмж товчийг toolbar-аас дээш өргөнө.
-  const keyboardVisible = useSheetKeyboardVisible();
   const { attachments, isUploading, pick, remove, reset } = useAttachments(
     showError,
     notifyAttachmentLimit,
@@ -564,7 +541,8 @@ function UnusedSheet({
         <View className="px-4 py-5">
           <AppText className="text-lg font-medium text-center">Биеэр эдлээгүй хоног</AppText>
         </View>
-        <View className="px-4" style={{ paddingBottom: keyboardVisible ? KEYBOARD_TOOLBAR_HEIGHT + 12 : 0 }}>
+        {/* Keyboard гарахад доод "Илгээх" товч keyboard-т наалдахгүй жижиг зай. */}
+        <View className="px-4 pb-3">
           <View className="gap-5">
             <View className="flex-row gap-3">
               <View className="flex-1">
@@ -659,7 +637,6 @@ function ApproveSheet({
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
-  const keyboardVisible = useSheetKeyboardVisible();
   const { attachments, isUploading, pick, remove, reset } = useAttachments(
     showError,
     notifyAttachmentLimit,
@@ -711,9 +688,8 @@ function ApproveSheet({
         <View className="px-4 py-5">
           <AppText className="text-lg font-medium text-center">Төлөвлөсөн э/амралт батлуулах</AppText>
         </View>
-        {/* ApproveSheet нь isModal (default) тул global KeyboardToolbar гарахгүй —
-            toolbar-ийн клиренс хэрэггүй, зөвхөн keyboard-тай жижиг зай өгнө. */}
-        <View className="px-4" style={{ paddingBottom: keyboardVisible ? 12 : 0 }}>
+        {/* Keyboard гарахад доод товч keyboard-т наалдахгүй жижиг зай. */}
+        <View className="px-4 pb-3">
           <View className="gap-5">
             <SheetDescriptionField
               value={description}

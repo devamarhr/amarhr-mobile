@@ -236,51 +236,43 @@ export default function AttendanceMapScreen() {
         </View>
       ) : (
         <View className="flex-1">
-          <MapView
-            ref={mapRef}
-            provider={PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            initialRegion={initialRegion}
-            showsUserLocation
-            showsMyLocationButton
-            followsUserLocation
-          >
-            {workplaces.map((wp, index) => (
-              <React.Fragment key={index}>
-                <Circle
-                  center={{ latitude: wp.latitude, longitude: wp.longitude }}
-                  radius={wp.radius}
-                  fillColor="rgba(0, 95, 238, 0.1)"
-                  strokeColor="rgba(0, 95, 238, 0.4)"
-                  strokeWidth={2}
-                />
-                <Marker
-                  coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
-                  title={wp.branch_name}
-                />
-              </React.Fragment>
-            ))}
-          </MapView>
+          <View className="flex-1">
+            <MapView
+              ref={mapRef}
+              provider={PROVIDER_GOOGLE}
+              style={StyleSheet.absoluteFill}
+              initialRegion={initialRegion}
+              showsUserLocation
+              showsMyLocationButton
+              followsUserLocation
+            >
+              {workplaces.map((wp, index) => (
+                <React.Fragment key={index}>
+                  <Circle
+                    center={{ latitude: wp.latitude, longitude: wp.longitude }}
+                    radius={wp.radius}
+                    fillColor="rgba(0, 95, 238, 0.1)"
+                    strokeColor="rgba(0, 95, 238, 0.4)"
+                    strokeWidth={2}
+                  />
+                  <Marker
+                    coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
+                    title={wp.branch_name}
+                  />
+                </React.Fragment>
+              ))}
+            </MapView>
+          </View>
 
-          <View
-            className="absolute bottom-0 left-0 right-0 p-4"
-            style={{ paddingBottom: insets.bottom + 16 + 56 }}
-          >
+          <View className="px-4 bg-background pt-5" style={{ paddingBottom: insets.bottom + 10 }}>
             <AppButton
               label="Бүртгүүлэх"
               onPress={handleClockIn}
               isDisabled={!isInsideGeofence || !userLocation}
               isLoading={isPunching}
-              spinnerColor="#005FEE"
-              className="h-[44px] bg-lightblue border-lightblue disabled:bg-gray/20 disabled:border-gray/20 disabled:opacity-100"
-              labelClassName="text-blue text-base font-semibold disabled:text-gray"
-              style={{
-                shadowColor: '#005FEE',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 12,
-                elevation: 4,
-              }}
+              spinnerColor="#ffffff"
+              className="bg-blue border-0 rounded-full disabled:bg-gray/20 disabled:border-gray/20 disabled:opacity-100"
+              labelClassName="text-white text-base font-semibold disabled:text-gray"
             />
           </View>
         </View>

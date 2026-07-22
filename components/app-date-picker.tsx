@@ -2,7 +2,7 @@ import { AppText } from '@/components/app-text';
 import dayjs from 'dayjs';
 import { cn, FieldError, Label, PressableFeedback } from 'heroui-native';
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 
 interface AppDatePickerProps {
@@ -168,7 +168,11 @@ export function AppDatePicker({
 
       <PressableFeedback
         isDisabled={isDisabled}
-        onPress={() => setIsOpen(true)}
+        onPress={() => {
+          // Textarea-гийн keyboard нээлттэй байхад picker-тэй давхцахаас сэргийлнэ.
+          Keyboard.dismiss();
+          setIsOpen(true);
+        }}
         className={cn(
           'flex-row rounded-lg border border-gray/30 items-center h-11 px-3 gap-2 disabled:opacity-50',
           isInvalid && 'border-red',

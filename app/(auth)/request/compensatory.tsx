@@ -290,7 +290,7 @@ export default function CompensatoryRequestScreen() {
           style={{ flex: 1, paddingHorizontal: 16, backgroundColor: '#ffffff' }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bottomOffset={footerHeight + 42 + 20}
+          bottomOffset={footerHeight + 20}
         >
           <View className="gap-[30px] pb-10 pt-7.5">
             <View className="flex-row gap-3">
@@ -514,7 +514,7 @@ export default function CompensatoryRequestScreen() {
         </KeyboardAwareScrollView>
 
         <KeyboardStickyView
-          offset={{ closed: 0, opened: insets.bottom - 54 }}
+          offset={{ closed: 0, opened: insets.bottom - 12 }}
           onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
         >
           <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>

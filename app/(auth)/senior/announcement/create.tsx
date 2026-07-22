@@ -266,7 +266,7 @@ export default function CreateAnnouncementScreen() {
           contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bottomOffset={footerHeight + 42 + 20}
+          bottomOffset={footerHeight + 20}
         >
           <View className="gap-[30px]">
             <AppSelect
@@ -427,7 +427,7 @@ export default function CreateAnnouncementScreen() {
       </View>
 
       <KeyboardStickyView
-        offset={{ closed: 0, opened: insets.bottom - 54 }}
+        offset={{ closed: 0, opened: insets.bottom - 12 }}
         onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
       >
         <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>

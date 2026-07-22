@@ -611,7 +611,7 @@ export default function RequestCreateScreen() {
           style={{flex:1,paddingHorizontal: 16,backgroundColor: "#ffffff"}}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bottomOffset={footerHeight + 42 + 20}
+          bottomOffset={footerHeight + 20}
         >
           <View className="pb-10 pt-7.5">
             {formFields}
@@ -678,7 +678,7 @@ export default function RequestCreateScreen() {
         </KeyboardAwareScrollView>
 
         <KeyboardStickyView
-          offset={{ closed: 0, opened: insets.bottom - 54 }}
+          offset={{ closed: 0, opened: insets.bottom - 12 }}
           onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
         >
           <View className="px-4 bg-background" style={{ paddingBottom: insets.bottom + 10, paddingTop: 16 }}>

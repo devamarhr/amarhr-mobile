@@ -5,7 +5,6 @@ import * as Notifications from 'expo-notifications';
 
 export const ATTENDANCE_REMINDER_TYPE = 'attendance_reminder';
 
-const DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 export const REMINDER_OFFSET_MINUTES = 5;
 const SYNC_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -66,8 +65,10 @@ export async function syncAttendanceReminders(opts?: { force?: boolean }): Promi
 
     const now = dayjs();
     for (const shift of res.data.shifts) {
-      const plannedStart = dayjs(shift.planned_start, DATETIME_FORMAT);
-      const plannedEnd = dayjs(shift.planned_end, DATETIME_FORMAT);
+      // API нь ISO 8601 UTC (…Z) буцаадаг тул формат зааж өгөхгүй — dayjs өөрөө
+      // ISO-г танин UTC-г local цаг руу хөрвүүлнэ.
+      const plannedStart = dayjs(shift.planned_start);
+      const plannedEnd = dayjs(shift.planned_end);
 
       const startAt = plannedStart.subtract(REMINDER_OFFSET_MINUTES, 'minute');
       if (!shift.actual_start && startAt.isAfter(now)) {
