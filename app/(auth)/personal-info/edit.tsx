@@ -219,14 +219,16 @@ export default function PersonalInfoEditScreen() {
                 const dateValue = value ? new Date(value) : undefined;
                 return (
                   <AppDatePicker
-                    label="Төрсөн огноо"
+                    label="Төрсөн он, сар, өдөр"
                     mode="date"
                     value={dateValue}
                     onValueChange={(date) => {
                       onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
                     }}
-                    placeholder="0000/00/00"
+                    placeholder="----/--/--"
+                    placeholderClassName="text-darkgray/50"
                     isRequired
+                    errorMessage={errors.birthDate?.message}
                     isInvalid={!!errors.birthDate}
                   />
                 );
@@ -465,11 +467,13 @@ export default function PersonalInfoEditScreen() {
                     name={`children.${index}.gender`}
                     render={({ field: { onChange, value } }) => (
                       <View className="gap-2">
-                        <Label>
-                          <Label.Text className="text-sm font-normal text-darkgray">
-                            Хүйс
-                          </Label.Text>
-                        </Label>
+                        {index === 0 && (
+                          <Label>
+                            <Label.Text className="text-sm font-normal text-darkgray">
+                              Хүйс
+                            </Label.Text>
+                          </Label>
+                        )}
                         <View className="flex-row gap-3">
                           <AppButton
                             label="Охин"
@@ -506,7 +510,7 @@ export default function PersonalInfoEditScreen() {
                       const fieldError = errors.children?.[index]?.birthDate;
                       return (
                         <AppDatePicker
-                          label="Төрсөн огноо"
+                          label={index === 0 ? 'Төрсөн огноо' : undefined}
                           mode="date"
                           value={dateValue}
                           onValueChange={(date) => {

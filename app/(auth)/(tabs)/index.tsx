@@ -384,7 +384,7 @@ export default function HomeScreen() {
               onPress={() => router.navigate('/contact')}
               className="w-10 h-10 rounded-full bg-lightblue items-center justify-center"
             >
-              <AppIcon icon={UserMultipleIcon} color="#222222" size={24} />
+              <AppIcon icon={UserMultipleIcon} color="#606884" size={24} />
             </Pressable>
             <Pressable onPress={() => router.navigate('/profile')}>
               <Avatar alt="Profile" className="w-10 h-10">

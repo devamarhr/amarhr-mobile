@@ -2,7 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
@@ -219,7 +219,7 @@ function AddSheet({
                   minimumDate={minDate}
                   maximumDate={maxDate}
                   isInvalid={showErrors && !startDate}
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                 />
               </View>
               <View className="flex-1">

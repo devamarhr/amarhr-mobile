@@ -1,6 +1,6 @@
 import { AppText } from '@/components/app-text';
 import { FileAttachmentIcon } from '@hugeicons-pro/core-stroke-standard';
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon } from "@/components/app-icon";
 import { cn } from 'heroui-native';
 import React from 'react';
 import { Linking, Pressable, View } from 'react-native';
@@ -31,7 +31,7 @@ export function AppAttachmentList({
           className="flex-row items-center gap-2 bg-background border border-gray/30 rounded-lg h-11 px-2.5"
           onPress={() => Linking.openURL(file.url)}
         >
-          <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+          <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
           <AppText className="text-base text-black flex-1" numberOfLines={1}>
             {file.name ?? file.path?.split('/').pop()}
           </AppText>

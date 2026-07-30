@@ -132,7 +132,7 @@ function DayCell({
             day.isCurrentMonth && data?.isHoliday && 'text-blue',
           )}
         >
-          {day.day}
+          {String(day.day).padStart(2, '0')}
         </AppText>
       </View>
       {/* Indicators */}

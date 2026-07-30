@@ -91,6 +91,7 @@ export function AppTextField({
       <InputComponent
         returnKeyType={isTextArea ? 'done' : undefined}
         submitBehavior={isTextArea ? 'blurAndSubmit' : undefined}
+        placeholderColorClassName="accent-darkgray/50"
         {...inputProps}
         className={cn(
           'rounded-lg border border-gray/30 focus:border-gray/30 px-3 text-base ios:shadow-none android:shadow-none',

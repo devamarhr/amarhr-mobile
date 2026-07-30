@@ -15,6 +15,9 @@ export interface InfoRow {
  * No measurement needed. A uniform line height keeps the two columns' rows aligned
  * even when label and value use different font sizes. Values are single-line; use a
  * full-width block for long free-text (e.g. "Шалтгаан") instead of this list.
+ *
+ * Spacing follows the design: a 24px line box plus a 5px row gap = a 29px row
+ * pitch, and a 10px column gap between the label and value columns.
  */
 export function InfoRowsView({
   rows,
@@ -32,9 +35,9 @@ export function InfoRowsView({
   if (rows.length === 0) return null;
   const labelOf = (row: InfoRow) => (withColon ? `${row.label}:` : row.label);
   return (
-    <View className={cn("flex-row gap-3", className)}>
+    <View className={cn("flex-row gap-2.5", className)}>
       {/* Label column: no width → auto-sizes to the widest label (max-content). */}
-      <View className="gap-2">
+      <View className="gap-[5px]">
         {rows.map((row, i) => (
           <AppText
             key={i}
@@ -46,7 +49,7 @@ export function InfoRowsView({
         ))}
       </View>
       {/* Value column: fills the remaining width. */}
-      <View className="flex-1 gap-2">
+      <View className="flex-1 gap-[5px]">
         {rows.map((row, i) => (
           <AppText
             key={i}

@@ -2,8 +2,8 @@ import { AppButton } from '@/components/app-button';
 import { AppCheckbox } from '@/components/app-checkbox';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
-import { AppIcon } from "@/components/app-icon";
-import { AppSelect } from '@/components/app-select';
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
+import { AppSelect, type SelectOption } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
@@ -56,6 +56,23 @@ function parseDateTimeToString(s?: string): string | undefined {
   return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : undefined;
 }
 
+/**
+ * Duration options for the hour selects: 01:00 … `cap`:00 in 30-minute steps,
+ * labelled as HH:mm per design (no "цаг" suffix, in the list or once selected).
+ * The value stays a plain hour count — "1.5" for 01:30 — which is what the
+ * request payload's `hours` carries.
+ */
+function buildDurationOptions(cap: number): SelectOption[] {
+  return Array.from({ length: Math.max(0, cap * 2 - 1) }, (_, i) => {
+    const hours = 1 + i * 0.5;
+    const minutes = hours % 1 ? '30' : '00';
+    return {
+      value: String(hours),
+      label: `${String(Math.floor(hours)).padStart(2, '0')}:${minutes}`,
+    };
+  });
+}
+
 export default function RequestCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -104,20 +121,13 @@ export default function RequestCreateScreen() {
     Array.from({ length: maxDays }, (_, i) => ({ value: String(i + 1), label: `${i + 1} хоног` })),
     [maxDays]
   );
-  const hourOptions = useMemo(() =>
-    Array.from({ length: maxHours }, (_, i) => ({ value: String(i + 1), label: `${i + 1} цаг` })),
+  const hourOptions = useMemo(() => buildDurationOptions(maxHours), [maxHours]);
+  // Overtime is additionally capped at 12:00, and falls back to it when the API
+  // sends no max.
+  const overtimeHourOptions = useMemo(
+    () => buildDurationOptions(maxHours > 0 ? Math.min(maxHours, 12) : 12),
     [maxHours]
   );
-  // Overtime duration: 1:00 … 12:00 in 30-min steps, capped at the API max hours.
-  const overtimeHourOptions = useMemo(() => {
-    const cap = maxHours > 0 ? Math.min(maxHours, 12) : 12;
-    return Array.from({ length: cap * 2 - 1 }, (_, i) => {
-      const hours = 1 + i * 0.5;
-      const whole = Math.floor(hours);
-      const minutes = hours % 1 ? '30' : '00';
-      return { value: String(hours), label: `${whole}:${minutes}` };
-    });
-  }, [maxHours]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; path: string }[]>([]);
@@ -294,7 +304,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                   isInvalid={!!errors.startDate}
                 />
               )}
@@ -307,7 +317,7 @@ export default function RequestCreateScreen() {
               value={endDate}
               placeholder="00/00"
               format="MM/DD"
-              icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+              icon={<AppFieldIcon icon={Calendar03Icon} />}
               isDisabled
               triggerClassName="bg-lightgray border-transparent disabled:opacity-100"
             />
@@ -358,7 +368,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                   isInvalid={!!errors.startDate}
                 />
               )}
@@ -381,7 +391,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Clock01Icon} />}
                   isInvalid={!!errors.startTime}
                   isDisabled={!dateSelected}
                 />
@@ -398,9 +408,8 @@ export default function RequestCreateScreen() {
                   label={isRemote ? 'Ажиллах цаг' : 'Чөлөө хүсэх цаг'}
                   options={hourOptions}
                   value={value != null ? hourOptions.find(o => o.value === String(value)) : undefined}
-                  onValueChange={(opt) => onChange(opt ? parseInt(opt.value, 10) : undefined)}
+                  onValueChange={(opt) => onChange(opt ? parseFloat(opt.value) : undefined)}
                   placeholder="Сонгох"
-                  renderValue={(option) => <AppText className="text-base">{option.value}</AppText>}
                   isInvalid={!!errors.hours}
                   isDisabled={!dateSelected || hourOptions.length === 0}
                 />
@@ -430,7 +439,7 @@ export default function RequestCreateScreen() {
                   onValueChange={(date) => onChange(dayjs(date).format('YYYY-MM-DD'))}
                   placeholder="00/00"
                   format="MM/DD"
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                   isInvalid={!!errors.startDate}
                 />
               )}
@@ -453,7 +462,7 @@ export default function RequestCreateScreen() {
                   placeholder="00:00"
                   format="HH:mm"
                   minuteInterval={5}
-                  icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Clock01Icon} />}
                   isInvalid={!!errors.startTime}
                   isDisabled={!dateSelected}
                 />
@@ -475,7 +484,6 @@ export default function RequestCreateScreen() {
                   value={value != null ? overtimeHourOptions.find(o => o.value === String(value)) : undefined}
                   onValueChange={(opt) => onChange(opt ? parseFloat(opt.value) : undefined)}
                   placeholder="Сонгох"
-                  renderValue={(option) => <AppText className="text-base">{option.label} цаг</AppText>}
                   isInvalid={!!errors.hours}
                   isDisabled={!dateSelected}
                 />
@@ -517,7 +525,7 @@ export default function RequestCreateScreen() {
                   format="HH:mm"
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
-                  icon={<AppIcon icon={Login03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Login03Icon} />}
                   isInvalid={!!arrivalError}
                   isDisabled={arrivalDisabled}
                 />
@@ -555,7 +563,7 @@ export default function RequestCreateScreen() {
                   minuteInterval={5}
                   placeholderClassName="text-darkerblue/50"
                   minimumDate={crossesDay ? minLeaveDate : undefined}
-                  icon={<AppIcon icon={Logout03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Logout03Icon} />}
                   isInvalid={!!leaveError}
                 />
               )}
@@ -568,7 +576,7 @@ export default function RequestCreateScreen() {
             onSelectedChange={handleCrossesDayChange}
             size={20}
           />
-          <AppText className="text-sm text-darkgray">Хоног дамжина</AppText>
+          <AppText className="text-base leading-6 text-darkgray/50">Хоног дамжина</AppText>
         </View>
       </View>
     );
@@ -602,8 +610,8 @@ export default function RequestCreateScreen() {
           showBack
           backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
-        <View className="px-4 pb-7.5 gap-5">
-          <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
+        <View className="px-4 pb-7.5 gap-[15px]">
+          <AppText className="text-base leading-6 font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
           <RequestHeaderInfo rows={headerInfo} />
         </View>
 
@@ -655,7 +663,7 @@ export default function RequestCreateScreen() {
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                <AppFieldIcon icon={FileAttachmentIcon} color="#222222" />
               )}
               <AppText className="text-base text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
@@ -663,7 +671,7 @@ export default function RequestCreateScreen() {
             {attachments.map((file, index) => (
               <View key={index} className="mt-[15px] flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                  <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable

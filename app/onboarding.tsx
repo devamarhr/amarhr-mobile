@@ -1,6 +1,7 @@
 import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from "@/components/app-date-picker";
 import { AppHeader } from "@/components/app-header";
+import { AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
@@ -14,7 +15,6 @@ import {
   MinusSignIcon,
   PlusSignIcon
 } from "@hugeicons-pro/core-stroke-standard";
-import { AppIcon } from "@/components/app-icon";
 import dayjs from 'dayjs';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useRouter } from 'expo-router';
@@ -206,14 +206,16 @@ export default function OnboardingScreen() {
 
             return (
               <AppDatePicker
-                label="Төрсөн огноо"
+                label="Төрсөн он, сар, өдөр"
                 mode="date"
                 value={dateValue}
                 onValueChange={(date) => {
                   onChange(date ? dayjs(date).format('YYYY-MM-DD') : '');
                 }}
-                placeholder="0000/00/00"
+                placeholder="----/--/--"
+                placeholderClassName="text-darkgray/50"
                 isRequired
+                errorMessage={fieldError?.message}
                 isInvalid={!!fieldError}
               />
             );
@@ -402,7 +404,7 @@ export default function OnboardingScreen() {
       return (
         <View className="flex-1 gap-6">
           <View className="gap-2">
-            <Label isRequired>
+            <Label>
               <Label.Text className="text-sm font-normal text-darkgray">
                 Хүүхэд
               </Label.Text>
@@ -439,11 +441,13 @@ export default function OnboardingScreen() {
                   name={`children.${index}.gender`}
                   render={({ field: { onChange, value } }) => (
                     <View className="gap-2">
-                      <Label isRequired>
-                        <Label.Text className="text-sm font-normal text-darkgray">
-                          Хүйс
-                        </Label.Text>
-                      </Label>
+                      {index === 0 && (
+                        <Label isRequired>
+                          <Label.Text className="text-sm font-normal text-darkgray">
+                            Хүйс
+                          </Label.Text>
+                        </Label>
+                      )}
                       <View className="flex-row gap-3">
                         <AppButton
                           label="Охин"
@@ -481,7 +485,7 @@ export default function OnboardingScreen() {
 
                     return (
                       <AppDatePicker
-                        label="Төрсөн огноо"
+                        label={index === 0 ? 'Төрсөн огноо' : undefined}
                         mode="date"
                         value={dateValue}
                         onValueChange={(date) => {
@@ -657,15 +661,13 @@ export default function OnboardingScreen() {
           <View className="gap-5 w-full mt-4 items-center">
             <AppButton
               label="Утаснаас оруулах"
-              className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
-              labelClassName="text-black text-base"
+              className="w-[60%] bg-white border-darkgray/30 rounded-full"
               onPress={handleUploadFromPhone}
               isDisabled={isUploadingImage}
             />
             <AppButton
               label="Шинээр зураг авах"
-              className="w-[60%] h-[52px] bg-white border-darkgray/30 rounded-full"
-              labelClassName="text-black text-base"
+              className="w-[60%] bg-white border-darkgray/30 rounded-full"
               onPress={handleTakePhoto}
               isDisabled={isUploadingImage}
             />
@@ -765,7 +767,7 @@ export default function OnboardingScreen() {
     // Define which fields to validate for each page
     const pageFields: Record<number, string[]> = {
       0: ['lastName', 'firstName', 'gender', 'nationality', 'familyName'],
-      1: ['registerNumber', 'email', 'emergencyContact', 'emergencyRelation'],
+      1: ['registerNumber', 'birthDate', 'email', 'emergencyContact', 'emergencyRelation'],
       2: ['address.path.aimag', 'address.path.soum', 'address.path.khoroo', 'address.street'],
       3: ['children'],
       4: ['bankAccount', 'bank'],
@@ -817,7 +819,7 @@ export default function OnboardingScreen() {
         <View className="flex-row justify-between gap-3 pt-4">
           {currentPage > 0 ? (
             <AppButton
-              className="rounded border-darkgray/60 w-11 h-11 p-0"
+              className="rounded-lg border-darkgray/60 w-11 h-11 p-0"
               isIconOnly
               leftIcon={
                 <AppIcon icon={ArrowLeft01Icon} color="#222222" size={24} />
@@ -842,7 +844,7 @@ export default function OnboardingScreen() {
           </View>
           <AppButton
             label="Үргэлжлүүл"
-            className="flex-1 rounded border-darkgray/60"
+            className="flex-1 rounded-full border-darkgray/60"
             onPress={currentPage === totalPages - 1 ? handleSubmit(handleComplete) : handleNext}
             isLoading={isLoading}
             isDisabled={isUploadingImage}

@@ -72,7 +72,8 @@
           "locationWhenInUsePermission": "Цаг бүртгэлд таны байршлыг ашиглана."
         }
       ],
-      "./plugins/withAndroidReleaseSigning"
+      "./plugins/withAndroidReleaseSigning",
+      "./plugins/withImagePickerCropColors"
     ],
     "experiments": {
       "typedRoutes": true,

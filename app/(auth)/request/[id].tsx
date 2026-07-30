@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import { AppToast } from '@/components/app-toast';
 import { type InfoRow } from '@/components/info-rows';
+import { getRequestHeaderInfo, RequestHeaderInfo } from '@/components/request-header-info';
 import { api } from '@/config/api';
 import { useRequestRefreshStore } from '@/store/request-refresh-store';
 import {
@@ -68,6 +69,11 @@ interface RequestSetting {
   type?: string;
   request_type?: string;
   detail?: SettingDetail;
+  // Тэтгэмжийн (benefit) хүсэлтийн header мөрүүдийн эх сурвалж.
+  adjustment_setting?: {
+    id: number;
+    detail: { amount: number; amount_type: 'fixed' | 'percent' }[];
+  } | null;
 }
 
 interface Decree {
@@ -191,6 +197,13 @@ export default function RequestDetailScreen() {
 
   const formType = useMemo(
     () => (request ? getFormType(request.setting, request.detail) : 'textOnly'),
+    [request]
+  );
+
+  // Хүсэлт илгээх дэлгэцтэй ижил header мэдээлэл. Ээлжийн амралт, нөхөж амрах нь
+  // одоогийн үлдэгдэл харуулдаг тул илгээсэн хүсэлтийн дэлгэрэнгүй дээр хасагдана.
+  const headerInfo = useMemo(
+    () => (request ? getRequestHeaderInfo(request.setting, { includeBalances: false }) ?? [] : []),
     [request]
   );
 
@@ -598,10 +611,11 @@ export default function RequestDetailScreen() {
           </View>
         ) : (
           <>
-            <View className="px-4 pb-7.5">
-              <AppText className="text-base font-semibold text-black" numberOfLines={1}>
+            <View className="px-4 pb-7.5 gap-[15px]">
+              <AppText className="text-base leading-6 font-semibold text-black" numberOfLines={1}>
                 {request.setting.name}
               </AppText>
+              <RequestHeaderInfo rows={headerInfo} />
             </View>
 
             <ScrollView
@@ -624,7 +638,7 @@ export default function RequestDetailScreen() {
                   <AppAttachmentList attachments={request.attachments} className="mt-5" />
                 </View>
 
-                {request.review_detail?.comment && (
+                {!!request.review_detail?.comment && (
                   <View>
                     <AppText className="text-sm text-darkgray/50">
                       {getReviewLabel(request.review_by_type) ?? 'Санал'}
@@ -633,7 +647,7 @@ export default function RequestDetailScreen() {
                     <AppAttachmentList attachments={request.review_detail.attachments} className="mt-5" />
                   </View>
                 )}
-                {request.decision_detail?.comment && (
+                {!!request.decision_detail?.comment && (
                   <View>
                     <AppText className="text-sm text-darkgray/50">
                       {getDecisionLabel(request.decision_by_type) ?? 'Шийдвэр'}
@@ -642,10 +656,10 @@ export default function RequestDetailScreen() {
                     <AppAttachmentList attachments={request.decision_detail.attachments} className="mt-5" />
                   </View>
                 )}
-                {request.decree && (request.decree.description || request.decree.attachments?.length) && (
+                {!!request.decree && !!(request.decree.description || request.decree.attachments?.length) && (
                   <View>
                     <AppText className="text-sm text-darkgray/50">Админ</AppText>
-                    {request.decree.description && (
+                    {!!request.decree.description && (
                       <AppText className="text-base">{request.decree.description}</AppText>
                     )}
                     <AppAttachmentList attachments={request.decree.attachments} className="mt-5" />

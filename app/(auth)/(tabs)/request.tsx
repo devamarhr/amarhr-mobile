@@ -1,6 +1,7 @@
 import { AppButton } from '@/components/app-button';
 import { AppHeader } from '@/components/app-header';
 import { AppText } from '@/components/app-text';
+import { getRequestHeaderInfo, type HeaderInfoItem } from '@/components/request-header-info';
 import { api } from '@/config/api';
 import { useNotificationStore } from '@/store/notification-store';
 import { useRequestRefreshStore } from '@/store/request-refresh-store';
@@ -15,11 +16,6 @@ import { withUniwind } from 'uniwind';
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type FormType = 'dateRange' | 'timeRange' | 'compensatory' | 'textOnly' | 'timeCorrection' | 'annualLeave' | 'overtime';
-
-interface HeaderInfoItem {
-  label: string;
-  value: string;
-}
 
 interface AnnualLeaveSplit {
   id: number;
@@ -110,59 +106,6 @@ function getFormType(setting: ApiRequestSetting): FormType {
   return 'textOnly';
 }
 
-// Format a minutes value as HH:mm, e.g. 90 -> "01:30", 720 -> "12:00".
-function formatMinutesAsHHMM(minutes: number): string {
-  const safe = Math.max(0, Math.round(minutes));
-  const h = Math.floor(safe / 60);
-  const m = safe % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-function getHeaderInfo(setting: ApiRequestSetting): HeaderInfoItem[] | undefined {
-  const detail = setting.detail;
-
-  if (detail.key === 'compensatory' && detail.compensatory_minutes != null) {
-    return [{ label: 'Хуримтлагдсан цаг', value: formatMinutesAsHHMM(detail.compensatory_minutes) }];
-  }
-
-  const annualLeaveTotal = detail.annual_leave_total_days ?? detail.annual_leave_available_days;
-  if (detail.key === 'annual_leave' && annualLeaveTotal != null) {
-    return [{ label: 'Боломжит хоног', value: `${annualLeaveTotal} хоног` }];
-  }
-
-  if (setting.type === 'benefit' && setting.adjustment_setting?.detail?.length) {
-    return setting.adjustment_setting.detail.map((item) => {
-      if (item.amount_type === 'fixed') {
-        return { label: 'Нэг удаагийн', value: `₮ ${item.amount.toLocaleString()}` };
-      }
-      return { label: 'Үндсэн цалингийн', value: `% ${item.amount}` };
-    });
-  }
-
-  const fields = detail.fields;
-  if (Array.isArray(fields)) return undefined;
-
-  if (setting.type === 'attendance') {
-    const timeLabel = fields.time_unit === 'hour' ? 'Боломжит дээд цаг' : 'Боломжит дээд хоног';
-    const timeValue = fields.time_unit === 'hour' ? `${fields.time_value} цаг` : `${fields.time_value} хоног`;
-    return [
-      { label: 'Амралт чөлөөний төрөл', value: fields.has_salary ? 'Цалинтай' : 'Цалингүй' },
-      { label: timeLabel, value: timeValue },
-    ];
-  }
-
-  if (setting.type === 'remote') {
-    const timeLabel = fields.time_unit === 'hour' ? 'Боломжит дээд цаг' : 'Боломжит дээд хоног';
-    const timeValue = fields.time_unit === 'hour' ? `${fields.time_value} цаг` : `${fields.time_value} хоног`;
-    return [
-      { label: 'Цалин бодолтын хувь', value: `% ${fields.salary_percent}` },
-      { label: timeLabel, value: timeValue },
-    ];
-  }
-
-  return undefined;
-}
-
 function mapApiToCategories(data: ApiResponse): RequestCategory[] {
   const categories: RequestCategory[] = [];
 
@@ -199,7 +142,7 @@ function mapApiToCategories(data: ApiResponse): RequestCategory[] {
           id: String(s.id),
           label: s.name,
           type: getFormType(s),
-          headerInfo: getHeaderInfo(s),
+          headerInfo: getRequestHeaderInfo(s),
           maxDays,
           maxHours,
           availableStartDate: detail.annual_leave_available_start_date,
@@ -422,12 +365,12 @@ export default function RequestScreen() {
             onPress={() => setActiveTab(1)}
             className={`flex-1 rounded-full ${activeTab === 1 ? 'border-darkgray' : 'border-darkgray/30'}`}
             labelComponent={
-              <View className="flex-row items-center gap-1.5">
+              <View className="relative">
                 <AppText className={`text-base ${activeTab === 1 ? 'font-medium text-black' : 'text-darkgray/50'}`}>
                   Шийдвэр
                 </AppText>
                 {hasEmployeeRequestNotification && (
-                  <View className="w-2 h-2 -mt-2 rounded-full bg-orange" />
+                  <View className="absolute top-0 -right-3 w-2 h-2 rounded-full bg-orange" />
                 )}
               </View>
             }

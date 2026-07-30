@@ -387,7 +387,7 @@ export function SeniorPerformance({
             >
               <AppIcon
                 icon={Task01Icon}
-                color={hasNote ? "#F0B400" : "#6A6A6A"}
+                color={hasNote ? "#F0B400" : "#B4B4B4"}
                 size={20}
               />
             </Pressable>

@@ -2,7 +2,7 @@ import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppDialog } from '@/components/app-dialog';
 import { AppHeader } from '@/components/app-header';
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
 import { AppSelect } from '@/components/app-select';
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
@@ -176,7 +176,7 @@ function AttachmentSection({ attachments, isUploading, onPick, onRemove }: Attac
         {isUploading ? (
           <Spinner color="#005FEE" size="sm" />
         ) : (
-          <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+          <AppFieldIcon icon={FileAttachmentIcon} color="#222222" />
         )}
         <AppText className="text-base text-darkgray">
           {isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}
@@ -185,7 +185,7 @@ function AttachmentSection({ attachments, isUploading, onPick, onRemove }: Attac
       {attachments.map((file, index) => (
         <View key={index} className="flex-row items-center gap-3">
           <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-            <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+            <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
             <AppText className="text-sm flex-1" numberOfLines={1}>
               {file.name}
             </AppText>
@@ -407,7 +407,7 @@ function ScheduledSheet({
                   minimumDate={minDate}
                   maximumDate={maxDate}
                   isInvalid={showErrors && !startDate}
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                 />
               </View>
               <View className="flex-1">
@@ -553,7 +553,7 @@ function UnusedSheet({
                   onValueChange={(opt) => setMonth(opt?.value ?? '')}
                   placeholder="Сонгох"
                   isInvalid={showErrors && !month}
-                  icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                  icon={<AppFieldIcon icon={Calendar03Icon} />}
                   renderValue={(option) => <AppText className="text-base">{option.label}</AppText>}
                 />
               </View>
@@ -850,8 +850,8 @@ export default function AnnualLeaveRequestScreen() {
           showBack
           backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
-        <View className="px-4 pb-7.5 gap-5">
-          <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>
+        <View className="px-4 pb-7.5 gap-[15px]">
+          <AppText className="text-base leading-6 font-medium text-darkerblue" numberOfLines={1}>
             {title}
           </AppText>
           {data && (

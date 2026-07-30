@@ -24,3 +24,15 @@ export const TugrugIcon: IconSvgElement = [
 export function AppIcon({ strokeWidth = 1.5, absoluteStrokeWidth = true, ...props }: HugeiconsProps) {
   return <HugeiconsIcon strokeWidth={strokeWidth} absoluteStrokeWidth={absoluteStrokeWidth} {...props} />;
 }
+
+/**
+ * The design's lighter icon family: 24px at a 1.2 stroke, used for the leading
+ * slot of a form field (date picker, select, text field) and for attachment rows
+ * and the "Файл хавсаргах" action.
+ *
+ * Everything else — headers, nav, the attachment X — keeps the app-wide 1.5 of
+ * `AppIcon`. Pass `color` for the rows that aren't #222; all props override.
+ */
+export function AppFieldIcon({ strokeWidth = 1.2, size = 24, color = '#222', ...props }: HugeiconsProps) {
+  return <AppIcon strokeWidth={strokeWidth} size={size} color={color} {...props} />;
+}

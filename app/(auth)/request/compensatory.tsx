@@ -1,7 +1,7 @@
 import { AppButton } from '@/components/app-button';
 import { AppDatePicker } from '@/components/app-date-picker';
 import { AppHeader } from '@/components/app-header';
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
 import { AppText } from '@/components/app-text';
 import { AppTextField } from '@/components/app-text-field';
 import { AppToast } from '@/components/app-toast';
@@ -281,8 +281,8 @@ export default function CompensatoryRequestScreen() {
           showBack
           backIcon={<AppIcon icon={ArrowLeft02Icon} color="#606884" size={24} />}
         />
-        <View className="px-4 pb-7.5 gap-5">
-          <AppText className="text-base font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
+        <View className="px-4 pb-7.5 gap-[15px]">
+          <AppText className="text-base leading-6 font-medium text-darkerblue" numberOfLines={1}>{title}</AppText>
           <RequestHeaderInfo rows={headerInfo} />
         </View>
 
@@ -343,7 +343,7 @@ export default function CompensatoryRequestScreen() {
                         onValueChange={(date) => onChange(dayjs(date).format(dateFormat))}
                         placeholder="00/00"
                         format="MM/DD"
-                        icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                        icon={<AppFieldIcon icon={Calendar03Icon} />}
                         isInvalid={!!errors.start}
                       />
                     )}
@@ -363,7 +363,7 @@ export default function CompensatoryRequestScreen() {
                         placeholder="00/00"
                         format="MM/DD"
                         minimumDate={watchStart ? dayjs(watchStart, dateFormat).toDate() : undefined}
-                        icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                        icon={<AppFieldIcon icon={Calendar03Icon} />}
                         isInvalid={!!errors.end}
                         isDisabled={!watchStart}
                       />
@@ -393,7 +393,7 @@ export default function CompensatoryRequestScreen() {
                           }}
                           placeholder="00/00"
                           format="MM/DD"
-                          icon={<AppIcon icon={Calendar03Icon} color="#222" size={22} />}
+                          icon={<AppFieldIcon icon={Calendar03Icon} />}
                           isInvalid={!!errors.hourDate}
                         />
                       )}
@@ -416,7 +416,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
+                          icon={<AppFieldIcon icon={Clock01Icon} />}
                           isInvalid={!!errors.start}
                           isDisabled={!watchHourDate}
                         />
@@ -437,7 +437,7 @@ export default function CompensatoryRequestScreen() {
                           placeholder="00:00"
                           format="HH:mm"
                           minuteInterval={5}
-                          icon={<AppIcon icon={Clock01Icon} color="#222" size={22} />}
+                          icon={<AppFieldIcon icon={Clock01Icon} />}
                           isInvalid={!!errors.end}
                           isDisabled={!watchHourDate}
                         />
@@ -491,7 +491,7 @@ export default function CompensatoryRequestScreen() {
               {isUploading ? (
                 <Spinner color="#005FEE" size="sm" />
               ) : (
-                <AppIcon icon={FileAttachmentIcon} color="#6A6A6A" size={24} />
+                <AppFieldIcon icon={FileAttachmentIcon} color="#222222" />
               )}
               <AppText className="text-base text-darkgray">{isUploading ? 'Хуулж байна...' : 'Файл хавсаргах'}</AppText>
             </Pressable>
@@ -499,7 +499,7 @@ export default function CompensatoryRequestScreen() {
             {attachments.map((file, index) => (
               <View key={index} className="-mt-[15px] flex-row items-center gap-3">
                 <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                  <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                  <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
                   <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                 </View>
                 <Pressable

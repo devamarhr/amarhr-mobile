@@ -7,6 +7,15 @@ import React, { useEffect, useState } from "react";
 import { cn } from "heroui-native";
 import { api } from "@/config/api";
 
+interface LateDeduction {
+  enabled: boolean;
+  thresholdMinutes: number | null;
+  type: 'fixed' | 'percentage' | null;
+  valuePerMinute: number | null;
+  /** Бэлэн үзүүлэх текст. null биш бол шууд зурна. */
+  text: string | null;
+}
+
 interface WorkInfo {
   department: string | null;
   jobPosition: string | null;
@@ -17,7 +26,11 @@ interface WorkInfo {
   branch: { id: number; name: string };
   isTimeTracking: boolean;
   rosterTemplate: string | null;
+  /** "{ажлын өдөр}/{амралтын өдөр}", ж: "5/2". Тогтмол бус хуваарьт null. */
+  rosterDays: string | null;
+  /** Legacy — lateDeduction.enabled-тэй ижил утга. */
   isLateDeduction: boolean;
+  lateDeduction: LateDeduction;
 }
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
@@ -72,7 +85,12 @@ export default function WorkInfoScreen() {
           <View className="px-4">
             <InfoField label="Ажилтны цагийг" value={workInfo?.isTimeTracking ? 'Бүртгэнэ' : 'Бүртгэхгүй'} />
             <InfoField label="Цагийн хуваарийн нэр" value={workInfo?.rosterTemplate} />
-            <InfoField label="Хоцорсон минутын суутгал" value={workInfo?.isLateDeduction ? 'Суутгана' : 'Суутгахгүй'} className="mb-0" />
+            <InfoField label="Ажлын хуваарь / Цикл / Ростер" value={workInfo?.rosterDays} />
+            <InfoField
+              label="Хоцорсон минутын суутгал"
+              value={workInfo ? (workInfo.lateDeduction?.text ?? 'Тооцохгүй') : null}
+              className="mb-0"
+            />
           </View>
         </ScrollView>
       </View>

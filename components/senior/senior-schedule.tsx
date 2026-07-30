@@ -6,7 +6,6 @@ import { AppToast } from "@/components/app-toast";
 import { avatarFallback, useSeniorContentPad } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
-import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 import {
   Alert01Icon,
   ArrowDown01Icon,
@@ -27,6 +26,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 
 function shortName(emp: { first_name?: string | null; last_name?: string | null }): string {
   const initial = emp.last_name?.[0];

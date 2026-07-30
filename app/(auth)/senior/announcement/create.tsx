@@ -1,6 +1,6 @@
 import { AppButton } from "@/components/app-button";
 import { AppHeader } from "@/components/app-header";
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
 import { AppSelect, SelectOption } from "@/components/app-select";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
@@ -398,7 +398,7 @@ export default function CreateAnnouncementScreen() {
             {isUploading ? (
               <Spinner color="#005FEE" size="sm" />
             ) : (
-              <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+              <AppFieldIcon icon={FileAttachmentIcon} color="#222222" />
             )}
             <AppText className="text-base text-darkgray">
               {isUploading ? "Хуулж байна..." : "Файл хавсаргах"}
@@ -410,7 +410,7 @@ export default function CreateAnnouncementScreen() {
               {attachments.map((file, index) => (
                 <View key={index} className="flex-row items-center gap-3">
                   <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                    <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                    <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
                     <AppText className="text-sm flex-1" numberOfLines={1}>{file.name}</AppText>
                   </View>
                   <Pressable

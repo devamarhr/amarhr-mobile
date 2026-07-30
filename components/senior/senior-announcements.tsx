@@ -14,7 +14,6 @@ import {
 } from "@/components/senior/shared";
 import { api } from "@/config/api";
 import { ScrollHandler } from "@/hooks/use-hide-tab-bar";
-import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 import { Search01Icon } from "@hugeicons-pro/core-stroke-standard";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
@@ -27,6 +26,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import ActionSheet, { ActionSheetRef, ScrollView as SheetScrollView } from "react-native-actions-sheet";
 
 function formatAnnouncementDate(iso: string | null): string {
   if (!iso) return "";
@@ -272,7 +272,7 @@ export function SeniorAnnouncements({ onScroll }: { onScroll?: ScrollHandler }) 
           refreshing={refreshing}
           onRefresh={handleRefresh}
           contentContainerStyle={{ paddingBottom: contentPad }}
-          ItemSeparatorComponent={() => <Separator className="bg-darkgray/12" />}
+          ItemSeparatorComponent={() => <Separator className="bg-darkgray/20" />}
           ListEmptyComponent={
             <View className="items-center justify-center py-20">
               <AppText className="text-sm text-darkgray">Зарлал оруулаагүй байна</AppText>

@@ -2,7 +2,7 @@ import { AppAttachmentList } from "@/components/app-attachment-list";
 import { AppButton } from "@/components/app-button";
 import { AppDialog } from "@/components/app-dialog";
 import { AppHeader } from "@/components/app-header";
-import { AppIcon } from "@/components/app-icon";
+import { AppFieldIcon, AppIcon } from "@/components/app-icon";
 import { AppText } from "@/components/app-text";
 import { AppTextField } from "@/components/app-text-field";
 import { AppToast } from "@/components/app-toast";
@@ -657,8 +657,8 @@ export default function SeniorRequestDetailScreen() {
             <View className="px-4 pb-5 bg-darkgray/7">
 
               {employee && (
-                <View className="flex-row items-center gap-3 mb-5">
-                  <Avatar alt={employeeFullName(employee)} className="w-12 h-12">
+                <View className="flex-row items-center gap-2.5 mb-5">
+                  <Avatar alt={employeeFullName(employee)} className="w-[50px] h-[50px]">
                     <Avatar.Image source={{ uri: employee.profile_image_url ?? "" }} />
                     <Avatar.Fallback classNames={{ text: "text-black text-sm" }}>
                       {employeeFallback(employee)}
@@ -668,8 +668,8 @@ export default function SeniorRequestDetailScreen() {
                     <AppText className="text-base font-medium" numberOfLines={1}>
                       {employeeFullName(employee)}
                     </AppText>
-                    {employee.last_assignment?.job_position?.name && (
-                      <AppText className="text-sm text-darkgray mt-0.5" numberOfLines={1}>
+                    {!!employee.last_assignment?.job_position?.name && (
+                      <AppText className="text-sm leading-5 text-darkgray mt-0.5" numberOfLines={1}>
                         {employee.last_assignment.job_position.name}
                       </AppText>
                     )}
@@ -677,23 +677,23 @@ export default function SeniorRequestDetailScreen() {
                 </View>
               )}
 
-              <AppText className="text-base font-semibold text-black mb-3" numberOfLines={1}>
+              <AppText className="text-base leading-6 font-semibold text-black mb-2.5" numberOfLines={1}>
                 {request.setting.name}
               </AppText>
 
-              <View className="gap-2">
+              <View className="gap-[5px]">
                 {formType === "annualLeave"
                   ? renderAnnualLeave()
                   : formRows.length > 0
                     ? <InfoRowsView rows={formRows} withColon labelClassName="text-base" valueClassName="text-base font-normal" />
                     : null}
 
-                <View className="gap-2">
-                  <AppText className="text-base text-darkgray">Шалтгаан</AppText>
+                <View className="gap-[5px]">
+                  <AppText className="text-base leading-6 text-darkgray">Шалтгаан</AppText>
                   {description ? (
                     <TruncatedText
                       text={description}
-                      className="text-base text-black"
+                      className="text-base leading-6 text-black"
                       onExpand={() => setExpandedText({ title: "Шалтгаан", text: description })}
                     />
                   ) : (
@@ -706,7 +706,7 @@ export default function SeniorRequestDetailScreen() {
             </View>
 
             <View className="flex-1 bg-background px-4">
-            {request.review_detail?.comment && (
+            {!!request.review_detail?.comment && (
               <View className="pt-5 gap-1">
                 <AppText className="text-sm text-darkgray">Санал</AppText>
                 <TruncatedText
@@ -722,7 +722,7 @@ export default function SeniorRequestDetailScreen() {
                 <AppAttachmentList attachments={request.review_detail.attachments} className="mt-1.5" />
               </View>
             )}
-            {request.decision_detail?.comment && (
+            {!!request.decision_detail?.comment && (
               <View className="pt-5 gap-1">
                 <AppText className="text-sm text-darkgray">Шийдвэр</AppText>
                 <TruncatedText
@@ -762,7 +762,7 @@ export default function SeniorRequestDetailScreen() {
                   {isUploading ? (
                     <Spinner color="#005FEE" size="sm" />
                   ) : (
-                    <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                    <AppFieldIcon icon={FileAttachmentIcon} color="#222222" />
                   )}
                   <AppText className="text-base text-darkgray">
                     {isUploading ? "Хуулж байна..." : "Файл хавсаргах"}
@@ -772,7 +772,7 @@ export default function SeniorRequestDetailScreen() {
                 {actionAttachments.map((file, index) => (
                   <View key={index} className="flex-row items-center gap-3">
                     <View className="flex-1 flex-row items-center gap-3 border border-gray/20 rounded-xl h-12 px-3">
-                      <AppIcon icon={FileAttachmentIcon} color="#222222" size={24} />
+                      <AppFieldIcon icon={FileAttachmentIcon} color="#6A6A6A" />
                       <AppText className="text-base flex-1" numberOfLines={1}>
                         {file.name}
                       </AppText>
