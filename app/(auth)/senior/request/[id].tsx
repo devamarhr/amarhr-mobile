@@ -792,7 +792,10 @@ export default function SeniorRequestDetailScreen() {
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView
-              offset={{ closed: 0, opened: insets.bottom - 12 }}
+              // Sticky view нь footer-ийн доод талыг "keyboard дээд тал + opened" дээр тавьдаг.
+              // opened = paddingBottom - 10 тул товч keyboard-аас яг 10px дээр сууж, footer-ийн
+              // дэвсгэр keyboard хүртэл үргэлж хүрнэ (жижиг inset-тэй утсан дээр ч цоорхой үгүй).
+              offset={{ closed: 0, opened: insets.bottom }}
               onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
             >
             {actionMode === "decide" ? (
