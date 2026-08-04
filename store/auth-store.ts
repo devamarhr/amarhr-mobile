@@ -188,7 +188,10 @@ export const useAuthStore = create<AuthState>()(
           hidePhone: data.hidePhone,
           attendanceReminder: data.attendanceReminder,
           attendanceMethod: data.attendanceMethod,
-          allowedAttendanceMethod: data.allowedAttendanceMethod,
+          // API-аас ирэхгүй/null байвал .map() дээр унахгүйн тулд массив болгож нормчилно
+          allowedAttendanceMethod: Array.isArray(data.allowedAttendanceMethod)
+            ? data.allowedAttendanceMethod
+            : [],
         });
       },
 
@@ -245,6 +248,14 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      // Хуучин хадгалагдсан state-д массив биш утга (null/undefined) байж болох тул
+      // rehydrate хийхдээ массив болгож баталгаажуулна
+      merge: (persisted, current) => {
+        const state = { ...current, ...(persisted as Partial<AuthState>) };
+        if (!Array.isArray(state.allowedAttendanceMethod)) state.allowedAttendanceMethod = [];
+        if (!Array.isArray(state.children)) state.children = [];
+        return state;
+      },
     }
   )
 );
