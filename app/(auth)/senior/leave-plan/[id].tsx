@@ -70,7 +70,7 @@ async function calculateEndDate(
     path: `/senior/annual-leaves/${employeeId}/end-date?start_date=${startDate}&days=${days}`,
     method: 'GET',
   });
-  return res.data.end_date;
+  return res.status === 200 && typeof res.data?.end_date === 'string' ? res.data.end_date : '';
 }
 
 interface AddSheetProps {

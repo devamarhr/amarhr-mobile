@@ -98,7 +98,7 @@ export default function ContractInfoScreen() {
   }, []);
 
   const salary = contractInfo?.salarySetting;
-  const adjustments = contractInfo?.adjustments ?? [];
+  const adjustments = Array.isArray(contractInfo?.adjustments) ? contractInfo.adjustments : [];
 
   return (
     <StyledSafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -156,9 +156,9 @@ export default function ContractInfoScreen() {
             {adjustments.map((adj) => (
               <View key={adj.id} className="mb-5">
                 <AppText className="text-sm text-darkgray">{adj.name}</AppText>
-                {adj.detail.map((d, di) => (
+                {(adj.detail ?? []).map((d, di) => (
                   <AppText key={di} className="text-base mt-1">
-                    {d.amount_type === 'fixed' ? `${d.amount.toLocaleString()} ₮` : `${d.amount} %`}
+                    {d.amount_type === 'fixed' ? `${(d.amount ?? 0).toLocaleString()} ₮` : `${d.amount ?? 0} %`}
                     {adj.category === 'yearly' && d.start_year != null && d.end_year != null
                       ? ` / ${d.start_year}-${d.end_year} жилийн хооронд`
                       : ''}

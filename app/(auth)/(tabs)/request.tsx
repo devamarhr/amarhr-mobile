@@ -108,10 +108,11 @@ function getFormType(setting: ApiRequestSetting): FormType {
 
 function mapApiToCategories(data: ApiResponse): RequestCategory[] {
   const categories: RequestCategory[] = [];
+  if (!data || typeof data !== 'object') return categories;
 
   for (const key of categoryOrder) {
     const settings = data[key];
-    if (!settings?.length) continue;
+    if (!Array.isArray(settings) || !settings.length) continue;
 
     categories.push({
       name: categoryLabels[key] || key,
@@ -245,8 +246,9 @@ export default function RequestScreen() {
     }).then((res) => {
       console.log(`page ${page}`)
       if (res.status === 200) {
-        setEmployeeRequests((prev) => isFirstPage ? res.data.data : [...prev, ...res.data.data]);
-        lastPage.current = res.data.last_page;
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        setEmployeeRequests((prev) => isFirstPage ? list : [...prev, ...list]);
+        lastPage.current = res.data?.last_page ?? 1;
       }
     }).catch(console.error)
       .finally(() => {

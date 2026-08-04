@@ -113,7 +113,7 @@ async function calculateEndDate(startDate: string, days: number): Promise<string
     method: 'POST',
     data: { start_date: startDate, days },
   });
-  return res.data.end_date;
+  return res.status === 200 && typeof res.data?.end_date === 'string' ? res.data.end_date : '';
 }
 
 function useAttachments(showError: (msg: string) => void, notifyLimit: () => void) {

@@ -261,7 +261,7 @@ export default function SeniorShiftSwapScreen() {
   const workDays = useMemo(() => {
     const s = new Set<number>();
     monthSchedule.forEach((d) => {
-      if (d.shifts.length > 0) s.add(d.day);
+      if (d.shifts?.length) s.add(d.day);
     });
     return s;
   }, [monthSchedule]);

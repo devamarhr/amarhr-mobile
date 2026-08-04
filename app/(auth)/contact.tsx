@@ -174,7 +174,7 @@ export default function ContactScreen() {
     return api<ContactApi[]>({ path: '/contacts', method: 'GET' })
       .then((res) => {
         if (res.status === 200) {
-          setContacts(res.data);
+          setContacts(Array.isArray(res.data) ? res.data : []);
         }
       })
       .catch(console.error)

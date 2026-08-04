@@ -121,8 +121,9 @@ export default function AnnouncementScreen() {
       method: 'GET',
     }).then((res) => {
       if (res.status === 200) {
-        setAnnouncements((prev) => isFirstPage ? res.data.data : [...prev, ...res.data.data]);
-        lastPage.current = res.data.last_page;
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        setAnnouncements((prev) => isFirstPage ? list : [...prev, ...list]);
+        lastPage.current = res.data?.last_page ?? 1;
       }
     }).catch(console.error)
       .finally(() => {

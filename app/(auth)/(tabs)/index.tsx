@@ -319,13 +319,15 @@ export default function HomeScreen() {
 
     api<ProfileData>({ path: '/profile', method: 'GET' })
       .then((res) => {
-        useAuthStore.getState().setProfileData(res.data);
+        if (res.status === 200 && res.data) {
+          useAuthStore.getState().setProfileData(res.data);
+        }
       })
       .catch(console.error);
 
     api<UpcomingEvent[]>({ path: '/upcoming-events', method: 'GET' })
       .then((res) => {
-        if (res.status >= 200 && res.status < 300 && res.data) {
+        if (res.status >= 200 && res.status < 300 && Array.isArray(res.data)) {
           setEvents(res.data);
         }
       })

@@ -871,6 +871,7 @@ export function SeniorSchedule({
           <View className="mt-2">
             {shifts.map((shift) => {
               let counter = 0;
+              const shiftEmployees = shift.employees ?? [];
               return (
                 <View key={shift.shift_index}>
                   <View className="bg-lightblue -mx-4 px-4 py-2.5 mt-3 flex-row items-center justify-between">
@@ -888,12 +889,12 @@ export function SeniorSchedule({
                       </Pressable>
                     )}
                   </View>
-                  {shift.employees.length === 0 && (
+                  {shiftEmployees.length === 0 && (
                     <View className="py-6 items-center">
                       <AppText className="text-sm text-darkgray">Ажилтан байхгүй байна</AppText>
                     </View>
                   )}
-                  {shift.employees.map((emp, i) => {
+                  {shiftEmployees.map((emp, i) => {
                     const isLeave = !!emp.employee_request_setting;
                     const number = isLeave ? null : (counter += 1);
                     return (
@@ -913,7 +914,7 @@ export function SeniorSchedule({
                           onSwap={() => goSwap(shift, emp)}
                           onRelease={() => setReleaseTarget(emp)}
                         />
-                        {i < shift.employees.length - 1 && (
+                        {i < shiftEmployees.length - 1 && (
                           <Separator className="bg-darkgray/12" />
                         )}
                       </View>

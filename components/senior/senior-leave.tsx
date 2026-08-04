@@ -242,7 +242,7 @@ export function SeniorLeave({
             <View className="bg-lightblue py-2 px-4 -mx-4 mt-2.5">
               <AppText className="text-sm text-darkblue">{monthLabel(section.month)}</AppText>
             </View>
-            {section.splits.map((split) => (
+            {(section.splits ?? []).map((split) => (
               <LeaveSplitRow
                 key={split.id}
                 split={split}

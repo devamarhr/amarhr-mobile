@@ -89,15 +89,15 @@ function formatMinutesHHMM(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function formatHolidayDates(dates: string[]): string {
-  if (dates.length === 0) return '';
+function formatHolidayDates(dates: string[] | null | undefined): string {
+  if (!dates?.length) return '';
   const formatted = dates.map((d) => d.slice(5).replace('-', '/'));
   if (dates.length === 1) return formatted[0];
   return `${formatted[0]} - ${formatted[formatted.length - 1]}`;
 }
 
 function hasPlannedShift(day: TimesheetDay): boolean {
-  return day.shifts.some((s) => !!s.planned_start && !!s.planned_end);
+  return (day.shifts ?? []).some((s) => !!s.planned_start && !!s.planned_end);
 }
 
 // Monday-first weekday names.
@@ -613,7 +613,7 @@ function YearView({
     { label: 'Цалингүй чөлөө', value: `${formatMinutesHHMM(stats?.total_unpaid_leave_minutes ?? 0)} цаг` },
   ];
 
-  const totalHolidayDays = holidays.reduce((sum, h) => sum + h.dates.length, 0);
+  const totalHolidayDays = holidays.reduce((sum, h) => sum + (h.dates?.length ?? 0), 0);
 
   const formatRange = (s: { start_date: string; end_date: string }) =>
     `${s.start_date.slice(5).replace('-', '/')} - ${s.end_date.slice(5).replace('-', '/')}`;
@@ -629,7 +629,7 @@ function YearView({
   const highlightRanges = useMemo(() => {
     const ranges: { start: string; end: string; color: 'blue' | 'annual' | 'cyan' }[] = [];
     holidays.forEach((h) => {
-      if (h.dates.length === 0) return;
+      if (!h.dates?.length) return;
       ranges.push({ start: h.dates[0], end: h.dates[h.dates.length - 1], color: 'blue' });
     });
     if (extra?.has_annual_leave) {

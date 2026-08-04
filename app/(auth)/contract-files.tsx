@@ -48,7 +48,7 @@ export default function ContractsRulesScreen() {
       method: 'GET',
     }).then((res) => {
       if (res.status === 200) {
-        setFiles(res.data.files);
+        setFiles(Array.isArray(res.data?.files) ? res.data.files : []);
       }
     }).catch(console.error);
   }, []);
