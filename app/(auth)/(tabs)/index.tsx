@@ -167,6 +167,8 @@ export default function HomeScreen() {
   const attendanceMethod = useAuthStore((state) => state.attendanceMethod);
   const allowedAttendanceMethod = useAuthStore((state) => state.allowedAttendanceMethod);
   const methodSheetRef = useRef<ActionSheetRef>(null);
+  const pendingMethodRef = useRef<'geo' | 'wifi' | null>(null);
+  const isPunchingRef = useRef(false);
   const [saveSelection, setSaveSelection] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [action, setAction] = useState<PunchAction>('none');
@@ -175,6 +177,7 @@ export default function HomeScreen() {
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   // Таслагдсан holiday/medical event дээр дарахад бүтэн текстийг харуулах dialog.
   const [eventDialog, setEventDialog] = useState<UpcomingEvent | null>(null);
+  const [wifiConfirmOpen, setWifiConfirmOpen] = useState(false);
   // PagerView өөрөө өндрөө агуулгаараа тааруулж чаддаггүй тул нэг баганы
   // агуулгыг onLayout-оор хэмжиж, түүгээр pager-ийн өндрийг жолооддог.
   const [shiftRowHeight, setShiftRowHeight] = useState(58);
@@ -217,6 +220,7 @@ export default function HomeScreen() {
   };
 
   const handleSelectMethod = useCallback((method: 'geo' | 'wifi') => {
+    pendingMethodRef.current = method;
     methodSheetRef.current?.hide();
     if (saveSelection) {
       useAuthStore.getState().setSettings({ attendance_method: method });
@@ -235,11 +239,12 @@ export default function HomeScreen() {
         }
       });
     }
-    proceedWithAttendance(method);
   }, [saveSelection, toast]);
 
-  const proceedWithAttendance = useCallback(async (method: 'geo' | 'wifi') => {
-    if (method === 'wifi') {
+  const punchWithWifi = useCallback(async () => {
+    if (isPunchingRef.current) return;
+    isPunchingRef.current = true;
+    try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         toast.show({
@@ -307,10 +312,17 @@ export default function HomeScreen() {
           ),
         });
       }
-    } else if (method === 'geo') {
-      router.navigate('/attendance-map');
+    } finally {
+      isPunchingRef.current = false;
     }
-  }, [router, toast, fetchTimesheet]);
+  }, [toast, fetchTimesheet]);
+
+  const proceedWithAttendance = useCallback((method: 'geo' | 'wifi') => {
+    // WiFi нь нэг даралтаар шууд punch хийдэг тул эхлээд баталгаажуулна.
+    // Geo нь газрын зургийн дэлгэц дээрээ баталгаажуулалтын алхамтай.
+    if (method === 'wifi') setWifiConfirmOpen(true);
+    else if (method === 'geo') router.navigate('/attendance-map');
+  }, [router]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -558,6 +570,11 @@ export default function HomeScreen() {
 
       <ActionSheet
         ref={methodSheetRef}
+        onClose={() => {
+          const method = pendingMethodRef.current;
+          pendingMethodRef.current = null;
+          if (method) proceedWithAttendance(method);
+        }}
         gestureEnabled
         indicatorStyle={{ width: 0, height: 0, marginVertical: 0 }}
         containerStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
@@ -597,6 +614,26 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ActionSheet>
+
+      <AppDialog isOpen={wifiConfirmOpen} onOpenChange={setWifiConfirmOpen}>
+        <View className="mb-5 gap-1.5">
+          <AppDialog.Title>{actionLabel(action)}</AppDialog.Title>
+          <AppDialog.Description>
+            Цагаа бүртгүүлэх үү?
+          </AppDialog.Description>
+        </View>
+        <View className="flex-row gap-3">
+          <AppDialog.Button label="Үгүй" className="flex-1" onPress={() => setWifiConfirmOpen(false)} />
+          <AppDialog.Button
+            label="Тийм"
+            className="flex-1"
+            onPress={() => {
+              setWifiConfirmOpen(false);
+              punchWithWifi();
+            }}
+          />
+        </View>
+      </AppDialog>
 
       <AppDialog isOpen={eventDialog !== null} onOpenChange={(open) => !open && setEventDialog(null)} className="pb-10">
         <View className="gap-1.5">
